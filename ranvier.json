@@ -1,6 +1,6 @@
 {
   "port": 4000,
-  "bundles": [],
+  "bundles": ["bundle-rantamuta"],
   "dataSources": {
     "YamlArea": {
       "require": "ranvier-datasource-file.YamlAreaDataSource"
