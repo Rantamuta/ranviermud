@@ -1,73 +1,43 @@
 # Review: Portable Behavioral Spec — Command-to-Output Interaction Model
 
-## Verdict
+## Updated verdict for your stated goal ("good enough", not perfect parity)
 
-The document is **strong enough to build a functionally similar system** in Rantamuta at the behavioral-contract level, but it is **not yet strict enough** for full-fidelity transcript compatibility without additional constraints.
+For the goal you clarified—**a robust, consistent verb/command contract in Rantamuta without transcript-perfect parity**—the original spec is **already sufficient**.
 
-## What is already well-specified
+In practical terms: **yes, you can build a stable command interface across verbs from the first version**. The stage model, failure taxonomy, fallback behavior, and canonical-event fanout are enough to enforce consistent behavior and avoid ad hoc verb implementations.
 
-- Clearly defined terminal outcomes (`success`, handled failures, unknown after fallback exhaustion).
-- A stable stage order with explicit fallback trigger conditions.
-- Useful failure taxonomy (`unknown`, `semantic`, `ambiguous`, `invalid-context`, `forbidden`).
-- Clear requirement that multi-audience text comes from a single canonical semantic event.
-- Acceptance examples that cover core command shapes and key edge conditions.
+## Recommendation between the two versions
 
-Together, these provide a solid implementation skeleton and significantly reduce architectural ambiguity.
+- **Prefer the first/original document as the implementation mandate.**
+- Treat the newer, more detailed version as an **optional guideline/reference appendix**, not a hard requirement.
 
-## What is missing for an implementation that matches behavior tightly
+Why:
 
-1. **Input grammar and normalization contract**
-   - The spec says normalization is deterministic but does not define canonical tokenization, quoting, punctuation handling, stop-word treatment, or case-folding details.
+1. The first version cleanly defines the behavioral contract every verb must satisfy.
+2. It preserves implementation freedom, which is valuable while porting into a different runtime architecture.
+3. The second version introduces parity-oriented constraints (ordering profiles, error envelopes, strict precedence declarations) that improve determinism but can over-constrain early integration work.
 
-2. **Target-resolution precedence rules**
-   - The spec references context scopes but not deterministic lookup order and tie-breakers (inventory vs room, equipped vs carried, aliases, numeric selectors like `2.sword`).
+## What the first version already guarantees (enough for a robust verb contract)
 
-3. **Fallback semantics details**
-   - It defines when fallback runs, but not how many fallback strategies are attempted, their priority, or whether fallback can return non-unknown failures.
+- One shared pipeline shape for every command: intake → normalize → interpret → resolve → validate → execute → render → dispatch (+ fallback only on unknown).
+- Stable failure classes that prevent ambiguous "generic fail" behavior.
+- Clear separation between world mutation (execution) and message fanout (render/dispatch).
+- Canonical semantic event requirement that keeps multi-recipient messaging coherent.
+- Acceptance examples that anchor expected behavior for common and edge paths.
 
-4. **Validation rule ordering**
-   - It states validation exists, but rule order matters for user-visible error precedence and reproducibility.
+This is exactly the foundation needed to enforce a consistent interface across verbs.
 
-5. **Execution atomicity boundaries**
-   - The document says command-level atomic “appearance,” but rollback behavior and partial-failure handling need explicit transaction boundaries.
+## Minimal hardening (small, non-overreaching)
 
-6. **Recipient eligibility snapshot timing**
-   - It requires eligibility filtering but not whether eligibility is evaluated before or after mutation, which can change recipient sets.
+If you want a little extra safety without drifting into over-specification, add only these three normative clarifications to the first version:
 
-7. **Delivery ordering guarantees**
-   - Open question #2 acknowledges this; full parity requires a normative ordering contract.
+1. **Validation error precedence is deterministic** (first failed check wins).
+2. **Unknown fallback must fully complete before any terminal unknown output** (already implied; make explicit).
+3. **Execution failure policy**: no persistent mutation on failure unless a legacy exception is explicitly documented.
 
-8. **Exact-text compatibility profile**
-   - Open question #3 acknowledges this; define command families requiring strict text matching versus semantic equivalence.
+These three items tighten consistency materially while keeping the document lightweight.
 
-9. **Concurrency/re-entrancy contract**
-   - No explicit policy for simultaneous commands, queued processing, or interleaving events during long-running actions.
+## Practical conclusion
 
-10. **Error payload contract for tests**
-    - Failure classes are defined, but machine-assertable error codes/fields are not.
-
-## Practical conclusion for porting into Rantamuta
-
-- **Yes**, the spec is sufficient to build a **similar** system that preserves high-level behavior, branch structure, and user experience patterns.
-- **No**, it is not sufficient by itself to guarantee **high-fidelity parity** (especially transcript-level determinism) without a small normative addendum.
-
-## Recommended “Spec v1.1” addendum (minimal)
-
-To make this implementation-ready for parity-sensitive work, add:
-
-1. Deterministic input grammar + normalization rules (with examples).
-2. Deterministic target-resolution order and disambiguation tie-breakers.
-3. Fallback chain definition (ordered strategies + terminal behavior per strategy).
-4. Validation rule order and error-precedence matrix.
-5. Atomicity/rollback policy with explicit exception list.
-6. Recipient eligibility evaluation timing (pre/post execution snapshot).
-7. Delivery ordering contract (actor/target/bystander ordering guarantees).
-8. Compatibility profile: semantic vs strict-text command subsets.
-9. Concurrency model (single-threaded queue vs other), including event interleaving policy.
-10. Machine-assertable error envelope schema (`class`, `code`, `details`).
-
-## Suggested confidence framing
-
-- **Current document confidence for similar-system port:** High.
-- **Current document confidence for strict behavioral parity:** Medium.
-- **Post-addendum confidence for strict parity implementation:** High.
+- If your target is **consistency and regularity across verbs**: the first spec is good enough now.
+- If your target later becomes **strict transcript parity**: adopt selected sections from the second spec incrementally (as a test-driven addendum), not as an immediate mandate.
