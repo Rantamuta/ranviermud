@@ -67,3 +67,39 @@ Start with `look`, `get`, and one utility verb (`help`):
 Produce one short table checked into `docs/` (or issue comment) that becomes the acceptance source for the first implementation pass.
 
 Once that matrix is agreed, implementation can begin directly; a prompt can come later if we want automation support, but it is not the critical first dependency.
+
+## Parser direction: start simple (your proposal is the right first build)
+
+I agree with your direction: for this stage, build a **simple token parser**, not a language parser.
+
+### Recommended first parser contract
+
+1. Normalize input with trim + whitespace collapse.
+2. Split on spaces into a token array.
+3. Interpret `tokens[0]` as the command key (verb/alias).
+4. Pass remaining tokens as positional arguments into verb-specific resolvers.
+5. Keep relation words (`at`, `from`, `in`, `with`, `on`) as plain tokens for resolver logic.
+
+This gives you consistency now, with very low implementation risk.
+
+### Why this is a better first step than a character-level parser
+
+- It matches your current goal (regular verb behavior, not full natural-language parsing).
+- It keeps command handling debuggable and testable per verb contract.
+- It avoids committing early to grammar complexity that is expensive to unwind.
+
+### Guardrails so "simple" does not become ad hoc
+
+- Keep one shared parse output shape for every command.
+- Keep one shared failure taxonomy.
+- Keep fallback handling centralized (only on unknown command key).
+- Add quoted-string support only when a concrete command needs it.
+
+### Practical sequence from here
+
+1. Lock the 3-verb contract matrix (`look`, `get`, `help`).
+2. Implement the shared split-based parser contract above.
+3. Wire those three verbs to the shared pipeline and failure classes.
+4. Add transcript-style smoke checks for those three verbs.
+
+That sequence gives you a working, coherent command layer quickly, while leaving room to add richer parsing later only where evidence says it is needed.
