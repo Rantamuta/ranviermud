@@ -103,3 +103,29 @@ This gives you consistency now, with very low implementation risk.
 4. Add transcript-style smoke checks for those three verbs.
 
 That sequence gives you a working, coherent command layer quickly, while leaving room to add richer parsing later only where evidence says it is needed.
+
+
+## Assessment of your latest updated spec draft
+
+Yes—this update answers the previously open questions and is now **implementation-ready** for a robust, contract-driven command layer.
+
+### What your update resolves well
+
+- It explicitly resolves the previously open strict-text boundary using a behavioral rule (non-diegetic commands strict-text, diegetic verbs semantic-equivalent).
+- It makes atomicity normative (no legacy non-atomic exceptions under the reference profile).
+- It declares a canonical delivery ordering profile and ties compatibility to a profile/version mechanism.
+- It adds deterministic verb resolution and grammar ownership constraints that reduce parser ambiguity.
+
+### Maintainer caution (scope control)
+
+Your draft is now strong enough that it can be treated as a **mandate** for the reference profile. The main tradeoff is that it is no longer "minimal"—it is intentionally prescriptive.
+
+Recommended adoption posture:
+
+1. Keep this as the **Reference Profile v1** contract.
+2. Keep implementation startup simple (split-token parser + verb-owned grammar patterns) as long as behavior satisfies the profile.
+3. Version any future behavioral changes rather than editing rules in place.
+
+### Practical next step
+
+Proceed to implementation using the 3-verb starter slice (`look`, `get`, `help`) under this profile. If those pass with deterministic outcomes and ordering, expand verb families incrementally.
