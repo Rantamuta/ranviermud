@@ -4,6 +4,22 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Bundle init defaults
+
+Summary:
+
+- Changed `util/init-bundles.js` default bundle installation list to only include `https://github.com/Rantamuta/bundle-rantamuta.git`.
+Why:
+- This wrapper now treats `bundle-rantamuta` as the canonical reference/base bundle for Rantamuta-first projects.
+Impact:
+- `npm run init` and `npm run ci:init` now install and enable only `bundle-rantamuta` by default.
+- Existing docs, smoke flows, or operator expectations based on the old baseline bundle set must be updated.
+Migration/Action:
+- If you still need legacy example bundles, install them explicitly with `npm run install-bundle <repo>`.
+References:
+- None.
+Timestamp: 2026.02.12 13:58
+
 ### Starting room default
 
 Summary:
