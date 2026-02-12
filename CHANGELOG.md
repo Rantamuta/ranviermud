@@ -4,6 +4,21 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Root test discovery includes all repo test files
+
+Summary:
+
+- Updated root `npm test` discovery to run `**/*.test.js` across the repository.
+Why:
+- Tests are now convention-based (`*.test.js`) rather than path-bound to specific directories.
+Impact:
+- `npm test` now executes any `*.test.js` under the repository by default (excluding `node_modules`).
+Migration/Action:
+- New tests can be colocated or stored in `tests/`; default execution depends on filename pattern.
+References:
+- None.
+Timestamp: 2026.02.12 16:26
+
 ### Parser v0 input integration
 
 Summary:

@@ -18,7 +18,7 @@
     "remove-bundle": "node ./util/remove-bundle.js",
     "install-bundle": "node ./util/install-bundle.js",
     "smoke:login": "node ./scripts/smoke-login.js",
-    "test": "mocha",
+    "test": "mocha \"**/*.test.js\" --ignore \"**/node_modules/**\"",
     "bundle:install": "node util/install-bundle.js",
     "bundle:remove": "node util/remove-bundle.js",
     "bundle:update": "node util/update-bundle-url.js",
