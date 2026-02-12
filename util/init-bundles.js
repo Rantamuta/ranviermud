@@ -23,6 +23,17 @@ function isPathIgnored(targetPath) {
   return false;
 }
 
+function getBundleName(remote) {
+  const name = remote
+    .trim()
+    .replace(/\/+$/, '')
+    .replace(/\.git$/i, '')
+    .split('/')
+    .pop();
+
+  return name;
+}
+
 async function prompt() {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -50,7 +61,7 @@ async function main() {
   }
 
   const defaultBundles = [
-    'https://github.com/Rantamuta/bundle-rantamuta.git',
+    'https://github.com/Rantamuta/bundle-rantamuta',
   ];
 
   if (!allowDirty) {
@@ -72,7 +83,7 @@ async function main() {
   console.info('Enabling bundles...');
   const ranvierJsonPath = __dirname + '/../ranvier.json';
   const ranvierJson = require(ranvierJsonPath);
-  ranvierJson.bundles = defaultBundles.map(bundle => bundle.replace(/^.+\/([a-z\-]+)$/, '$1'));
+  ranvierJson.bundles = defaultBundles.map(getBundleName);
   fs.writeFileSync(ranvierJsonPath, JSON.stringify(ranvierJson, null, 2));
   console.info('Done.');
 
@@ -97,9 +108,13 @@ You're all set! See https://ranviermud.com for guides and API references
   process.exit(0);
 }
 
-try {
-  main();
-} catch (err) {
-  console.error(err);
-  process.exit(1);
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
 }
+
+module.exports = {
+  getBundleName,
+};

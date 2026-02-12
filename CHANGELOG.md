@@ -4,6 +4,22 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Bundle name normalization in init
+
+Summary:
+
+- Fixed `util/init-bundles.js` bundle-name extraction so remotes ending in `.git` resolve to the correct bundle key (`bundle-rantamuta`) when writing `ranvier.json`.
+Why:
+- The previous extraction regex did not match `.git` remotes and could write the full remote URL into `ranvier.json`, which prevented bundle loading in CI init flows.
+Impact:
+- `npm run init` and `npm run ci:init` now produce a valid `bundles` list in `ranvier.json` for both `.git` and non-`.git` remotes.
+- `ci:local` smoke login no longer stalls due to missing loaded bundle server events caused by invalid bundle keys.
+Migration/Action:
+- Re-run `npm run ci:init` or `npm run init` if `ranvier.json` contains a full remote URL in `bundles`.
+References:
+- None.
+Timestamp: 2026.02.12 14:08
+
 ### Bundle init defaults
 
 Summary:
