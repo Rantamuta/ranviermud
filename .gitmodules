@@ -1,0 +1,3 @@
+[submodule "bundles/bundles/bundle-rantamuta"]
+	path = bundles/bundles/bundle-rantamuta
+	url = https://github.com/Rantamuta/bundle-rantamuta.git
