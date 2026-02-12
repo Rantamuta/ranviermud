@@ -4,6 +4,23 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Parser v0 input integration
+
+Summary:
+
+- Added bundle-local lexer/parser v0 (`bundles/bundle-rantamuta/lib/parse-input.js`) and integrated it into `input-events/main.js` command handling.
+Why:
+- The reference bundle now needs explicit parser staging and spec-aligned parser artifacts before broader verb-family migration.
+Impact:
+- In-game command input now flows through parser output (`intentToken`, target spans, relation token, classification) before command lookup.
+- Unknown command output remains `Unknown command.` for unsupported/malformed text in current command set.
+Migration/Action:
+- None.
+References:
+- `docs/normative/ParserPortingInstructions.md`
+- `docs/normative/CommandInteractionReferenceProfile-v1.md`
+Timestamp: 2026.02.12 16:11
+
 ### Scenario runner input-event mode
 
 Summary:

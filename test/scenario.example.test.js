@@ -91,3 +91,17 @@ test('scenario runner --throughInput executes via input events and reports unkno
   assert.match(result.stdout, /Unknown command\./);
   assert.match(result.stdout, /\[info\] scenario complete \(commands=2, unknown=1, failed=1\)/);
 });
+
+test('scenario runner --throughInput keeps unknown-command output stable for malformed relation text', () => {
+  const result = runScenario([
+    '--throughInput',
+    '--room', 'rantamuta:start',
+    '--command', 'put in old chest',
+    '--failOnUnknown',
+  ]);
+
+  assert.equal(result.status, 1, result.stderr || result.stdout);
+  assert.match(result.stdout, /\[run\] 1\/1: put in old chest/);
+  assert.match(result.stdout, /Unknown command\./);
+  assert.match(result.stdout, /\[info\] scenario complete \(commands=1, unknown=1, failed=1\)/);
+});
