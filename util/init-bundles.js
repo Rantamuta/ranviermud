@@ -34,6 +34,35 @@ function getBundleName(remote) {
   return name;
 }
 
+function hasSubmoduleStageEntry(stageOutput) {
+  return stageOutput
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .some(line => line.startsWith('160000 '));
+}
+
+function isTrackedSubmodule(bundlePath) {
+  const result = cp.spawnSync('git', ['ls-files', '--stage', '--', bundlePath], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  });
+
+  if (result.status !== 0) {
+    return false;
+  }
+
+  return hasSubmoduleStageEntry(result.stdout || '');
+}
+
+function ensureSubmoduleInitialized(bundlePath) {
+  if (!isTrackedSubmodule(bundlePath)) {
+    return;
+  }
+
+  cp.execSync(`git submodule update --init -- ${bundlePath}`);
+}
+
 async function prompt() {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -75,7 +104,9 @@ async function main() {
 
   // install each bundle
   for (const bundle of defaultBundles) {
-    const bundlePath = `bundles/${bundle}`;
+    const bundleName = getBundleName(bundle);
+    const bundlePath = `bundles/${bundleName}`;
+    ensureSubmoduleInitialized(bundlePath);
     cp.execSync(`npm run install-bundle ${bundle}`);
   }
   console.info('Done.');
@@ -117,4 +148,5 @@ if (require.main === module) {
 
 module.exports = {
   getBundleName,
+  hasSubmoduleStageEntry,
 };

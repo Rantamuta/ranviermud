@@ -4,6 +4,23 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Submodule initialization in init
+
+Summary:
+
+- Updated `util/init-bundles.js` to initialize tracked submodules (`git submodule update --init`) before invoking `install-bundle`.
+Why:
+- In fresh clones without submodule recursion, tracked bundle paths exist as empty directories.
+- `install-bundle` treated that state as "already installed", leaving bundles unpopulated for CI/local smoke startup.
+Impact:
+- `npm run init` and `npm run ci:init` now populate tracked bundle submodules deterministically in clean clones and isolated worktrees.
+- `ci:local` no longer hangs at startup waiting for telnet readiness due to an uninitialized bundle path.
+Migration/Action:
+- Re-run `npm run ci:init` (or `npm run init`) in repositories that previously reported `Bundle already installed` but did not load bundle command/server-event content.
+References:
+- None.
+Timestamp: 2026.02.12 14:29
+
 ### Bundle name normalization in init
 
 Summary:
