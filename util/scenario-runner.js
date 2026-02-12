@@ -11,14 +11,16 @@
  *
  * Usage:
  * - `node util/scenario-runner.js --command "look" --command "north"`
- * - `node util/scenario-runner.js --commandsFile test/scenarios/smoke.commands`
+ * - `node util/scenario-runner.js --scenario test/scenarios/smoke.scenario`
  * - `node util/scenario-runner.js --room "rantamuta:start" --command "look"`
  *
  * Flags:
  * - `--command <text>`: add a command line to run (repeatable).
- * - `--commandsFile <path>`: load line-separated commands (# for comments).
+ * - `--scenario <path>`: load scenario directives from file.
  * - `--args "<args>"`: legacy args appended to a single `--command`.
  * - `--room "<area:roomId>"`: start the player in a specific room.
+ * - `--seedInventory "<area:itemId>"`: seed a resolved item into player inventory (repeatable).
+ * - `--seedRoomItem "<area:itemId>"`: seed a resolved item into the player's room (repeatable).
  * - `--throughInput`: route commands through InputEvent `main` using an in-game session.
  * - `--playerEmit:<event> [args]`: emit player events (e.g., `--playerEmit:move east`).
  * - `--failOnUnknown`: exit non-zero if any unknown commands are encountered.
@@ -38,14 +40,18 @@ function ensureTrailingSeparator(targetPath) {
 }
 
 function printHelp() {
-  console.log('Usage: node util/scenario-runner.js [--command "look"] [--commandsFile <path>] [--room "area:roomId"] [--failOnUnknown] [--json]');
+  console.log('Usage: node util/scenario-runner.js [--command "look"] [--scenario <path>] [--room "area:roomId"] [--failOnUnknown] [--json]');
   console.log('       node util/scenario-runner.js [--command <name>] [--args "<args>"]');
+  console.log('       node util/scenario-runner.js [--seedInventory "<area:itemId>"] [--seedRoomItem "<area:itemId>"]');
   console.log('       node util/scenario-runner.js --playerEmit:<event> [args]');
+  console.log('       --scenario             load directives from .scenario files');
   console.log('       --throughInput         execute command text via InputEvent "main" in an in-game session');
   console.log('       --failOnUnknown        exit non-zero if any unknown commands are encountered');
   console.log('       --json                 emit machine-readable JSON output');
+  console.log('       --seedInventory        seed an item into player inventory (repeatable)');
+  console.log('       --seedRoomItem         seed an item into the current room (repeatable)');
   console.log('Boots the engine in no-transport mode, loads bundles, and executes one or more commands.');
-  console.log('Command files are line-separated: one command per line, # for comments, blank lines ignored.');
+  console.log('Scenario files are key/value directives: command, room, seedInventory, seedRoomItem.');
   console.log('Unknown flags are ignored.');
 }
 
@@ -88,19 +94,42 @@ function parseCommandLine(line) {
   };
 }
 
-function readCommandsFile(filePath) {
+function readScenarioFile(filePath) {
   const content = fs.readFileSync(filePath, 'utf8');
+  const lines = content.split(/\r?\n/u);
+  const directives = [];
 
-  return content
-    .split(/\r?\n/u)
-    .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith('#'));
+  for (let lineNumber = 0; lineNumber < lines.length; lineNumber += 1) {
+    const rawLine = lines[lineNumber];
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) {
+      continue;
+    }
+
+    const separator = line.indexOf(':');
+    if (separator === -1) {
+      throw new Error(`Invalid scenario directive at ${filePath}:${lineNumber + 1}`);
+    }
+
+    const key = line.slice(0, separator).trim();
+    const value = line.slice(separator + 1).trim();
+    if (!value) {
+      throw new Error(`Missing scenario value for "${key}" at ${filePath}:${lineNumber + 1}`);
+    }
+
+    directives.push({ key, value, filePath, lineNumber: lineNumber + 1 });
+  }
+
+  return directives;
 }
 
-function collectCommandLines(args, root) {
+function collectScenarioConfig(args, root) {
   const commandLines = [];
+  const seedInventoryRefs = [];
+  const seedRoomItemRefs = [];
+  let roomRef = null;
   let legacyArgs = '';
-  let sawCommandsFile = false;
+  let sawScenarioFile = false;
 
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
@@ -115,16 +144,39 @@ function collectCommandLines(args, root) {
       continue;
     }
 
-    if (arg === '--commandsFile') {
+    if (arg === '--scenario') {
       if (i + 1 >= args.length) {
-        throw new Error('Missing value for --commandsFile');
+        throw new Error('Missing value for --scenario');
       }
 
-      const commandFilePath = path.resolve(root, args[i + 1]);
-      commandLines.push(...readCommandsFile(commandFilePath));
-      sawCommandsFile = true;
+      const scenarioPath = path.resolve(root, args[i + 1]);
+      const directives = readScenarioFile(scenarioPath);
+      for (const directive of directives) {
+        switch (directive.key) {
+          case 'command':
+            commandLines.push(directive.value);
+            break;
+          case 'room':
+            roomRef = directive.value;
+            break;
+          case 'seedInventory':
+            seedInventoryRefs.push(directive.value);
+            break;
+          case 'seedRoomItem':
+            seedRoomItemRefs.push(directive.value);
+            break;
+          default:
+            throw new Error(`Unknown scenario directive "${directive.key}" at ${directive.filePath}:${directive.lineNumber}`);
+        }
+      }
+
+      sawScenarioFile = true;
       i += 1;
       continue;
+    }
+
+    if (arg === '--commandsFile') {
+      throw new Error('--commandsFile is not supported. Use --scenario <path>.');
     }
 
     if (arg.startsWith('--playerEmit:')) {
@@ -164,12 +216,33 @@ function collectCommandLines(args, root) {
         throw new Error('Missing value for --room');
       }
 
+      roomRef = args[i + 1];
+      i += 1;
+      continue;
+    }
+
+    if (arg === '--seedInventory') {
+      if (i + 1 >= args.length) {
+        throw new Error('Missing value for --seedInventory');
+      }
+
+      seedInventoryRefs.push(args[i + 1]);
+      i += 1;
+      continue;
+    }
+
+    if (arg === '--seedRoomItem') {
+      if (i + 1 >= args.length) {
+        throw new Error('Missing value for --seedRoomItem');
+      }
+
+      seedRoomItemRefs.push(args[i + 1]);
       i += 1;
       continue;
     }
   }
 
-  if (commandLines.length === 1 && legacyArgs && !sawCommandsFile) {
+  if (commandLines.length === 1 && legacyArgs && !sawScenarioFile) {
     if (typeof commandLines[0] === 'string') {
       commandLines[0] = `${commandLines[0]} ${legacyArgs}`;
     } else if (commandLines[0].type === 'command') {
@@ -185,20 +258,14 @@ function collectCommandLines(args, root) {
     commandLines.push(commandArgs ? `${commandName} ${commandArgs}` : commandName);
   }
 
-  return commandLines;
-}
-
-function getRoomRef(args) {
-  const roomIndex = args.indexOf('--room');
-  if (roomIndex === -1) {
-    return null;
-  }
-
-  if (roomIndex + 1 >= args.length) {
-    throw new Error('Missing value for --room');
-  }
-
-  return args[roomIndex + 1];
+  return {
+    commandLines,
+    roomRef,
+    seedRefs: {
+      seedInventoryRefs,
+      seedRoomItemRefs,
+    },
+  };
 }
 
 async function bootEngine(root, config) {
@@ -319,6 +386,53 @@ function getMainInputListeners(GameState) {
 function hasUnknownCommandOutput(output, fromIndex) {
   const addedOutput = output.slice(fromIndex);
   return addedOutput.some(line => String(line).includes('Unknown command.'));
+}
+
+function createSeedItem(GameState, itemRef) {
+  const area = GameState.AreaManager.getAreaByReference(itemRef);
+  if (!area) {
+    throw new Error(`seed area not found for item: ${itemRef}`);
+  }
+
+  let item;
+  try {
+    item = GameState.ItemFactory.create(area, itemRef);
+  } catch (error) {
+    throw new Error(`seed item not found: ${itemRef}`);
+  }
+
+  item.hydrate(GameState);
+  GameState.ItemManager.add(item);
+  return item;
+}
+
+function applySeeds(GameState, player, seedRefs, emitEvent) {
+  for (const itemRef of seedRefs.seedInventoryRefs) {
+    const item = createSeedItem(GameState, itemRef);
+    player.addItem(item);
+    emitEvent({
+      type: 'seed',
+      scope: 'inventory',
+      entityReference: itemRef,
+      itemName: item.name,
+    });
+  }
+
+  for (const itemRef of seedRefs.seedRoomItemRefs) {
+    if (!player.room) {
+      throw new Error('Cannot seed room items without a room. Pass --room "<area:roomId>".');
+    }
+
+    const item = createSeedItem(GameState, itemRef);
+    player.room.addItem(item);
+    emitEvent({
+      type: 'seed',
+      scope: 'room',
+      entityReference: itemRef,
+      itemName: item.name,
+      room: player.room.entityReference,
+    });
+  }
 }
 
 function flushOutput(output, emitOutput) {
@@ -466,9 +580,11 @@ async function main() {
   }
 
   const root = process.cwd();
-  const commandLines = collectCommandLines(args, root);
+  const scenarioConfig = collectScenarioConfig(args, root);
+  const commandLines = scenarioConfig.commandLines;
   const parsedCommands = commandLines.map(parseCommandLine).filter(Boolean);
-  const roomRef = getRoomRef(args);
+  const roomRef = scenarioConfig.roomRef;
+  const seedRefs = scenarioConfig.seedRefs;
   const throughInput = args.includes('--throughInput');
   const failOnUnknown = args.includes('--failOnUnknown');
   const jsonOutput = args.includes('--json');
@@ -520,6 +636,8 @@ async function main() {
   if (player && typeof player.hydrate === 'function' && !player.__hydrated) {
     player.hydrate(GameState);
   }
+
+  applySeeds(GameState, player, seedRefs, emitEvent);
 
   if (jsonOutput) {
     emitEvent({ type: 'start', commands: parsedCommands.length });
