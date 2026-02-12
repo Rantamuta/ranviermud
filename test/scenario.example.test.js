@@ -73,3 +73,21 @@ test('scenario runner legacy --command/--args fallback builds one command line',
   assert.match(result.stdout, /Unknown command\./);
   assert.match(result.stdout, /\[info\] scenario complete \(commands=1, unknown=1, failed=0\)/);
 });
+
+test('scenario runner --throughInput executes via input events and reports unknown text commands', () => {
+  const result = runScenario([
+    '--throughInput',
+    '--room', 'rantamuta:start',
+    '--command', 'look',
+    '--command', 'east',
+    '--failOnUnknown',
+  ]);
+
+  assert.equal(result.status, 1, result.stderr || result.stdout);
+  assert.match(result.stdout, /\[info\] scenario starting \(commands=2\)/);
+  assert.match(result.stdout, /\[run\] 1\/2: look/);
+  assert.match(result.stdout, /Rantamuta/);
+  assert.match(result.stdout, /\[run\] 2\/2: east/);
+  assert.match(result.stdout, /Unknown command\./);
+  assert.match(result.stdout, /\[info\] scenario complete \(commands=2, unknown=1, failed=1\)/);
+});

@@ -4,6 +4,22 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Scenario runner input-event mode
+
+Summary:
+
+- Added `--throughInput` to `util/scenario-runner.js` so command text can run through InputEvent `main` using an in-game session instead of direct `CommandManager` dispatch.
+Why:
+- Scenario smoke checks needed a mode that matches telnet command handling semantics (including input-event unknown-command behavior) without requiring interactive login.
+Impact:
+- `util/scenario-runner.js` now supports two execution models: direct command dispatch (existing default) and input-event dispatch (`--throughInput`).
+- In `--throughInput` mode, direction text such as `east` follows input-event command resolution and can emit `Unknown command.` when no command alias exists.
+Migration/Action:
+- Use `--throughInput` in scenario checks where parity with in-game input-event command flow is required.
+References:
+- None.
+Timestamp: 2026.02.12 15:05
+
 ### Submodule initialization in init
 
 Summary:

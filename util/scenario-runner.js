@@ -19,6 +19,7 @@
  * - `--commandsFile <path>`: load line-separated commands (# for comments).
  * - `--args "<args>"`: legacy args appended to a single `--command`.
  * - `--room "<area:roomId>"`: start the player in a specific room.
+ * - `--throughInput`: route commands through InputEvent `main` using an in-game session.
  * - `--playerEmit:<event> [args]`: emit player events (e.g., `--playerEmit:move east`).
  * - `--failOnUnknown`: exit non-zero if any unknown commands are encountered.
  * - `--json`: emit machine-readable JSON (includes log capture events).
@@ -40,6 +41,7 @@ function printHelp() {
   console.log('Usage: node util/scenario-runner.js [--command "look"] [--commandsFile <path>] [--room "area:roomId"] [--failOnUnknown] [--json]');
   console.log('       node util/scenario-runner.js [--command <name>] [--args "<args>"]');
   console.log('       node util/scenario-runner.js --playerEmit:<event> [args]');
+  console.log('       --throughInput         execute command text via InputEvent "main" in an in-game session');
   console.log('       --failOnUnknown        exit non-zero if any unknown commands are encountered');
   console.log('       --json                 emit machine-readable JSON output');
   console.log('Boots the engine in no-transport mode, loads bundles, and executes one or more commands.');
@@ -293,6 +295,32 @@ function createFakePlayer(output, GameState) {
   return player;
 }
 
+function createInGameSession(player) {
+  return {
+    state: 'inGame',
+    socket: player.socket,
+    username: player.name,
+    account: player.account || null,
+    player,
+    isNewAccount: false,
+    processing: false,
+  };
+}
+
+function getMainInputListeners(GameState) {
+  const listeners = GameState.InputEventManager.get('main');
+  if (!listeners || listeners.size === 0) {
+    return [];
+  }
+
+  return [...listeners];
+}
+
+function hasUnknownCommandOutput(output, fromIndex) {
+  const addedOutput = output.slice(fromIndex);
+  return addedOutput.some(line => String(line).includes('Unknown command.'));
+}
+
 function flushOutput(output, emitOutput) {
   if (output.length) {
     if (emitOutput) {
@@ -441,6 +469,7 @@ async function main() {
   const commandLines = collectCommandLines(args, root);
   const parsedCommands = commandLines.map(parseCommandLine).filter(Boolean);
   const roomRef = getRoomRef(args);
+  const throughInput = args.includes('--throughInput');
   const failOnUnknown = args.includes('--failOnUnknown');
   const jsonOutput = args.includes('--json');
 
@@ -464,6 +493,11 @@ async function main() {
   const GameState = await bootEngine(root, config);
   const output = [];
   const player = createFakePlayer(output, GameState);
+  const inputListeners = throughInput ? getMainInputListeners(GameState) : [];
+  if (throughInput && inputListeners.length === 0) {
+    throw new Error('No input-event listeners are registered for "main"');
+  }
+  const inputSession = throughInput ? createInGameSession(player) : null;
 
   if (roomRef) {
     const room = GameState.RoomManager.getRoom(roomRef);
@@ -517,6 +551,19 @@ async function main() {
     }
 
     const commandName = commandSpec.name.toLowerCase();
+    if (throughInput) {
+      const outputStart = output.length;
+      for (const listener of inputListeners) {
+        await listener(inputSession, commandSpec.raw);
+      }
+      if (hasUnknownCommandOutput(output, outputStart)) {
+        unknownCount += 1;
+        emitEvent({ type: 'unknown', index: i + 1, raw: commandSpec.raw });
+      }
+      flushOutput(output, emitOutput);
+      continue;
+    }
+
     const movement = resolveMovementCommand(player, commandName);
     if (movement) {
       player.emit('move', { roomExit: movement.roomExit, originalCommand: movement.direction });
