@@ -161,3 +161,11 @@ If behavior is unclear:
 - Add a test that captures current behavior first, or
 - Document the uncertainty explicitly in the PR description.
 - Do **not** guess and move on.
+
+## Normative documents
+
+Behavior contracts that are intended to be binding are stored under `docs/normative/`.
+
+- `docs/normative/` is the canonical location for versioned, compatibility-impacting behavior specs.
+- Keep `AGENTS.md` high-level; subsystem-specific behavioral mandates belong in `docs/normative/`.
+- If a task changes behavior covered by a normative document, update that document (or explicitly document why no update is needed).
