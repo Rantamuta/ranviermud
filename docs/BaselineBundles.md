@@ -5,7 +5,7 @@ and the expected on-disk layout used by the wrapper and engine loaders.
 
 ## Default bundle set
 
-- bundle-example-areas
+- bundle-rantamuta
 - bundle-example-channels
 - bundle-example-classes
 - bundle-example-combat
