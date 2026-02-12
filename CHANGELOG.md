@@ -4,6 +4,24 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Starting room default
+
+Summary:
+
+- Changed the default `startingRoom` in `ranvier.json` from `limbo:white` to `rantamuta:start`.
+Why:
+- The wrapper now ships with a minimal Rantamuta-first baseline where `rantamuta:start` is the intended initial spawn room.
+Impact:
+- Fresh boots that rely on default config now place new sessions in `rantamuta:start`.
+- Existing tooling or smoke checks that assumed `limbo:white` must update expected room references.
+Migration/Action:
+- Update any scripts, tests, or operator docs that reference the old default room.
+References:
+- None.
+Timestamp: 2026.02.12 13:48
+
+## Rantamuta `ranviermud` v1.0.1 - Strict mode
+
 ## Rantamuta `ranviermud` v1.0.0 — Salpausselkä
 
 **The Salpausselkä Release**

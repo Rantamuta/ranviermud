@@ -3,7 +3,6 @@
 
 const cp = require('child_process');
 const fs = require('fs');
-const os = require('os');
 const readline = require('readline');
 
 const argv = process.argv.slice(2);
@@ -51,26 +50,8 @@ async function main() {
   }
 
   const defaultBundles = [
-    'https://github.com/Rantamuta/bundle-example-areas',
-    'https://github.com/Rantamuta/bundle-example-channels',
-    'https://github.com/Rantamuta/bundle-example-classes',
-    'https://github.com/Rantamuta/bundle-example-combat',
-    'https://github.com/Rantamuta/bundle-example-commands',
-    'https://github.com/Rantamuta/bundle-example-debug',
-    'https://github.com/Rantamuta/bundle-example-effects',
-    'https://github.com/Rantamuta/bundle-example-input-events',
-    'https://github.com/Rantamuta/bundle-example-lib',
-    'https://github.com/Rantamuta/bundle-example-npc-behaviors',
-    'https://github.com/Rantamuta/bundle-example-player-events',
-    'https://github.com/Rantamuta/bundle-example-quests',
-    'https://github.com/Rantamuta/simple-crafting',
-    'https://github.com/Rantamuta/vendor-npcs',
-    'https://github.com/Rantamuta/player-groups',
-    'https://github.com/Rantamuta/progressive-respawn',
-    'https://github.com/Rantamuta/telnet-networking',
-    'https://github.com/Rantamuta/websocket-networking',
+    'https://github.com/Rantamuta/bundle-rantamuta.git',
   ];
-  const enabledBundles = [];
 
   if (!allowDirty) {
     const modified = cp.execSync('git status -uno --porcelain').toString();
