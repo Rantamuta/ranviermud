@@ -12,7 +12,7 @@
  * Usage:
  * - `node util/scenario-runner.js --command "look" --command "north"`
  * - `node util/scenario-runner.js --scenario test/scenarios/smoke.scenario`
- * - `node util/scenario-runner.js --room "rantamuta:start" --command "look"`
+ * - `node util/scenario-runner.js --room "test:room" --command "look"`
  *
  * Flags:
  * - `--command <text>`: add a command line to run (repeatable).
