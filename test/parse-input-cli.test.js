@@ -11,37 +11,30 @@ function runCli(args) {
   });
 }
 
-test('parse-input CLI help exits successfully', () => {
-  const result = runCli(['--help']);
-
-  assert.equal(result.status, 0, result.stderr || result.stdout);
-  assert.match(result.stdout, /Usage:/);
-  assert.match(result.stdout, /--bundle <bundle-name>/);
-});
-
-test('parse-input CLI parses input for default bundle in JSON mode', () => {
-  const result = runCli(['--json', 'look']);
+test('parse-input CLI outputs parse artifact for a normal input string', () => {
+  const result = runCli(['look']);
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const payload = JSON.parse(result.stdout);
-  assert.equal(payload.bundle, 'bundle-rantamuta');
-  assert.equal(payload.actorInput, 'look');
-  assert.equal(payload.parsedInput.intentToken, 'look');
-  assert.equal(payload.parsedInput.classification, 'success');
+  assert.equal(payload.intentToken, 'look');
+  assert.equal(payload.classification, 'success');
+  assert.equal(payload.normalizedInput, 'look');
 });
 
-test('parse-input CLI treats explicit empty string argument as actor input', () => {
-  const result = runCli(['--json', '']);
+test('parse-input CLI outputs parse artifact for explicit empty input string', () => {
+  const result = runCli(['']);
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.actorInput, '');
-  assert.equal(payload.parsedInput.classification, 'unknown intent');
+  assert.equal(payload.classification, 'unknown intent');
 });
 
-test('parse-input CLI reports missing bundle parser path clearly', () => {
-  const result = runCli(['--bundle', 'does-not-exist', '--json', 'look']);
+test('parse-input CLI outputs parse artifact for missing argv input (empty actor input)', () => {
+  const result = runCli([]);
 
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /Parser not found for bundle "does-not-exist"/);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.actorInput, '');
+  assert.equal(payload.classification, 'unknown intent');
 });
