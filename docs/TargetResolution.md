@@ -211,4 +211,28 @@ Phase ownership note:
 
 ## Integration Points
 
+- Receive Input -> Target Resolution
+  - Consumes parsed artifact, selected verb/rule context, and actor/session context.
+- Command module declaration -> Target Resolution
+  - Rule forms, relation policy, and scope profiles are declared with the command for developer ergonomics.
+- Helper layer -> Target Resolution
+  - Resolution code should use explicit helper functions for world reads and matching.
+  - Prefer helper calls (for example `getPlayerInventory(...)`) over ad hoc deep `gameState` traversal.
+- World data access -> Target Resolution
+  - Read-only candidate retrieval from inventories, rooms, containers, and permitted scopes.
+- Target Resolution -> Capture
+  - Exports bound context (`directTarget`, `indirectTarget?`, `relationToken?`, metadata) to capture checks.
+  - Recommended check contract:
+    - `CaptureCheck(boundContext) -> { ok: true } | { ok: false, vetoInfo }`
+  - Capture evaluates checks in declared order and stops at first veto.
+- Target Resolution -> Target (planner)
+  - Success path: pass bound context into command planner.
+  - Failure path: return structured resolver failure envelope.
+- Non-boundaries
+  - Target Resolution must not invoke policy-veto hooks directly.
+  - Target Resolution must not execute mutations.
+- Observability (optional)
+  - May emit diagnostic traces (selected rule, searched scopes, candidate sets, ranking decisions).
+  - Diagnostics are non-normative to gameplay behavior.
+
 ## Open Questions
