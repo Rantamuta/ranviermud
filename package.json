@@ -32,7 +32,7 @@
   "dependencies": {
     "commander": "^2.19.0",
     "rando-js": "^0.2.0",
-    "ranvier": "github:Rantamuta/core#v1.0.0",
+    "ranvier": "github:Rantamuta/core#bbb4147cc8d30a2e810d64afe8ae39a48cab2e25",
     "ranvier-datasource-file": "github:Rantamuta/datasource-file#v1.0.0",
     "ranvier-telnet": "github:Rantamuta/ranvier-telnet#v1.0.0",
     "semver": "^7.6.0",
