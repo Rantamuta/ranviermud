@@ -10,12 +10,11 @@ This directory contains behavior contracts that are normative for this repositor
 
 ## Current normative set
 
-- `CommandInteractionReferenceProfile-v1.md`
-- `ParserPortingInstructions.md`
+- <none>
 
 ## Proposed normative extensions (in review)
 
-- `VerbRulesAndHooksContract.md`
+- <none>
 
 ## Precedence
 
