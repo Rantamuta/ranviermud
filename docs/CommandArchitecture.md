@@ -6,9 +6,9 @@ It presents a phase-based architecture centered on deterministic command plannin
 
 ## Status
 
-- Status: `draft`
+- Status: normative-v1
 - Scope: Bundle-layer command execution flow
-- Binding: No (design draft)
+- Binding: yes
 
 ## Purpose
 
