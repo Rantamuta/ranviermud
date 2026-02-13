@@ -58,10 +58,9 @@ Form matching owns syntax/shape failures such as missing required spans for a se
 - Allowed rule keys:
   - `intransitive` (no target roles). Example: "sing".
   - `direct` (direct role only). Example: "sing a lullaby".
-  - `indirect` (indirect role only). Example: "sing to the baby".
+  - `indirect` (relation token + indirect target, no direct target). Example: "sing to the baby".
   - `directIndirect` (direct + indirect roles). Example: "sing a lullaby to the baby".
   - `relationOnly` (relation token required, no direct or indirect target roles). Example: "keep off".
-  - `relationIndirect` (relation token + indirect target, no direct target). Example: "drink from the river".
 - A verb declaration can provide any or all of the rule keys, but it must provide at least one.
 - Declaring zero rules is a command-load (`compile-time`) error.
 - Relation acceptance is rule-specific.
@@ -69,7 +68,6 @@ Form matching owns syntax/shape failures such as missing required spans for a se
   - `indirect`
   - `directIndirect`
   - `relationOnly`
-  - `relationIndirect`
 - Missing rule-level `acceptedRelations` for a relation-bearing rule is a command-load (`compile-time`) error.
 
 Runtime form-matching implications:
@@ -236,3 +234,11 @@ Phase ownership note:
   - Diagnostics are non-normative to gameplay behavior.
 
 ## Open Questions
+
+- Command declaration shape: should rule declarations be keyed objects or ordered rule arrays?
+- Selector support in v1: do we support explicit selectors such as `2.sword` now or defer?
+- Nested scope traversal policy: what are the depth limits and deterministic traversal order for nested containers?
+- Interchangeable auto-pick policy: is convenience first-pick disabled by default and enabled only by explicit policy, or enabled by default when all matches are interchangeable?
+- Final deterministic tie-breaker: after match ranking, what is the canonical final tie-break sequence (for example insertion order then UUID)?
+- Relation normalization policy: do we preserve relation tokens exactly as typed (`in` vs `into`) or canonicalize before downstream phases?
+- Failure message ownership: should Target Resolution emit default player-facing message text, or only `code/details` with renderer-owned text mapping?
