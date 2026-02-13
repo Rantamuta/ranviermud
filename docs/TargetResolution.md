@@ -124,7 +124,90 @@ Illustrative shape:
 
 ### Disambiguation
 
+- Disambiguation runs after candidate matching when more than one candidate remains for a required role.
+- Outcomes:
+  - exactly one candidate: bind and continue
+  - zero candidates: role not-found failure
+  - multiple candidates: ambiguous failure unless an explicit interchangeable policy applies
+- v1 default policy for multiple candidates is ambiguous failure.
+- Optional convenience policy may allow first-pick only when all matching candidates are declared interchangeable.
+
+Recommended optional metadata for ambiguous-prompt quality:
+
+- `metadata.resolution.disambiguationLabel: string`
+  - Human-readable label used in "which one?" prompts.
+  - Does not affect matching eligibility.
+- `metadata.resolution.descriptors: string[]`
+  - Optional descriptors used to generate comparative prompt text when labels are absent.
+- `metadata.resolution.interchangeable: boolean`
+  - Declares candidate as interchangeable for optional first-pick convenience policies.
+
+Prompt generation preference:
+
+1. `disambiguationLabel` (if present)
+2. descriptor-based comparative phrase
+3. fallback to normalized display name
+
+Authoring guidance:
+
+- Keep `keywords` focused on stable lookup nouns/aliases.
+- Avoid using `keywords` for decorative adjective prose when possible.
+- Use resolution metadata for human-facing disambiguation wording.
+
+Examples:
+
+- Ambiguous by default:
+  - Input: "get envelope"
+  - Matches: two envelopes
+  - Result: ambiguous failure (`code: AMBIGUOUS_TARGET`)
+- Label-driven prompt:
+  - Candidate A label: "large, green envelope"
+  - Candidate B label: "large, blue envelope"
+  - Prompt: "Which envelope do you mean: large, green envelope or large, blue envelope?"
+- Optional interchangeable first-pick:
+  - All matching candidates have `metadata.resolution.interchangeable: true`
+  - Policy allows convenience pick
+  - Result: first deterministic candidate binds without ambiguity prompt
+
 ### Failure Classification
+
+Failure classification defines stable resolver-owned failure codes for target-resolution outcomes.
+
+Goals:
+
+- deterministic behavior across identical input/state
+- consistent testing surfaces
+- clear phase ownership boundaries
+
+Resolver should emit the most specific failure code available. `FORM_NOT_SUPPORTED` is the generic fallback when a more precise code cannot be determined.
+
+Recommended v1 resolver-owned codes:
+
+- Form/rule failures:
+  - `FORM_NOT_SUPPORTED`
+  - `FORM_DIRECT_NOT_SUPPORTED`
+  - `FORM_INDIRECT_NOT_SUPPORTED`
+  - `FORM_MISSING_DIRECT`
+  - `FORM_MISSING_INDIRECT`
+  - `FORM_MISSING_RELATION`
+  - `FORM_UNSUPPORTED_RELATION`
+- Binding/disambiguation failures:
+  - `TARGET_NOT_FOUND`
+  - `AMBIGUOUS_TARGET`
+
+Illustrative example:
+
+- Input: "sing a song"
+- Verb rules: `intransitive` only
+- Resolver output:
+  - preferred code: `FORM_DIRECT_NOT_SUPPORTED`
+  - fallback code (if needed): `FORM_NOT_SUPPORTED`
+
+Phase ownership note:
+
+- Target Resolution owns form/scope/binding/disambiguation failures.
+- Capture owns policy veto failures.
+- Target phase owns verb-planner feasibility failures after successful binding.
 
 ## Integration Points
 
