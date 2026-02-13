@@ -13,6 +13,10 @@ This directory contains behavior contracts that are normative for this repositor
 - `CommandInteractionReferenceProfile-v1.md`
 - `ParserPortingInstructions.md`
 
+## Proposed normative extensions (in review)
+
+- `VerbRulesAndHooksContract.md`
+
 ## Precedence
 
 When documents conflict, precedence is:
