@@ -95,6 +95,19 @@ Recommended runtime codes:
 - `MISSING_REQUIRED_ROLE`
 - `UNSUPPORTED_RELATION`
 
+### Relation Normalization
+
+Relation handling is locked in v1:
+
+- Entity Resolution must preserve the raw relation token as typed by the actor (`relationTokenRaw`).
+- Entity Resolution must also produce a canonical relation token for logic (`relationTokenCanonical`).
+- Rule validation, scope logic, hooks, planner logic, and semantic event identity use `relationTokenCanonical`.
+- Renderer text may use `relationTokenRaw` where strict-text/user wording fidelity requires it.
+
+Human note:
+
+Treating `in` and `into` as distinct semantic relationships can create unintended divergence where "put x in y" and "put x into y" behave differently. Canonicalization prevents that divergence while preserving actor-authored wording for output.
+
 ### Intransitive offramp
 
 If the selected verb rule is `intransitive` and the input satisfies that rule, Entity Resolution succeeds immediately with an empty binding set. No scope search, role binding, or object disambiguation is performed, and command flow continues to Capture/Target using the intransitive resolution result.
@@ -107,6 +120,8 @@ If the selected verb rule is `intransitive` and the input satisfies that rule, E
   - `scopeProfile.indirect = [...]`
 - Resolver must search only declared scopes, in declared order.
 - Resolver must remain deterministic for identical input/state.
+- Verbs may define scope profiles at declaration time (including rule-specific variations).
+- Runtime verb handlers must not override scope resolution or bypass shared resolver scope logic.
 
 Optional diagnostic lookups may exist for more helpful messaging, but they must not change successful binding semantics.
 
@@ -131,7 +146,7 @@ Illustrative examples:
 Illustrative shape:
 
 - parsed: `intentToken + directSpan + relationToken + indirectSpan`
-- bound: `{ directTarget, indirectTarget?, relationToken? }`
+- bound: `{ directTarget, indirectTarget?, relationTokenRaw?, relationTokenCanonical? }`
 
 ### Disambiguation
 
@@ -242,7 +257,7 @@ Phase ownership note:
 - World data access -> Entity Resolution
   - Read-only candidate retrieval from inventories, rooms, containers, and permitted scopes.
 - Entity Resolution -> Capture
-  - Exports bound context (`directTarget`, `indirectTarget?`, `relationToken?`, metadata) to capture checks.
+  - Exports bound context (`directTarget`, `indirectTarget?`, `relationTokenRaw?`, `relationTokenCanonical?`, metadata) to capture checks.
   - Recommended check contract:
     - `CaptureCheck(boundContext) -> { ok: true } | { ok: false, vetoInfo }`
   - Capture evaluates checks in declared order and stops at first veto.
@@ -262,5 +277,4 @@ Phase ownership note:
 - Selector support in v1: do we support explicit selectors such as `2.sword` now or defer?
 - Nested scope traversal policy: what are the depth limits and deterministic traversal order for nested containers?
 - Interchangeable auto-pick policy: is convenience first-pick disabled by default and enabled only by explicit policy, or enabled by default when all matches are interchangeable?
-- Relation normalization policy: do we preserve relation tokens exactly as typed (`in` vs `into`) or canonicalize before downstream phases?
 - Failure message ownership: should Entity Resolution emit default player-facing message text, or only `code/details` with renderer-owned text mapping?
