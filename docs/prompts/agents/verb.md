@@ -34,7 +34,10 @@ Print this table and fill every row with `KNOWN` or `UNKNOWN`:
 | mutation instruction types needed |  |  |
 | mutator support exists for each instruction |  |  |
 | expected success outcome |  |  |
+| success narration contract (required, unless explicitly silent) |  |  |
+| success label source policy (`directSpan`/`indirectSpan` vs entity names) |  |  |
 | expected failure behavior |  |  |
+| output expectation for every non-empty input |  |  |
 | required tests list |  |  |
 
 ### Preflight gate
@@ -51,6 +54,7 @@ Print this table and fill every row with `KNOWN` or `UNKNOWN`:
 5. Mutation semantics not explicit.
 6. Failure codes or message-mapping ownership not explicit.
 7. Unclear expected committed outcome for happy path.
+8. Success narration contract is missing or ambiguous.
 
 ## Implementation requirements
 
@@ -62,6 +66,8 @@ Print this table and fill every row with `KNOWN` or `UNKNOWN`:
 4. Mutations occur only through mutator/commit path.
 5. Resolver/capture remain read-only and side-effect free.
 6. Player-facing failure text emitted by dispatch via code mapping (not resolver).
+7. Non-empty input must yield player-visible output. Silent success is not allowed unless explicitly approved in preflight.
+8. For success narration, declare and apply a deterministic label policy (prefer resolved spans when present; otherwise fall back to entity names).
 
 ## Tests required
 
@@ -74,6 +80,7 @@ Add/update tests for:
 - ambiguity vs indistinguishable auto-pick (if applicable)
 - resolver has no mutation/output side effects
 - dispatch integration path for this verb (resolve -> target -> commit/render)
+- happy-path success rendering assertions (text present and stable)
 
 ## Validation
 
@@ -123,6 +130,7 @@ Run and report:
 - Command must not emit player output directly for resolver failures
 - Use stable failure codes; map messages in command metadata (`errorMessages`)
 - If new mutation behavior is needed, add/extend mutator instruction handlers atomically and safely
+- Success paths must render player-visible feedback via render payload and/or bubble render additions unless explicitly declared as intentionally silent.
 
 ## Deliverables
 
@@ -135,20 +143,4 @@ Run and report:
   - scope precedence behavior
   - ambiguity vs indistinguishable auto-pick behavior (as applicable)
   - no mutation/output side effects in resolver phase
-  - command-dispatch integration for happy path + failure path
-
-## Validation
-
-Run and report:
-
-- `cd bundles/bundle-rantamuta && npm test -- --runInBand`
-- `npm test`
-- `npm run ci:local` (if blocked by dirty-tree policy, report exact blocker)
-
-## Output format
-
-1. Files changed
-2. Behavior implemented (mapped to phases 0–6)
-3. Tests added/updated
-4. Test results
-5. Deferred items (if any) with reason
+  - command-dispatch integration for happy path + failure path, including success text assertions
