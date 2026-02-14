@@ -127,6 +127,12 @@ Rules:
 - Delivery order is deterministic.
 - No success narration before successful commit.
 
+Non-command render path:
+
+- Session/room lifecycle transitions (for example login arrival after room bind) may render room view output without entering the command pipeline.
+- Lifecycle render must not synthesize implicit player commands.
+- Lifecycle render should reuse the same room-view builder used by intransitive `look`.
+
 ## Hook Kinds
 
 Two hook kinds are used across phases:
