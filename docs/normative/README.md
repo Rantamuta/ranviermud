@@ -10,7 +10,10 @@ This directory contains behavior contracts that are normative for this repositor
 
 ## Current normative set
 
-- <none>
+- `CommandArchitecture.md`
+  - Defines the phase model (`Receive Input` through `Render/Dispatch`), including deterministic input canonicalization before parse.
+- `EntityResolution.md`
+  - Defines read-only entity binding, deterministic scope/disambiguation behavior, and resolver failure ownership.
 
 ## Proposed normative extensions (in review)
 

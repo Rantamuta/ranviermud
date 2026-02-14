@@ -29,7 +29,11 @@ Policy veto hooks run in Capture, not Entity Resolution.
 ## Inputs
 
 - Actor context (player/session identity).
-- Parsed command artifact (`intentToken`, role spans, relation token, normalized input).
+- Parsed command artifact:
+  - `actorInput` (raw unexpanded text)
+  - `canonicalInput` (post-canonicalization text)
+  - `normalizedInput`
+  - `intentToken`, role spans, relation token
 - Verb/command rule declaration (expected form and target roles).
 - Scope policy per role (declared search spaces and precedence).
 - Current world context (room, area, and relevant environment references).
