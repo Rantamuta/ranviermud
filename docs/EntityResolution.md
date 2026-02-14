@@ -1,4 +1,4 @@
-# Target Resolution
+# Entity Resolution
 
 ## Status
 
@@ -11,7 +11,20 @@ Define how the engine identifies and binds concrete targets for diegetic command
 
 ## Scope
 
-Specifies target resolution behavior for bundle-layer diegetic verbs from parsed command artifact through concrete role binding, including scope search, disambiguation, and resolver-owned failures.
+Specifies entity resolution behavior for bundle-layer diegetic verbs from parsed command artifact through concrete role binding, including scope search, disambiguation, and resolver-owned failures.
+
+## Purity Requirement
+
+Entity Resolution is a read-only phase. Policy veto hooks run in Capture, not Entity Resolution.
+
+It must not:
+
+- mutate world state
+- invoke mutation or reaction hooks
+- emit player-visible output
+- perform external side effects (I/O, timers, network)
+
+Policy veto hooks run in Capture, not Entity Resolution.
 
 ## Inputs
 
@@ -84,7 +97,7 @@ Recommended runtime codes:
 
 ### Intransitive offramp
 
-If the selected verb rule is `intransitive` and the input satisfies that rule, Target Resolution succeeds immediately with an empty binding set. No scope search, role binding, or object disambiguation is performed, and command flow continues to Capture/Target using the intransitive resolution result.
+If the selected verb rule is `intransitive` and the input satisfies that rule, Entity Resolution succeeds immediately with an empty binding set. No scope search, role binding, or object disambiguation is performed, and command flow continues to Capture/Target using the intransitive resolution result.
 
 ### Scope Declaration
 
@@ -129,6 +142,16 @@ Illustrative shape:
   - multiple candidates: ambiguous failure unless an explicit interchangeable policy applies
 - v1 default policy for multiple candidates is ambiguous failure.
 - Optional convenience policy may allow first-pick only when all matching candidates are declared interchangeable.
+
+Canonical candidate ordering must be deterministic. v1 tie-break sequence:
+
+1. scope order
+2. match score
+3. declaration/enumeration order within scope
+4. UUID lexical order
+
+This ordering defines the canonical candidate list for prompts, diagnostics, and optional first-pick policies.
+If ambiguity policy is active, resolver still returns `AMBIGUOUS_TARGET`; it does not auto-bind solely because deterministic ordering exists.
 
 Recommended optional metadata for ambiguous-prompt quality:
 
@@ -203,32 +226,32 @@ Illustrative example:
 
 Phase ownership note:
 
-- Target Resolution owns form/scope/binding/disambiguation failures.
+- Entity Resolution owns form/scope/binding/disambiguation failures.
 - Capture owns policy veto failures.
 - Target phase owns verb-planner feasibility failures after successful binding.
 
 ## Integration Points
 
-- Receive Input -> Target Resolution
+- Receive Input -> Entity Resolution
   - Consumes parsed artifact, selected verb/rule context, and actor/session context.
-- Command module declaration -> Target Resolution
+- Command module declaration -> Entity Resolution
   - Rule forms, relation policy, and scope profiles are declared with the command for developer ergonomics.
-- Helper layer -> Target Resolution
+- Helper layer -> Entity Resolution
   - Resolution code should use explicit helper functions for world reads and matching.
   - Prefer helper calls (for example `getPlayerInventory(...)`) over ad hoc deep `gameState` traversal.
-- World data access -> Target Resolution
+- World data access -> Entity Resolution
   - Read-only candidate retrieval from inventories, rooms, containers, and permitted scopes.
-- Target Resolution -> Capture
+- Entity Resolution -> Capture
   - Exports bound context (`directTarget`, `indirectTarget?`, `relationToken?`, metadata) to capture checks.
   - Recommended check contract:
     - `CaptureCheck(boundContext) -> { ok: true } | { ok: false, vetoInfo }`
   - Capture evaluates checks in declared order and stops at first veto.
-- Target Resolution -> Target (planner)
+- Entity Resolution -> Target (planner)
   - Success path: pass bound context into command planner.
   - Failure path: return structured resolver failure envelope.
 - Non-boundaries
-  - Target Resolution must not invoke policy-veto hooks directly.
-  - Target Resolution must not execute mutations.
+  - Entity Resolution must not invoke policy-veto hooks directly.
+  - Enforce the [Purity Requirement](#purity-requirement)
 - Observability (optional)
   - May emit diagnostic traces (selected rule, searched scopes, candidate sets, ranking decisions).
   - Diagnostics are non-normative to gameplay behavior.
@@ -239,6 +262,5 @@ Phase ownership note:
 - Selector support in v1: do we support explicit selectors such as `2.sword` now or defer?
 - Nested scope traversal policy: what are the depth limits and deterministic traversal order for nested containers?
 - Interchangeable auto-pick policy: is convenience first-pick disabled by default and enabled only by explicit policy, or enabled by default when all matches are interchangeable?
-- Final deterministic tie-breaker: after match ranking, what is the canonical final tie-break sequence (for example insertion order then UUID)?
 - Relation normalization policy: do we preserve relation tokens exactly as typed (`in` vs `into`) or canonicalize before downstream phases?
-- Failure message ownership: should Target Resolution emit default player-facing message text, or only `code/details` with renderer-owned text mapping?
+- Failure message ownership: should Entity Resolution emit default player-facing message text, or only `code/details` with renderer-owned text mapping?

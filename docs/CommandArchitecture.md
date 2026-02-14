@@ -25,7 +25,7 @@ Core principle:
 Execution phases are:
 
 0. Receive Input
-1. Target Resolution
+1. Entity Resolution
 2. Capture
 3. Target
 4. Bubble
@@ -41,19 +41,19 @@ Rules:
 - Select verb family/rule variant from parsed form.
 - No world mutation.
 - No audience output.
-- Produces the parse/rule context consumed by Target Resolution.
+- Produces the parse/rule context consumed by Entity Resolution.
 
-### 1) Target Resolution (binding phase)
+### 1) Entity Resolution (binding phase)
 
 Rules:
 
 - Resolve parse spans to concrete world entities before policy hooks.
-- Produce bound entities for direct and indirect roles, plus any contextual targets.
+- Produce bound entities for direct and indirect roles, plus any contextual entities.
 - Remain deterministic for identical input and state.
 - No world mutation.
 - No audience output.
 
-Capture must consume these concrete bindings; it must not re-run target resolution logic.
+Capture must consume these concrete bindings; it must not re-run entity resolution logic.
 
 ### 2) Capture (veto phase)
 
@@ -133,7 +133,7 @@ This split prevents veto/mutation ambiguity and keeps behavior predictable.
 ## Immediate Application To `put`
 
 - `put.js` lives in Target.
-- Span-to-entity binding happens in Target Resolution before Capture.
+- Span-to-entity binding happens in Entity Resolution before Capture.
 - Container/object/player/room/quest/world policy checks run in Capture.
 - Post-plan narrative and quest/world effects accumulate in Bubble.
 - Mutator executes one merged plan in Commit.
