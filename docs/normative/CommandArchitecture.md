@@ -39,7 +39,18 @@ Execution phases are:
 Rules:
 
 - Accept one actor-issued input payload for the active session.
-- Normalize and parse into command artifact/context.
+- Canonicalize shorthand input using deterministic ordered rewrite rules before parse/token binding.
+  - Rule order is authoritative (first-match wins).
+  - Canonicalization is pure string-to-string transform with no side effects.
+  - Current canonical shorthand examples:
+    - `n` -> `go north`
+    - `east` -> `go east`
+    - `l` -> `look`
+    - `x <thing>` -> `look at <thing>`
+- Normalize and parse canonical input into command artifact/context.
+- Parse artifact must preserve both:
+  - `actorInput` (raw user text, unexpanded)
+  - `canonicalInput` (post-canonicalization text)
 - Resolve intent to a command by exact command/alias key match.
 - Prefix matching for command lookup is not allowed.
 - If no command matches, render unknown-intent feedback and stop before Entity Resolution.
