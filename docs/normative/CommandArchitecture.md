@@ -88,13 +88,24 @@ Rules:
 
 - Hooks may allow or deny.
 - Hooks must not mutate world state.
+- Hooks must not append mutation instructions, render events, or bubble contributions.
 - First deny wins.
 - If denied, command terminates with failure envelope and does not enter Target.
 - Policy hook contract is `allowAction(action, context)`.
+- `allowAction(action, context)` is synchronous.
 - If `allowAction` is not implemented on an entity, that entity is treated as "no objection" (allow).
 - Item/room/area/player/world YAML definitions remain data-only; they do not embed executable hook functions.
 - Declarative policy fallback may be supplied through metadata (for example `metadata.permissions`), evaluated by shared capture helpers.
 - Special-case runtime policy logic may be implemented in code behaviors/scripts that attach `allowAction`.
+
+Determinism constraints for capture hooks:
+
+- For identical input and identical world state, capture outcomes must be identical.
+- Capture hooks may read only:
+  - hook arguments (`action`, `context`)
+  - entity/world state reachable from `context` at evaluation time
+- Capture hooks must not read external nondeterministic sources (time, random, network, filesystem, process-global mutable state).
+- Any randomness required in future must be supplied through deterministic context input (for example seeded source), not read ad hoc inside hooks.
 
 `metadata.permissions` contract:
 
@@ -144,6 +155,22 @@ Policy return normalization:
 - `string` => deny with default code and that message
 - object with `allow:false` (or `ok:false`) => deny with object-provided `code/message/details`
 
+Policy return contract:
+
+- Explicit allow values:
+  - `true`
+  - `'allow'`
+  - `{ ok: true }`
+  - `{ allow: true }`
+- Explicit deny values:
+  - `false`
+  - `'deny'`
+  - deny message string
+  - `{ ok: false, ... }`
+  - `{ allow: false, ... }`
+- Any non-explicit/unknown value is treated as no decision (`no objection`) and evaluation continues by precedence.
+- Promise/thenable returns are not supported and are treated as invalid/non-explicit values.
+
 ### 3) Target (verb phase)
 
 This is the command script (example: `put.js`).
@@ -173,14 +200,33 @@ Rules:
 
 - No veto in bubble.
 - Hooks may append reaction instructions/events.
+- Hooks must not directly mutate world state or emit output.
+- Bubble contributions are data-only and may be evaluated repeatedly without changing world state.
+- Bubble hooks cannot deny an action that has already passed Capture/Target.
 - Hooks must be deterministic for identical input/state.
+
+Determinism constraints for bubble hooks:
+
+- For identical input and identical world state, bubble outputs must be identical.
+- Bubble hooks may read only provided context and current entity/world state.
+- Bubble hooks must not read external nondeterministic sources (time, random, network, filesystem, process-global mutable state).
+- Any randomness required in future must be supplied through deterministic context input (for example seeded source), not read ad hoc inside hooks.
 
 ### 5) Commit (transaction phase)
 
 Rules:
 
 - Merge base plan + bubble contributions into one plan.
-- Apply atomically (all-or-rollback).
+- Merge semantics:
+  - operation order is deterministic and append-only
+  - base plan operations run first, then bubble operations in bubble phase order
+  - no dedupe
+  - no conflict resolution layer beyond operation order
+  - validation/failure is handled by mutator apply
+- Apply with compensating rollback:
+  - mutator applies operations in order
+  - if one operation fails, mutator runs recorded undo handlers in reverse order
+  - if rollback itself fails, rollback error is logged as a system error with operation context
 - Rollback failures are system errors and must be logged with context.
 
 ### 6) Render/Dispatch (output phase)
