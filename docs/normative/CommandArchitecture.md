@@ -99,6 +99,10 @@ Rules:
 - Role policy may include relation map:
   - `{ relations: { in: <policy>, on: <policy> }, default?: <policy> }`
   - relation keys are canonical relation tokens
+- Exit entries may also include metadata policy for movement verbs:
+  - `exits[].metadata.permissions.verbs.go: <policy>`
+  - Example:
+    - `direction: east`, `roomId: test:gate`, `metadata.permissions.verbs.go: "The portcullis is down."`
 
 Policy precedence:
 
@@ -198,3 +202,12 @@ This split prevents veto/mutation ambiguity and keeps behavior predictable.
 - Container/object/player/room/quest/world policy checks run in Capture.
 - Post-plan narrative and quest/world effects accumulate in Bubble.
 - Mutator executes one merged plan in Commit.
+
+## Immediate Application To `go`
+
+- `go.js` lives in Target and declares direct-only form with direct scope `room.exits`.
+- Direction text is resolved to a concrete exit entity in Entity Resolution.
+- Exit/world policy checks run in Capture and can veto via metadata or runtime hooks.
+- Target validates destination and door state, then returns a `movePlayer` plan.
+- Mutator commits movement atomically in Commit.
+- Destination room view renders in Render/Dispatch only after commit.

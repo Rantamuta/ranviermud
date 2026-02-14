@@ -33,7 +33,7 @@ Policy veto hooks run in Capture, not Entity Resolution.
 - Verb/command rule declaration (expected form and target roles).
 - Scope policy per role (declared search spaces and precedence).
 - Current world context (room, area, and relevant environment references).
-- Candidate collections (player inventory, room contents, other permitted inventories/containers, including nested items when enabled by scope policy).
+- Candidate collections (player inventory, room contents, room exits, other permitted inventories/containers, including nested items when enabled by scope policy).
 - Candidate metadata for matching (names, aliases, keywords, qualifiers).
 - Normalization and ignore-token policy used by matching.
 - Resolver options/profile flags (for example strictness and compatibility mode).
@@ -146,6 +146,13 @@ Illustrative examples:
 
 - `put`: direct typically prefers player-held scopes; indirect typically prefers room/container scopes.
 - `get`: direct typically prefers room/container scopes before already-held scope checks.
+- `go`: direct uses `room.exits` scope in direct-only form (`go <direction>`).
+
+Standard scope sources currently supported by shared resolver helpers:
+
+- `player.inventory`
+- `room.items`
+- `room.exits`
 
 ### Role Binding
 
