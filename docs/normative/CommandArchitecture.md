@@ -199,6 +199,9 @@ Order (reverse specificity):
 Rules:
 
 - No veto in bubble.
+- Reaction hook contract is `bubbleEvent(action, context)`.
+- `bubbleEvent(action, context)` is synchronous.
+- If `bubbleEvent` is not implemented on an entity, that entity contributes nothing.
 - Hooks may append reaction instructions/events.
 - Hooks must not directly mutate world state or emit output.
 - Bubble contributions are data-only and may be evaluated repeatedly without changing world state.
@@ -248,7 +251,7 @@ Non-command render path:
 Two hook kinds are used across phases:
 
 - Policy hook (capture): allow/deny only.
-- Reaction hook (bubble): append instructions/events only.
+- Reaction hook (bubble): `bubbleEvent(action, context)` appends instructions/events only.
 
 This split prevents veto/mutation ambiguity and keeps behavior predictable.
 
