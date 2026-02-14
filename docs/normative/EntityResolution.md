@@ -181,6 +181,17 @@ Canonical candidate ranking must be deterministic. Tie-break sequence:
 4. declaration/enumeration order within scope
 5. UUID lexical order
 
+Match score definition:
+
+- higher score for exact normalized display-name phrase match
+- then exact normalized keyword/alias phrase match
+- then token-coverage match (required noun + all qualifier tokens)
+
+Declaration/enumeration order definition:
+
+- declaration/enumeration order means the stable iteration order returned by the scope helper for that container/scope
+- examples: insertion order for `Map`, index order for arrays, deterministic set iteration order provided by the helper
+
 Traversal order and ranking are related but distinct: breadth-first traversal controls discovery order, while tie-break ranking controls canonical candidate ordering for prompts, diagnostics, and indistinguishable auto-pick behavior.
 If ambiguity policy is active, resolver still returns `AMBIGUOUS_TARGET`; it does not auto-bind solely because deterministic ordering exists.
 
@@ -207,6 +218,8 @@ Signature constraints:
 
 - include only actor-visible data
 - exclude hidden/internal identifiers and hidden state
+- use a finite, declared, stable set of signature fields across ports
+- exclude ephemeral/non-resolution-critical state
 - compute read-only with no side effects
 
 Resolver behavior for `|C| > 1`:
