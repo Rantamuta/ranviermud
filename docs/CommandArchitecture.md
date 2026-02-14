@@ -9,6 +9,8 @@ It presents a phase-based architecture centered on deterministic command plannin
 - Status: normative-v1
 - Scope: Bundle-layer command execution flow
 - Binding: yes
+- Related:
+  - [EntityResolution.md](EntityResolution.md)
 
 ## Purpose
 
@@ -44,6 +46,8 @@ Rules:
 - Produces the parse/rule context consumed by Entity Resolution.
 
 ### 1) Entity Resolution (binding phase)
+
+Execute Entity Resolution as specified in [EntityResolution.md](EntityResolution.md).
 
 Rules:
 
