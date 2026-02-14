@@ -2,8 +2,8 @@
 
 ## Status
 
-- Status: `proposed-v1`
-- Binding: No (in review)
+- Status: `normative-v1`
+- Binding: Yes
 
 ## Purpose
 
@@ -15,7 +15,7 @@ Specifies entity resolution behavior for bundle-layer diegetic verbs from parsed
 
 ## Purity Requirement
 
-Entity Resolution is a read-only phase. Policy veto hooks run in Capture, not Entity Resolution.
+Entity Resolution is a read-only phase.
 
 It must not:
 
@@ -36,7 +36,6 @@ Policy veto hooks run in Capture, not Entity Resolution.
 - Candidate collections (player inventory, room contents, other permitted inventories/containers, including nested items when enabled by scope policy).
 - Candidate metadata for matching (names, aliases, keywords, qualifiers).
 - Normalization and ignore-token policy used by matching.
-- Optional selector tokens (for example explicit numeric selectors), when supported.
 - Resolver options/profile flags (for example strictness and compatibility mode).
 
 ## Outputs
@@ -47,9 +46,9 @@ Policy veto hooks run in Capture, not Entity Resolution.
 - Failure output:
   - no target bindings
   - resolver message/failure payload explaining why binding failed
-- v1 target count assumption:
+- target count assumption:
   - at most two concrete targets (`directTarget`, `indirectTarget`)
-  - higher-arity target sets are deferred to a later version
+  - higher-arity target sets are deferred
 
 ## Phase Responsibilities
 
@@ -58,19 +57,19 @@ Policy veto hooks run in Capture, not Entity Resolution.
 - Form matching consumes parsed artifact fields and the selected verb family/rules.
 - It must deterministically decide whether the parsed shape is valid for resolution.
 - Invalid form must return a structured failure payload (code/details), not only ad hoc text.
-- v1 recommended failure shape:
+- recommended failure shape:
   - `{ ok: false, code, details, message? }`
 - Successful form match returns a rule-selected artifact for resolution.
-- v1 recommended success shape:
-  - `{ ok: true, ruleId, directSpan?, relationToken?, indirectSpan? }`
+- recommended success shape:
+  - `{ ok: true, ruleId, directSpan?, relationTokenRaw?, relationTokenCanonical?, indirectSpan? }`
 
 Form matching owns syntax/shape failures such as missing required spans for a selected rule.
 
-#### v1 Verb Rule Set
+#### Verb Rule Set
 
-- Command declaration shape is locked in v1:
+- Command declaration shape:
   - Rule declarations are keyed objects, keyed by rule key.
-  - Ordered rule arrays are not used for v1 rule declarations.
+  - Ordered rule arrays are not used for rule declarations.
 - Allowed rule keys:
   - `intransitive` (no target roles). Example: "sing".
   - `direct` (direct role only). Example: "sing a lullaby".
@@ -100,7 +99,7 @@ Recommended runtime codes:
 
 ### Relation Normalization
 
-Relation handling is locked in v1:
+Relation handling:
 
 - Entity Resolution must preserve the raw relation token as typed by the actor (`relationTokenRaw`).
 - Entity Resolution must also produce a canonical relation token for logic (`relationTokenCanonical`).
@@ -118,7 +117,7 @@ If the selected verb rule is `intransitive` and the input satisfies that rule, E
 ### Scope Declaration
 
 - Scope must be declared per role, not as one combined list.
-- v1 recommended shape:
+- recommended shape:
   - `scopeProfile.direct = [...]`
   - `scopeProfile.indirect = [...]`
 - Resolver must search only declared scopes, in declared order.
@@ -128,7 +127,7 @@ If the selected verb rule is `intransitive` and the input satisfies that rule, E
 
 Optional diagnostic lookups may exist for more helpful messaging, but they must not change successful binding semantics.
 
-Nested traversal policy is locked in v1:
+Nested traversal policy:
 
 - Nested scope traversal is bounded; unbounded/infinite traversal is not allowed.
 - Maximum traversal depth is configuration-driven with a finite default.
@@ -137,7 +136,7 @@ Nested traversal policy is locked in v1:
 - Resolver must enforce cycle protection when traversing nested containers.
 - Resolver may bind deeply nested matches found within the configured depth limit.
 - Reachability/usability of a found entity is validated in later phases (Capture/Target), not by Entity Resolution.
-- v1 traversal order is:
+- traversal order is:
   1. scope order
   2. depth level (shallow to deep)
   3. declaration/enumeration order within scope level
@@ -152,7 +151,7 @@ Illustrative examples:
 
 - Role binding maps parsed role spans to concrete world entities.
 - Binding is rule-driven per verb: not all verbs require all roles.
-- v1 role model:
+- role model:
   - `direct` role maps to `directTarget`
   - `indirect` role maps to `indirectTarget` when required by the selected rule
 - Required roles must bind to exactly one concrete entity.
@@ -174,7 +173,7 @@ Illustrative shape:
   - zero candidates: role not-found failure
   - multiple candidates: resolve with indistinguishability policy, else ambiguous failure
 
-Canonical candidate ranking must be deterministic. v1 tie-break sequence:
+Canonical candidate ranking must be deterministic. Tie-break sequence:
 
 1. scope order
 2. match score
@@ -185,7 +184,7 @@ Canonical candidate ranking must be deterministic. v1 tie-break sequence:
 Traversal order and ranking are related but distinct: breadth-first traversal controls discovery order, while tie-break ranking controls canonical candidate ordering for prompts, diagnostics, and indistinguishable auto-pick behavior.
 If ambiguity policy is active, resolver still returns `AMBIGUOUS_TARGET`; it does not auto-bind solely because deterministic ordering exists.
 
-#### Indistinguishable Candidate Auto-Pick (v1)
+#### Indistinguishable Candidate Auto-Pick
 
 Intent:
 
@@ -197,7 +196,7 @@ Definitions:
 - Candidate set: entities remaining after scope search and span-token filtering for one required role.
 - Visibility signature: deterministic actor-relative summary of visible distinguishing data for one candidate.
 
-v1 visibility signature fields:
+Visibility signature fields:
 
 - normalized visible display name
 - normalized `metadata.resolution.disambiguationLabel` when present and visible
@@ -264,7 +263,7 @@ Goals:
 
 Resolver should emit the most specific failure code available. `FORM_NOT_SUPPORTED` is the generic fallback when a more precise code cannot be determined.
 
-Recommended v1 resolver-owned codes:
+Recommended resolver-owned codes:
 
 - Form/rule failures:
   - `FORM_NOT_SUPPORTED`
@@ -291,6 +290,13 @@ Phase ownership note:
 - Entity Resolution owns form/scope/binding/disambiguation failures.
 - Capture owns policy veto failures.
 - Target phase owns verb-planner feasibility failures after successful binding.
+
+Failure message ownership:
+
+- Entity Resolution must not emit player-visible text.
+- Entity Resolution returns structured failure data (`code`, `details`, and optional context fields) only.
+- Renderer/dispatch owns player-facing message selection and emission.
+- Command-level text customization, when used, is still rendered through renderer/dispatch, not emitted directly from Entity Resolution.
 
 ## Integration Points
 
@@ -320,13 +326,13 @@ Phase ownership note:
 
 ## Open Questions
 
-- Failure message ownership: should Entity Resolution emit default player-facing message text, or only `code/details` with renderer-owned text mapping?
+- <none>
 
 ## Deferred
 
-- Selector-based disambiguation inputs are deferred beyond v1.
+- Selector-based disambiguation inputs are deferred.
   - Includes explicit numeric selectors (for example `2.sword`).
   - Includes ordinal-language selector forms (for example `second sword`).
 - UI output must not render selector-prefixed entity labels (for example `1.sword`, `2.sword`) in inventory, room listings, or other player-facing lists.
 - Revisit selector support after baseline Entity Resolution and command-planning flow are implemented and stable.
-- Optional metadata overrides for disambiguation policy (for example force disambiguation even when signatures match) are deferred beyond v1.
+- Optional metadata overrides for disambiguation policy (for example force disambiguation even when signatures match) are deferred.
