@@ -79,6 +79,55 @@ Rules:
 - Hooks must not mutate world state.
 - First deny wins.
 - If denied, command terminates with failure envelope and does not enter Target.
+- Policy hook contract is `allowAction(action, context)`.
+- If `allowAction` is not implemented on an entity, that entity is treated as "no objection" (allow).
+- Item/room/area/player/world YAML definitions remain data-only; they do not embed executable hook functions.
+- Declarative policy fallback may be supplied through metadata (for example `metadata.permissions`), evaluated by shared capture helpers.
+- Special-case runtime policy logic may be implemented in code behaviors/scripts that attach `allowAction`.
+
+`metadata.permissions` contract:
+
+- Root:
+  - `metadata.permissions.default` (optional): `allow` | `deny` | `true` | `false` | `string` | policy object
+  - `metadata.permissions.verbs` (optional): map keyed by canonical verb id (for example `take`, `put`)
+- Verb entry value may be:
+  - `true` / `allow`: allow
+  - `false` / `deny`: deny using default code
+  - `string`: deny and use this player-facing veto message
+  - policy object: `{ allow: boolean, code?: string, message?: string, details?: object }`
+  - role map object: `{ direct?: <policy>, indirect?: <policy>, default?: <policy> }`
+- Role policy may include relation map:
+  - `{ relations: { in: <policy>, on: <policy> }, default?: <policy> }`
+  - relation keys are canonical relation tokens
+
+Policy precedence:
+
+1. runtime `allowAction(action, context)` result when method exists and returns explicit allow/deny
+2. `metadata.permissions.verbs[verbId]` role+relation match (`direct`/`indirect` + canonical relation)
+3. `metadata.permissions.verbs[verbId]` role default / verb default
+4. `metadata.permissions.default`
+5. implicit allow (no objection)
+
+Examples:
+
+- Runtime hook wins:
+  - `allowAction(...)` returns `"The ward rejects your touch."` and metadata says `allow` -> result is deny with that runtime message.
+- Role+relation match:
+  - `metadata.permissions.verbs.put.indirect.relations.in = "That container rejects items."` and input is `put apple into chest` -> resolver canonicalizes `into` to `in`, policy denies with that message.
+- Role default then verb default:
+  - `verbs.put.indirect = { relations: { on: false }, default: "You cannot put things there." }` and relation is `in` -> role default applies.
+  - If role default is absent and `verbs.put.default = "Putting is disabled here."`, verb default applies.
+- Metadata default:
+  - No `verbs.put` entry, but `metadata.permissions.default = "Nothing may be moved here."` -> deny with that message.
+- Implicit allow:
+  - No `allowAction` method and no `metadata.permissions` entry -> action proceeds.
+
+Policy return normalization:
+
+- `true`/`allow` => allow
+- `false`/`deny` => deny with default code (`FORBIDDEN_BLOCKED`)
+- `string` => deny with default code and that message
+- object with `allow:false` (or `ok:false`) => deny with object-provided `code/message/details`
 
 ### 3) Target (verb phase)
 
