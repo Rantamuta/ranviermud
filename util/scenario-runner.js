@@ -383,9 +383,48 @@ function getMainInputListeners(GameState) {
   return [...listeners];
 }
 
-function hasUnknownCommandOutput(output, fromIndex) {
-  const addedOutput = output.slice(fromIndex);
-  return addedOutput.some(line => String(line).includes('Unknown command.'));
+function resolveCommandExact(GameState, commandName) {
+  const normalizedName = String(commandName || '').trim().toLowerCase();
+  if (!normalizedName) {
+    return { command: null, alias: null };
+  }
+
+  const manager = GameState && GameState.CommandManager;
+  if (!manager || typeof manager !== 'object') {
+    return { command: null, alias: null };
+  }
+
+  if (typeof manager.get === 'function') {
+    const command = manager.get(normalizedName);
+    if (!command) {
+      return { command: null, alias: null };
+    }
+
+    const isAlias = Array.isArray(command.aliases) &&
+      command.aliases.includes(normalizedName) &&
+      command.name !== normalizedName;
+
+    return { command, alias: isAlias ? normalizedName : null };
+  }
+
+  if (typeof manager.find === 'function') {
+    const match = manager.find(normalizedName, true);
+    if (!match) {
+      return { command: null, alias: null };
+    }
+
+    if (typeof match === 'object' && 'command' in match && 'alias' in match) {
+      if (match.alias !== normalizedName) {
+        return { command: null, alias: null };
+      }
+
+      return { command: match.command, alias: match.alias };
+    }
+
+    return { command: null, alias: null };
+  }
+
+  return { command: null, alias: null };
 }
 
 function createSeedItem(GameState, itemRef) {
@@ -670,11 +709,11 @@ async function main() {
 
     const commandName = commandSpec.name.toLowerCase();
     if (throughInput) {
-      const outputStart = output.length;
+      const { command } = resolveCommandExact(GameState, commandName);
       for (const listener of inputListeners) {
         await listener(inputSession, commandSpec.raw);
       }
-      if (hasUnknownCommandOutput(output, outputStart)) {
+      if (!command) {
         unknownCount += 1;
         emitEvent({ type: 'unknown', index: i + 1, raw: commandSpec.raw });
       }
@@ -689,16 +728,15 @@ async function main() {
       continue;
     }
 
-    const commandMatch = GameState.CommandManager.find(commandSpec.name, true);
-    if (!commandMatch) {
+    const { command, alias } = resolveCommandExact(GameState, commandName);
+    if (!command) {
       unknownCount += 1;
-      player.send('Unknown command.');
+      player.send('What?');
       emitEvent({ type: 'unknown', index: i + 1, raw: commandSpec.raw });
       flushOutput(output, emitOutput);
       continue;
     }
 
-    const { command, alias } = commandMatch;
     await command.execute(commandSpec.args, player, alias);
     flushOutput(output, emitOutput);
   }
