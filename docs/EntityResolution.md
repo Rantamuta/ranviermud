@@ -172,9 +172,7 @@ Illustrative shape:
 - Outcomes:
   - exactly one candidate: bind and continue
   - zero candidates: role not-found failure
-  - multiple candidates: ambiguous failure unless an explicit interchangeable policy applies
-- v1 default policy for multiple candidates is ambiguous failure.
-- Optional convenience policy may allow first-pick only when all matching candidates are declared interchangeable.
+  - multiple candidates: resolve with indistinguishability policy, else ambiguous failure
 
 Canonical candidate ranking must be deterministic. v1 tie-break sequence:
 
@@ -184,8 +182,39 @@ Canonical candidate ranking must be deterministic. v1 tie-break sequence:
 4. declaration/enumeration order within scope
 5. UUID lexical order
 
-Traversal order and ranking are related but distinct: breadth-first traversal controls discovery order, while tie-break ranking controls canonical candidate ordering for prompts, diagnostics, and optional first-pick policies.
+Traversal order and ranking are related but distinct: breadth-first traversal controls discovery order, while tie-break ranking controls canonical candidate ordering for prompts, diagnostics, and indistinguishable auto-pick behavior.
 If ambiguity policy is active, resolver still returns `AMBIGUOUS_TARGET`; it does not auto-bind solely because deterministic ordering exists.
+
+#### Indistinguishable Candidate Auto-Pick (v1)
+
+Intent:
+
+- Prompt only when the actor can meaningfully distinguish candidates.
+- If candidates are indistinguishable from actor-visible data, auto-pick deterministically.
+
+Definitions:
+
+- Candidate set: entities remaining after scope search and span-token filtering for one required role.
+- Visibility signature: deterministic actor-relative summary of visible distinguishing data for one candidate.
+
+v1 visibility signature fields:
+
+- normalized visible display name
+- normalized `metadata.resolution.disambiguationLabel` when present and visible
+- normalized `metadata.resolution.descriptors` when present and visible
+- declared visible state flags used for resolution messaging
+
+Signature constraints:
+
+- include only actor-visible data
+- exclude hidden/internal identifiers and hidden state
+- compute read-only with no side effects
+
+Resolver behavior for `|C| > 1`:
+
+1. compute visibility signatures for all candidates
+2. if all signatures are equal, bind the first candidate by canonical deterministic ranking
+3. otherwise return `AMBIGUOUS_TARGET` and produce a disambiguation prompt
 
 Recommended optional metadata for ambiguous-prompt quality:
 
@@ -193,9 +222,7 @@ Recommended optional metadata for ambiguous-prompt quality:
   - Human-readable label used in "which one?" prompts.
   - Does not affect matching eligibility.
 - `metadata.resolution.descriptors: string[]`
-  - Optional descriptors used to generate comparative prompt text when labels are absent.
-- `metadata.resolution.interchangeable: boolean`
-  - Declares candidate as interchangeable for optional first-pick convenience policies.
+  - Optional descriptors used to generate comparative prompt text when labels are absent or identical.
 
 Prompt generation preference:
 
@@ -214,14 +241,15 @@ Examples:
 - Ambiguous by default:
   - Input: "get envelope"
   - Matches: two envelopes
+  - Signatures differ
   - Result: ambiguous failure (`code: AMBIGUOUS_TARGET`)
 - Label-driven prompt:
   - Candidate A label: "large, green envelope"
   - Candidate B label: "large, blue envelope"
   - Prompt: "Which envelope do you mean: large, green envelope or large, blue envelope?"
-- Optional interchangeable first-pick:
-  - All matching candidates have `metadata.resolution.interchangeable: true`
-  - Policy allows convenience pick
+- Indistinguishable auto-pick:
+  - Input: "get apple"
+  - Matches: multiple apples with identical visibility signatures
   - Result: first deterministic candidate binds without ambiguity prompt
 
 ### Failure Classification
@@ -292,7 +320,6 @@ Phase ownership note:
 
 ## Open Questions
 
-- Interchangeable auto-pick policy: is convenience first-pick disabled by default and enabled only by explicit policy, or enabled by default when all matches are interchangeable?
 - Failure message ownership: should Entity Resolution emit default player-facing message text, or only `code/details` with renderer-owned text mapping?
 
 ## Deferred
@@ -302,3 +329,4 @@ Phase ownership note:
   - Includes ordinal-language selector forms (for example `second sword`).
 - UI output must not render selector-prefixed entity labels (for example `1.sword`, `2.sword`) in inventory, room listings, or other player-facing lists.
 - Revisit selector support after baseline Entity Resolution and command-planning flow are implemented and stable.
+- Optional metadata overrides for disambiguation policy (for example force disambiguation even when signatures match) are deferred beyond v1.
