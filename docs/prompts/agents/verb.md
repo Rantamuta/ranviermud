@@ -17,6 +17,8 @@ Implement a new bundle-layer verb: `<VERB_ID>`.
 
 ## Mandatory preflight (print before coding)
 
+### Verb semantic contract
+
 Print this table and fill every row with `KNOWN` or `UNKNOWN`:
 
 | Field | Status | Value/Notes |
@@ -31,14 +33,23 @@ Print this table and fill every row with `KNOWN` or `UNKNOWN`:
 | nested traversal policy (if any) |  |  |
 | planner failure codes |  |  |
 | message mapping ownership (`metadata.errorMessages`) |  |  |
-| mutation instruction types needed |  |  |
-| mutator support exists for each instruction |  |  |
 | expected success outcome |  |  |
 | success narration contract (required, unless explicitly silent) |  |  |
 | success label source policy (`directSpan`/`indirectSpan` vs entity names) |  |  |
 | expected failure behavior |  |  |
 | output expectation for every non-empty input |  |  |
+| ambiguity and indistinguishable resolution behavior confirmation |  |  |
+| failure-output matrix (`code -> renderer/dispatch mapping ownership`) |  |  |
+
+### Implementation support audit
+
+Print this table and fill every row with `KNOWN` or `UNKNOWN`:
+
+| Field | Status | Value/Notes |
+|---|---|---|
 | required tests list |  |  |
+| mutation instruction types needed |  |  |
+| mutator support exists for each instruction |  |  |
 
 ### Preflight gate
 
@@ -55,6 +66,7 @@ Print this table and fill every row with `KNOWN` or `UNKNOWN`:
 6. Failure codes or message-mapping ownership not explicit.
 7. Unclear expected committed outcome for happy path.
 8. Success narration contract is missing or ambiguous.
+9. Ambiguity and indistinguishable resolution behavior not explicitly confirmed.
 
 ## Implementation requirements
 
@@ -68,6 +80,8 @@ Print this table and fill every row with `KNOWN` or `UNKNOWN`:
 6. Player-facing failure text emitted by dispatch via code mapping (not resolver).
 7. Non-empty input must yield player-visible output. Silent success is not allowed unless explicitly approved in preflight.
 8. For success narration, declare and apply a deterministic label policy (prefer resolved spans when present; otherwise fall back to entity names).
+9. Do not mutate `context`, `context.entityResolution`, or any bound entity during planning. Treat them as immutable inputs.
+10. Provide a failure-output matrix for this verb covering resolver/planner/capture/commit failure codes and where text mapping is owned.
 
 ## Tests required
 
@@ -78,7 +92,7 @@ Add/update tests for:
 - relation raw/canonical behavior (if relation-bearing)
 - scope precedence and deterministic tie behavior
 - ambiguity vs indistinguishable auto-pick (if applicable)
-- resolver has no mutation/output side effects
+- resolver has no mutation side effects and no broadcast/output side effects
 - dispatch integration path for this verb (resolve -> target -> commit/render)
 - happy-path success rendering assertions (text present and stable)
 
@@ -96,7 +110,8 @@ Run and report:
 2. Behavior implemented mapped to phases 0–6
 3. Tests added/updated
 4. Test results
-5. Deferred items and reason
+5. Assumptions made beyond preflight inputs
+6. Deferred items and reason
 
 ## Verb spec
 
@@ -137,10 +152,4 @@ Run and report:
 - Command implementation file: `bundles/bundle-rantamuta/commands/<VERB_ID>.js`
 - Any needed mutator updates: `lib/session/mutator.js`
 - Resolver declaration usage in command metadata (`entityResolution.rules`)
-- Tests:
-  - rule/form matching outcomes
-  - relation normalization behavior (if relation-bearing)
-  - scope precedence behavior
-  - ambiguity vs indistinguishable auto-pick behavior (as applicable)
-  - no mutation/output side effects in resolver phase
-  - command-dispatch integration for happy path + failure path, including success text assertions
+- Tests: satisfy all items under `## Tests required` in this prompt.
