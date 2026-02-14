@@ -68,6 +68,9 @@ Form matching owns syntax/shape failures such as missing required spans for a se
 
 #### v1 Verb Rule Set
 
+- Command declaration shape is locked in v1:
+  - Rule declarations are keyed objects, keyed by rule key.
+  - Ordered rule arrays are not used for v1 rule declarations.
 - Allowed rule keys:
   - `intransitive` (no target roles). Example: "sing".
   - `direct` (direct role only). Example: "sing a lullaby".
@@ -125,6 +128,21 @@ If the selected verb rule is `intransitive` and the input satisfies that rule, E
 
 Optional diagnostic lookups may exist for more helpful messaging, but they must not change successful binding semantics.
 
+Nested traversal policy is locked in v1:
+
+- Nested scope traversal is bounded; unbounded/infinite traversal is not allowed.
+- Maximum traversal depth is configuration-driven with a finite default.
+- Traversal order must be deterministic and breadth-first by depth level.
+- Resolver must evaluate all candidates at depth `N` before traversing to depth `N+1` within the same scope.
+- Resolver must enforce cycle protection when traversing nested containers.
+- Resolver may bind deeply nested matches found within the configured depth limit.
+- Reachability/usability of a found entity is validated in later phases (Capture/Target), not by Entity Resolution.
+- v1 traversal order is:
+  1. scope order
+  2. depth level (shallow to deep)
+  3. declaration/enumeration order within scope level
+  4. UUID lexical order
+
 Illustrative examples:
 
 - `put`: direct typically prefers player-held scopes; indirect typically prefers room/container scopes.
@@ -158,14 +176,15 @@ Illustrative shape:
 - v1 default policy for multiple candidates is ambiguous failure.
 - Optional convenience policy may allow first-pick only when all matching candidates are declared interchangeable.
 
-Canonical candidate ordering must be deterministic. v1 tie-break sequence:
+Canonical candidate ranking must be deterministic. v1 tie-break sequence:
 
 1. scope order
 2. match score
-3. declaration/enumeration order within scope
-4. UUID lexical order
+3. depth level (shallow to deep)
+4. declaration/enumeration order within scope
+5. UUID lexical order
 
-This ordering defines the canonical candidate list for prompts, diagnostics, and optional first-pick policies.
+Traversal order and ranking are related but distinct: breadth-first traversal controls discovery order, while tie-break ranking controls canonical candidate ordering for prompts, diagnostics, and optional first-pick policies.
 If ambiguity policy is active, resolver still returns `AMBIGUOUS_TARGET`; it does not auto-bind solely because deterministic ordering exists.
 
 Recommended optional metadata for ambiguous-prompt quality:
@@ -273,8 +292,13 @@ Phase ownership note:
 
 ## Open Questions
 
-- Command declaration shape: should rule declarations be keyed objects or ordered rule arrays?
-- Selector support in v1: do we support explicit selectors such as `2.sword` now or defer?
-- Nested scope traversal policy: what are the depth limits and deterministic traversal order for nested containers?
 - Interchangeable auto-pick policy: is convenience first-pick disabled by default and enabled only by explicit policy, or enabled by default when all matches are interchangeable?
 - Failure message ownership: should Entity Resolution emit default player-facing message text, or only `code/details` with renderer-owned text mapping?
+
+## Deferred
+
+- Selector-based disambiguation inputs are deferred beyond v1.
+  - Includes explicit numeric selectors (for example `2.sword`).
+  - Includes ordinal-language selector forms (for example `second sword`).
+- UI output must not render selector-prefixed entity labels (for example `1.sword`, `2.sword`) in inventory, room listings, or other player-facing lists.
+- Revisit selector support after baseline Entity Resolution and command-planning flow are implemented and stable.
