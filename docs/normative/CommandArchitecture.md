@@ -40,7 +40,9 @@ Rules:
 
 - Accept one actor-issued input payload for the active session.
 - Normalize and parse into command artifact/context.
-- Select verb family/rule variant from parsed form.
+- Resolve intent to a command by exact command/alias key match.
+- Prefix matching for command lookup is not allowed.
+- If no command matches, render unknown-intent feedback and stop before Entity Resolution.
 - No world mutation.
 - No audience output.
 - Produces the parse/rule context consumed by Entity Resolution.

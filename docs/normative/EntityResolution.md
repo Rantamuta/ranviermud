@@ -315,6 +315,7 @@ Failure message ownership:
 
 - Receive Input -> Entity Resolution
   - Consumes parsed artifact, selected verb/rule context, and actor/session context.
+  - Entry precondition: Receive Input has already resolved command intent by exact command/alias key match (no prefix matching).
 - Command module declaration -> Entity Resolution
   - Rule forms, relation policy, and scope profiles are declared with the command for developer ergonomics.
 - Helper layer -> Entity Resolution

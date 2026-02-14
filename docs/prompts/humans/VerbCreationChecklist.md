@@ -1,0 +1,23 @@
+# Verb creation checklist
+
+- [ ] Define verb spec: `verbId`, aliases, intended player phrasing, supported rule keys.
+- [ ] Ensure command invocation uses exact command/alias keys only; add explicit aliases for shorthands (no prefix matching).
+- [ ] Declare `metadata.entityResolution.rules` as keyed rule objects (not ordered arrays).
+- [ ] For each relation-bearing rule, add `acceptedRelations` at rule level.
+- [ ] Define per-role scope profiles (`direct`, `indirect`) in deterministic order.
+- [ ] Do not parse ad hoc inside command; consume `context.entityResolution`.
+- [ ] Implement Target phase as planner-only: return `{ ok: true, plan }` or `{ ok: false, error }`.
+- [ ] Do not mutate world directly in command.
+- [ ] Add command-level `metadata.errorMessages` for stable code-to-text mapping.
+- [ ] If needed, add mutator instruction type(s) and atomic rollback-safe behavior in `mutator.js`.
+- [ ] Keep Capture checks read-only and consuming bound roles only (no re-resolution).
+- [ ] Keep Bubble reactions additive only (no veto).
+- [ ] Ensure resolver returns structured failures only (no player output from resolver).
+- [ ] Add unit tests for command planner success/failure envelopes.
+- [ ] Add resolver tests for form/rule behavior relevant to verb.
+- [ ] Add tests for relation canonicalization (`raw` vs `canonical`) if relation-bearing.
+- [ ] Add scope-order and ambiguity/indistinguishable behavior tests if target binding is involved.
+- [ ] Add dispatch integration test covering end-to-end verb path (resolve -> target -> commit/render).
+- [ ] Run `cd bundles/bundle-rantamuta && npm test -- --runInBand`.
+- [ ] Run repo `npm test`.
+- [ ] Run `npm run ci:local` or report exact dirty-tree blocker.
