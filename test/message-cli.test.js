@@ -49,6 +49,19 @@ test('message CLI supports relaxed object input syntax', () => {
   assert.equal(result.stdout.trim(), 'You wave.');
 });
 
+test('message CLI coerces relaxed boolean fields for character-like capitalization', () => {
+  const result = runCli([
+    '{actor.you} {verb:stab} {target.you} in {target.poss} neck!',
+    '--actor', '{name:foo,pronoun:he,isNpc:false}',
+    '--target', '{name:bar,pronoun:she,isNpc:true}',
+    '--pov', 'self',
+    '--audience', 'self_target_and_others',
+  ]);
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(result.stdout.trim(), 'You stab Bar in her neck!');
+});
+
 test('message CLI can return JSON output', () => {
   const result = runCli([
     '{actor.you} {verb:don\'t}.',
@@ -130,4 +143,17 @@ test('message CLI supports actor/target capitalization placeholders', () => {
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.equal(result.stdout.trim(), 'Foo stabs Bar in Her neck.');
+});
+
+test('message CLI capitalizes name output for target.you with lowercase source names', () => {
+  const result = runCli([
+    '{actor.you} {verb:stab} {target.you} in {target.poss} neck!',
+    '--actor', '{"name":"foo","pronoun":"he","isNpc":false}',
+    '--target', '{"name":"bar","pronoun":"she","isNpc":true}',
+    '--pov', 'self',
+    '--audience', 'self_target_and_others',
+  ]);
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(result.stdout.trim(), 'You stab Bar in her neck!');
 });
