@@ -21,13 +21,13 @@
  * - `--room "<area:roomId>"`: start the player in a specific room.
  * - `--seedInventory "<area:itemId>"`: seed a resolved item into player inventory (repeatable).
  * - `--seedRoomItem "<area:itemId>"`: seed a resolved item into the player's room (repeatable).
- * - `--throughInput`: route commands through InputEvent `main` using an in-game session.
  * - `--playerEmit:<event> [args]`: emit player events (e.g., `--playerEmit:move east`).
  * - `--failOnUnknown`: exit non-zero if any unknown commands are encountered.
  * - `--json`: emit machine-readable JSON (includes log capture events).
  */
 const fs = require('fs');
 const path = require('path');
+const { parseInput } = require('../bundles/bundle-rantamuta/lib/parse-input');
 
 let activeLogCapture = null;
 
@@ -45,12 +45,11 @@ function printHelp() {
   console.log('       node util/scenario-runner.js [--seedInventory "<area:itemId>"] [--seedRoomItem "<area:itemId>"]');
   console.log('       node util/scenario-runner.js --playerEmit:<event> [args]');
   console.log('       --scenario             load directives from .scenario files');
-  console.log('       --throughInput         execute command text via InputEvent "main" in an in-game session');
   console.log('       --failOnUnknown        exit non-zero if any unknown commands are encountered');
   console.log('       --json                 emit machine-readable JSON output');
   console.log('       --seedInventory        seed an item into player inventory (repeatable)');
   console.log('       --seedRoomItem         seed an item into the current room (repeatable)');
-  console.log('Boots the engine in no-transport mode, loads bundles, and executes one or more commands.');
+  console.log('Boots the engine in no-transport mode, loads bundles, and executes commands through InputEvent "main".');
   console.log('Scenario files are key/value directives: command, room, seedInventory, seedRoomItem.');
   console.log('Unknown flags are ignored.');
 }
@@ -383,6 +382,21 @@ function getMainInputListeners(GameState) {
   return [...listeners];
 }
 
+/**
+ * Resolve the canonical intent token from raw command text.
+ *
+ * @param {string} raw
+ * @returns {string}
+ */
+function resolveCanonicalIntent(raw) {
+  const parsed = parseInput(raw);
+  if (!parsed || typeof parsed !== 'object' || typeof parsed.intentToken !== 'string') {
+    return '';
+  }
+
+  return parsed.intentToken.trim().split(/\s+/u)[0] || '';
+}
+
 function resolveCommandExact(GameState, commandName) {
   const normalizedName = String(commandName || '').trim().toLowerCase();
   if (!normalizedName) {
@@ -484,10 +498,76 @@ function flushOutput(output, emitOutput) {
         }
       }
     } else {
-      process.stdout.write(`${output.join('\n')}\n`);
+      for (const entry of output) {
+        process.stdout.write(String(entry));
+      }
     }
     output.length = 0;
   }
+}
+
+/**
+ * @param {*} value
+ * @returns {value is { parse?: Record<string, *>, lookup?: Record<string, *>, phases?: Record<string, *>, outcome?: Record<string, *> }}
+ */
+function isCommandTraceInternal(value) {
+  return !!value && typeof value === 'object';
+}
+
+/**
+ * @param {*} value
+ * @returns {string | null}
+ */
+function nullableString(value) {
+  return typeof value === 'string' ? value : null;
+}
+
+/**
+ * @param {string} raw
+ * @param {*} trace
+ * @param {object} fallbackLookup
+ * @param {boolean} fallbackLookup.commandFound
+ * @param {string | null} fallbackLookup.commandName
+ * @param {string | null} fallbackLookup.alias
+ * @returns {{ parse: Record<string, *>, lookup: Record<string, *>, phases: Record<string, *>, outcome: Record<string, *> }}
+ */
+function mapTraceForRunEvent(raw, trace, fallbackLookup) {
+  const parsed = parseInput(raw);
+  const parseSource = trace && trace.parse && typeof trace.parse === 'object'
+    ? trace.parse
+    : parsed;
+  const lookupSource = trace && trace.lookup && typeof trace.lookup === 'object'
+    ? trace.lookup
+    : fallbackLookup;
+  const phasesSource = trace && trace.phases && typeof trace.phases === 'object'
+    ? trace.phases
+    : {};
+  const outcomeSource = trace && trace.outcome && typeof trace.outcome === 'object'
+    ? trace.outcome
+    : { ok: false, phase: 'lookup', code: 'UNKNOWN_COMMAND' };
+
+  return {
+    parse: {
+      intentToken: nullableString(parseSource.intentToken),
+      canonicalInput: typeof parseSource.canonicalInput === 'string' ? parseSource.canonicalInput : '',
+      normalizedInput: typeof parseSource.normalizedInput === 'string' ? parseSource.normalizedInput : '',
+      primaryTargetSpan: Array.isArray(parseSource.primaryTargetSpan) ? parseSource.primaryTargetSpan : null,
+      relationToken: nullableString(parseSource.relationToken),
+      secondaryTargetSpan: Array.isArray(parseSource.secondaryTargetSpan) ? parseSource.secondaryTargetSpan : null,
+    },
+    lookup: {
+      commandFound: !!lookupSource.commandFound,
+      commandName: nullableString(lookupSource.commandName),
+      alias: nullableString(lookupSource.alias),
+    },
+    phases: phasesSource,
+    outcome: {
+      ok: !!outcomeSource.ok,
+      phase: nullableString(outcomeSource.phase) || (outcomeSource.ok ? 'success' : 'runtime'),
+      code: nullableString(outcomeSource.code) || (outcomeSource.ok ? 'OK' : 'COMMAND_FAILED'),
+      errorTag: nullableString(outcomeSource.errorTag),
+    },
+  };
 }
 
 function resolveLogLevel(text, fallback) {
@@ -624,7 +704,6 @@ async function main() {
   const parsedCommands = commandLines.map(parseCommandLine).filter(Boolean);
   const roomRef = scenarioConfig.roomRef;
   const seedRefs = scenarioConfig.seedRefs;
-  const throughInput = args.includes('--throughInput');
   const failOnUnknown = args.includes('--failOnUnknown');
   const jsonOutput = args.includes('--json');
 
@@ -648,11 +727,11 @@ async function main() {
   const GameState = await bootEngine(root, config);
   const output = [];
   const player = createFakePlayer(output, GameState);
-  const inputListeners = throughInput ? getMainInputListeners(GameState) : [];
-  if (throughInput && inputListeners.length === 0) {
+  const inputListeners = getMainInputListeners(GameState);
+  if (inputListeners.length === 0) {
     throw new Error('No input-event listeners are registered for "main"');
   }
-  const inputSession = throughInput ? createInGameSession(player) : null;
+  const inputSession = createInGameSession(player);
 
   if (roomRef) {
     const room = GameState.RoomManager.getRoom(roomRef);
@@ -680,18 +759,21 @@ async function main() {
 
   if (jsonOutput) {
     emitEvent({ type: 'start', commands: parsedCommands.length });
-  } else {
-    console.log(`[info] scenario starting (commands=${parsedCommands.length})`);
   }
   let unknownCount = 0;
 
   for (let i = 0; i < parsedCommands.length; i += 1) {
     const commandSpec = parsedCommands[i];
+    if (!jsonOutput) {
+      process.stdout.write(`> ${commandSpec.raw}\n`);
+    }
+
+    /** @type {Record<string, *> | null} */
+    let runEvent = null;
 
     if (jsonOutput) {
-      emitEvent({ type: 'run', index: i + 1, raw: commandSpec.raw });
-    } else {
-      console.log(`[run] ${i + 1}/${parsedCommands.length}: ${commandSpec.raw}`);
+      runEvent = { type: 'run', index: i + 1, raw: commandSpec.raw };
+      emitEvent(runEvent);
     }
 
     if (commandSpec.type === 'playerEmit') {
@@ -703,41 +785,66 @@ async function main() {
       } else {
         player.emit(commandSpec.event, commandSpec.args);
       }
+      if (runEvent) {
+        Object.assign(runEvent, {
+          parse: {
+            intentToken: null,
+            canonicalInput: '',
+            normalizedInput: '',
+            primaryTargetSpan: null,
+            relationToken: null,
+            secondaryTargetSpan: null,
+          },
+          lookup: {
+            commandFound: false,
+            commandName: null,
+            alias: null,
+          },
+          phases: {
+            input: { ok: true, code: 'PLAYER_EVENT' },
+          },
+          outcome: {
+            ok: true,
+            phase: 'success',
+            code: 'PLAYER_EVENT',
+            errorTag: null,
+          },
+        });
+      }
       flushOutput(output, emitOutput);
       continue;
     }
 
-    const commandName = commandSpec.name.toLowerCase();
-    if (throughInput) {
-      const { command } = resolveCommandExact(GameState, commandName);
-      for (const listener of inputListeners) {
-        await listener(inputSession, commandSpec.raw);
+    const intentToken = resolveCanonicalIntent(commandSpec.raw);
+    const { command, alias } = resolveCommandExact(GameState, intentToken);
+    const fallbackLookup = {
+      commandFound: !!command,
+      commandName: command && typeof command.name === 'string' ? command.name : (intentToken || null),
+      alias: alias || null,
+    };
+
+    /** @type {Record<string, *> | null} */
+    let commandTrace = null;
+    for (const listener of inputListeners) {
+      const listenerResult = await listener(inputSession, commandSpec.raw);
+      if (isCommandTraceInternal(listenerResult)) {
+        commandTrace = listenerResult;
       }
-      if (!command) {
+    }
+
+    if (runEvent) {
+      Object.assign(runEvent, mapTraceForRunEvent(commandSpec.raw, commandTrace, fallbackLookup));
+      const outcome = runEvent.outcome && typeof runEvent.outcome === 'object'
+        ? /** @type {Record<string, *>} */ (runEvent.outcome)
+        : null;
+      if (outcome && outcome.code === 'UNKNOWN_COMMAND') {
         unknownCount += 1;
         emitEvent({ type: 'unknown', index: i + 1, raw: commandSpec.raw });
       }
-      flushOutput(output, emitOutput);
-      continue;
-    }
-
-    const movement = resolveMovementCommand(player, commandName);
-    if (movement) {
-      player.emit('move', { roomExit: movement.roomExit, originalCommand: movement.direction });
-      flushOutput(output, emitOutput);
-      continue;
-    }
-
-    const { command, alias } = resolveCommandExact(GameState, commandName);
-    if (!command) {
+    } else if (commandTrace && commandTrace.outcome && commandTrace.outcome.code === 'UNKNOWN_COMMAND') {
       unknownCount += 1;
-      player.send('What?');
-      emitEvent({ type: 'unknown', index: i + 1, raw: commandSpec.raw });
-      flushOutput(output, emitOutput);
-      continue;
     }
 
-    await command.execute(commandSpec.args, player, alias);
     flushOutput(output, emitOutput);
   }
 
@@ -764,8 +871,6 @@ async function main() {
     } else {
       process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
     }
-  } else {
-    console.log(`[info] scenario complete (commands=${parsedCommands.length}, unknown=${unknownCount}, failed=${failed})`);
   }
   process.exit(failed);
 }
