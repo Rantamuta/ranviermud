@@ -199,7 +199,12 @@ Perspective variant behavior in v1:
 - `.you` is recipient-relative:
   - resolves to `you` when recipient is that participant
   - otherwise resolves to participant display name
-- `.name` always resolves to participant display name
+- participant display names in v1:
+  - `actor` display name is treated as a proper name and capitalized
+  - `target` display name is kind-sensitive:
+    - character-like targets (player/NPC shape) => capitalized proper name
+    - non-character targets (objects/details) => preserve authored casing
+- `.name` resolves to participant display name using the rules above
 - `.poss`:
   - resolves to `your` when recipient is that participant
   - otherwise uses participant pronoun possessive when `pronoun` is declared (`he -> his`, `she -> her`, `it -> its`)
@@ -207,7 +212,7 @@ Perspective variant behavior in v1:
     - character-like entities (player/NPC shape) => name possessive (for example `Bar's`)
     - non-character entities => `its`
 - `.name_poss`:
-  - always resolves to name possessive form (for example `Bar's`)
+  - always resolves to name possessive form derived from participant display name (for example `Bar's`)
   - does not use recipient-relative `your`
   - does not use pronoun possessive forms
 - `.refl`:
