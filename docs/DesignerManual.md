@@ -253,17 +253,16 @@ node util/scenario-runner.js --room test:lab --command "look"
 Expected runner output:
 
 ```text
-[info] scenario starting (commands=1)
-[run] 1/1: look
-[info] scenario complete (commands=1, unknown=0, failed=0)
+> look
+<bold>Test Lab</bold>
+...
 ```
 
 What this means:
 
-- `scenario starting`: runner booted and queued your command list.
-- `[run] 1/1: look`: it executed command 1 of 1.
-- `unknown=0`: no unknown commands were seen.
-- `failed=0`: process exit code is success.
+- `> look`: scenario-runner echoes command input like a user prompt.
+- following lines are server output as captured.
+- use exit code (and `--failOnUnknown`) to determine pass/fail in scripts.
 
 Run multiple commands in order:
 
@@ -277,29 +276,13 @@ node util/scenario-runner.js \
 
 Useful flags:
 
-- `--throughInput`: routes command text through normal input handling (recommended for command-feel checks).
 - `--room <area:roomId>`: start in a specific room.
 - `--seedInventory <area:itemId>`: seed item(s) into player inventory before commands.
 - `--seedRoomItem <area:itemId>`: seed item(s) into the current room before commands.
 - `--failOnUnknown`: exit non-zero if any unknown command appears.
 - `--json`: emit machine-readable output (useful for tooling).
 
-`--throughInput` explained:
-
-- This path sends each command line through the `main` input event, like real player input.
-- It exercises parser/canonicalization and command dispatch the same way telnet input does.
-- Use this when you want gameplay-faithful behavior.
-
-Example with `--throughInput`:
-
-```bash
-node util/scenario-runner.js --throughInput --room test:lab --command "look"
-```
-
-Without `--throughInput`:
-
-- Scenario-runner resolves the command by exact key/alias and calls command execution directly.
-- This is useful for lower-level command checks, but it skips parts of the input pipeline.
+Scenario-runner command execution always goes through normal input handling (`InputEvent "main"`), so it follows the same parser/canonicalization/dispatch path as live player input.
 
 ### Run from the testing framework
 
@@ -332,7 +315,7 @@ command: put apple in chest
 Run it:
 
 ```bash
-node util/scenario-runner.js --throughInput --scenario path/to/my.scenario
+node util/scenario-runner.js --scenario path/to/my.scenario
 ```
 
 Supported directives:
