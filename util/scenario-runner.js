@@ -795,7 +795,7 @@ async function main() {
   for (let i = 0; i < parsedCommands.length; i += 1) {
     const commandSpec = parsedCommands[i];
     if (!jsonOutput) {
-      process.stdout.write(`> ${commandSpec.raw}\n`);
+      process.stdout.write(`${commandSpec.raw}\n`);
     }
 
     /** @type {Record<string, *> | null} */
