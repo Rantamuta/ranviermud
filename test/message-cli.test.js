@@ -118,3 +118,16 @@ test('message CLI falls back to its for non-character targets without pronoun', 
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.equal(result.stdout.trim(), 'Foo polishes Lantern and admires its shine.');
 });
+
+test('message CLI supports actor/target capitalization placeholders', () => {
+  const result = runCli([
+    '{actor.You} {verb:stab} {target.you} in {target.Poss} neck.',
+    '--actor', '{"name":"Foo","pronoun":"he"}',
+    '--target', '{"name":"Bar","pronoun":"she"}',
+    '--pov', 'other',
+    '--audience', 'self_target_and_others',
+  ]);
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(result.stdout.trim(), 'Foo stabs Bar in Her neck.');
+});
