@@ -217,6 +217,13 @@ Perspective variant behavior in v1:
     - character-like entities (player/NPC shape) => `themself`
     - non-character entities => `itself`
 
+Placeholder capitalization in v1:
+
+- `actor.*` and `target.*` placeholders support optional title-case token segments to capitalize the resolved token value.
+  - examples: `{actor.You}`, `{target.Poss}`, `{target.Name_poss}`
+- capitalization is token-local (only that placeholder output is capitalized).
+- capitalization does not apply to `{verb:...}` or `{object.*}` tokens in v1.
+
 Supported participant pronouns in v1:
 
 - `he`
