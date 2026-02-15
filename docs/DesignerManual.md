@@ -281,6 +281,7 @@ Useful flags:
 - `--seedRoomItem <area:itemId>`: seed item(s) into the current room before commands.
 - `--failOnUnknown`: exit non-zero if any unknown command appears.
 - `--json`: emit machine-readable output (useful for tooling).
+- `--whitespace`: with `--json`, keep blank/ANSI-only output lines instead of filtering them.
 
 Scenario-runner command execution always goes through normal input handling (`InputEvent "main"`), so it follows the same parser/canonicalization/dispatch path as live player input.
 
