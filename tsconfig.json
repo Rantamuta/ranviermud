@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "types": [
+      "node",
+      "mocha"
+    ]
+  },
+  "include": [
+    "bundles/bundle-rantamuta/lib/**/*.js",
+    "bundles/bundle-rantamuta/commands/**/*.js",
+    "bundles/bundle-rantamuta/input-events/**/*.js",
+    "bundles/bundle-rantamuta/server-events/**/*.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/node_modules/**",
+    "bundles/bundle-rantamuta/areas/**",
+    "bundles/bundle-rantamuta/tests/**",
+    "test/**"
+  ]
+}

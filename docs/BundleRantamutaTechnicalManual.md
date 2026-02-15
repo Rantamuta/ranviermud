@@ -53,6 +53,7 @@ Entity resolution:
 Mutation/commit:
 
 - `bundles/bundle-rantamuta/lib/session/mutator.js`
+- `bundles/bundle-rantamuta/lib/session/post-commit-dispatch.js`
 
 Room rendering:
 
@@ -212,15 +213,21 @@ Bubble contributions are accumulated from:
 
 Contribution shape accepted:
 
-1. `{ operations: [...], render: { lines: [...] } }`
-2. arrays of those
-3. legacy single-operation object
+1. `{ render: { lines: [...] } }`
+2. `{ postCommit: [...] }`
+3. arrays of contribution objects
 
 Bubble does not veto.
 
+Important runtime guard:
+
+1. bubble `operations` are forbidden,
+2. dispatcher logs a contract error and ignores forbidden content,
+3. command continues on the success path.
+
 ### Phase 5: Commit
 
-`Mutator.applyMutationPlan(state, mergedPlan)` applies base plan + bubble operations.
+`Mutator.applyMutationPlan(state, plan)` applies command target/base operations only.
 
 Current instruction types:
 
@@ -247,7 +254,27 @@ Invariant enforcement in mutator:
 1. Failure messages resolved by dispatcher (`command.metadata.errorMessages` then defaults).
 2. Success lines rendered only after successful commit.
 3. Bubble-added render lines append after target render lines.
-4. Prompt is emitted at end when player/socket is still active.
+4. Post-commit delivery queue runs after render (best-effort, no rollback impact).
+5. Prompt is emitted at end when player/socket is still active.
+
+Current post-commit delivery DSL (v1):
+
+1. instruction type: `broadcast` only.
+2. selector-based targeting only (no raw target object pointers in payload):
+   - `targetSelector`: `currentPlayer | currentRoom | currentArea | roomByRef`
+   - `exceptSelector`: `currentRoomTargets | targetsByRoomRef`
+   - selector data fields: `targetRoomRef`, `exceptRoomRef` (when selector requires room reference)
+3. audience kinds:
+   - `player`
+   - `room`
+   - `area`
+   - `areaExceptTargets`
+
+Queue merge and execution order:
+
+1. command success envelope `postCommit` entries first,
+2. bubble `postCommit` entries second (bubble subject order),
+3. execute after successful commit and after render lines are sent.
 
 ## Internal trace and scenario diagnostics
 
@@ -377,11 +404,11 @@ Bell Tower examples:
 1. `ritualPutTarget.js`:
    - validates accepted offerings on indirect `put`,
    - contributes success flavor via bubble render lines,
+   - enqueues ritual-completion post-commit broadcasts when the final required offering is planned,
    - syncs item descriptions based on contained ritual item.
 2. `bellCryptGate.js`:
    - defines render predicates for slab/runes state,
-   - gates `go down` using exit metadata requirements,
-   - emits area/room broadcast messages when puzzle opens.
+   - gates `go down` using exit metadata requirements.
 3. `*Guard.js` item scripts:
    - prevent removing ritual items once placed.
 

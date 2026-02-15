@@ -15,6 +15,11 @@ This directory contains behavior contracts that are normative for this repositor
 - `EntityResolution.md`
   - Defines read-only entity binding, deterministic scope/disambiguation behavior, and resolver failure ownership.
 
+## Related implementation docs (non-normative)
+
+- `../BundleRantamutaTechnicalManual.md`
+  - Bundle-level implementation map (file-by-file runtime flow, hooks, mutator, rendering, and scenario/test surfaces).
+
 ## Proposed normative extensions (in review)
 
 - <none>
