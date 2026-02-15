@@ -54,6 +54,11 @@ Mutation/commit:
 
 - `bundles/bundle-rantamuta/lib/session/mutator.js`
 - `bundles/bundle-rantamuta/lib/session/post-commit-dispatch.js`
+- `bundles/bundle-rantamuta/lib/session/semantic-message.js`
+
+Semantic messaging harness (tooling):
+
+- `util/message.js`
 
 Room rendering:
 
@@ -259,7 +264,9 @@ Invariant enforcement in mutator:
 
 Current post-commit delivery DSL (v1):
 
-1. instruction type: `broadcast` only.
+1. instruction types:
+   - `broadcast`
+   - `semanticEvent`
 2. selector-based targeting only (no raw target object pointers in payload):
    - `targetSelector`: `currentPlayer | currentRoom | currentArea | roomByRef`
    - `exceptSelector`: `currentRoomTargets | targetsByRoomRef`
@@ -275,6 +282,16 @@ Queue merge and execution order:
 1. command success envelope `postCommit` entries first,
 2. bubble `postCommit` entries second (bubble subject order),
 3. execute after successful commit and after render lines are sent.
+
+`semanticEvent` runtime behavior (current implementation):
+
+1. render is perspective-aware for `self`, `target`, and `other`.
+2. actor display names are treated as proper names and capitalized.
+3. target display names are kind-sensitive:
+   - player/NPC shape (`isNpc` boolean) => capitalized proper name,
+   - non-character/object targets => authored casing preserved.
+4. pronouns currently supported in renderer: `he`, `she`, `it`.
+5. renderer is pure text transformation; dispatch owns audience delivery.
 
 ## Internal trace and scenario diagnostics
 
@@ -330,9 +347,11 @@ Examples:
    - direct and directIndirect
    - direct scope: `player.inventory`
    - indirect scope: `player.inventory`, `room.items`
+   - success path contributes `postCommit` `semanticEvent` narration.
 4. `take`:
    - direct only
    - scope includes nested room items and nested carried containers.
+   - success path contributes `postCommit` `semanticEvent` narration.
 
 ## Room details and inspectables
 

@@ -86,6 +86,68 @@ Supported command intents in `bundle-rantamuta`:
 - `put` (`place`, `drop`)
 - `inventory` (`i`)
 
+## Semantic Message Templates
+
+Semantic message templates let one event render differently for actor, target, and bystanders.
+
+Example idea:
+
+- actor sees: `You take the seal.`
+- others see: `Rendall takes the seal.`
+
+Useful placeholders:
+
+- `{actor.you}` / `{target.you}`
+- `{actor.name}` / `{target.name}`
+- `{actor.poss}` / `{target.poss}`
+- `{actor.name_poss}` / `{target.name_poss}`
+- `{actor.refl}` / `{target.refl}`
+- `{verb:take}` (recipient-aware verb inflection)
+- `{object.direct}` / `{object.indirect}`
+
+Practical naming behavior in v1:
+
+- `actor` names are treated as proper names (capitalized).
+- `target` names are kind-sensitive:
+  - player/NPC targets are capitalized (`Bar`).
+  - non-character/object targets keep authored casing (`rusty sword` stays lowercase if authored lowercase).
+
+Pronouns in v1:
+
+- supported values: `he`, `she`, `it`
+- without a pronoun:
+  - character-like targets fall back to name possessive (`Bar's`)
+  - non-character targets fall back to `its` / `itself`
+
+Token-local capitalization:
+
+- You can force capitalization on actor/target tokens by using a title-cased token segment.
+- examples: `{actor.You}`, `{target.Poss}`, `{target.Name_poss}`
+- this applies to actor/target tokens only (not verbs or object slots).
+
+### Template Harness CLI
+
+Use `util/message.js` to test templates quickly without running the game loop:
+
+```bash
+node util/message "{actor.you} {verb:stab} {target.you} in {target.poss} neck!" \
+  --actor '{"name":"foo","pronoun":"he","isNpc":false}' \
+  --target '{"name":"bar","pronoun":"she","isNpc":true}' \
+  --pov self \
+  --audience self_target_and_others
+```
+
+Expected output:
+
+```text
+You stab Bar in her neck!
+```
+
+Notes:
+
+- JSON input is recommended for clarity.
+- Relaxed input (`{name:bar,isNpc:true}`) is also supported and now parses boolean fields (`true` / `false`).
+
 ## Authoring Rooms
 
 Minimal room shape:
