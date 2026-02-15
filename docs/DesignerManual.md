@@ -118,6 +118,37 @@ Current room rendering convention (`look`, arrival render):
 3. exits line (`Exits: north, west`) when exits exist
 4. room item lines (`roomDesc` if present, else fallback)
 
+## Room Details (Scenery You Can Look At)
+
+Sometimes you want players to inspect room nouns without creating full items.
+Use `metadata.details` for that (under `metadata`, not top-level room fields).
+
+Example:
+
+```yml
+- id: bell_courtyard
+  title: "Bell Courtyard"
+  description: "Broken flagstones ring a weathered bell-shrine."
+  metadata:
+    details:
+      - name: "bell-shrine"
+        keywords: [ "bell-shrine", "shrine", "bell", "flagstones" ]
+        description: "The weathered shrine is veined with old cracks."
+        verbs:
+          take: "The shrine is part of the courtyard stone."
+```
+
+What this gives you:
+
+- `look bell-shrine` resolves and shows the detail description.
+- Non-`look` commands against a detail are denied.
+- If `verbs.<verbId>` exists on that detail, that text is used for the denial.
+
+Current bundle behavior:
+
+- `look` direct scope order is `room.items`, then `room.details`, then `player.inventory`.
+- `take/get` scope order includes `room.details` so detail-specific denial text can be shown.
+
 ## Authoring Items
 
 Minimal item shape:
@@ -237,6 +268,69 @@ metadata:
     rejectMessage: "That does not belong in the bell."
     successRender: "A low hum rolls through the chamber."
 ```
+
+## Stateful Room Descriptions
+
+You can vary room text based on current world state without putting branching logic in command files.
+
+Use these metadata fields on the room:
+
+- `metadata.descriptionVariants`: optional full-description replacements (first matching variant wins).
+- `metadata.descriptionFragments`: optional extra lines appended after the chosen description (all matching fragments are appended in order).
+
+Variant example (first match wins):
+
+```yml
+metadata:
+  descriptionVariants:
+    - when: ritual_complete
+      text: "The chamber rings with warm harmonic light."
+    - when: ritual_started
+      text: "A faint tremor rolls through the chamber."
+```
+
+Example:
+
+```yml
+- id: bell_crypt
+  title: "Bell Crypt"
+  description: "A low crypt of damp stone holds offerings and a basin etched with old runes."
+  script: bellCryptGate
+  metadata:
+    descriptionFragments:
+      - when: slab_blocking
+        text: "A dull stone slab blocks the descent."
+      - when: slab_open
+        text: "A heavy slab has been forced aside, revealing stone stairs descending into darkness."
+```
+
+Then define the predicate keys in the room script (`scripts/rooms/bellCryptGate.js`) by attaching `renderPredicates` during `spawn`:
+
+```js
+module.exports = {
+  listeners: {
+    spawn: state => function onSpawn() {
+      this.renderPredicates = {
+        ...(this.renderPredicates || {}),
+        slab_open: () => {
+          // return true when puzzle state says descent is open
+          return true;
+        },
+        slab_blocking: () => {
+          // return true while descent is still blocked
+          return false;
+        },
+      };
+    },
+  },
+};
+```
+
+Tips:
+
+- Keep render predicates read-only; they should compute from state and return booleans.
+- Avoid side effects inside predicates.
+- Arrival render and intransitive `look` both use the same room-view builder, so this text stays consistent.
 
 ## Scenario Runner
 
