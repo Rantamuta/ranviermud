@@ -18,6 +18,7 @@
     "remove-bundle": "node ./util/remove-bundle.js",
     "install-bundle": "node ./util/install-bundle.js",
     "smoke:login": "node ./scripts/smoke-login.js",
+    "typecheck": "tsc --project tsconfig.json --pretty false",
     "test": "mocha \"**/*.test.js\" --ignore \"**/node_modules/**\"",
     "bundle:install": "node util/install-bundle.js",
     "bundle:remove": "node util/remove-bundle.js",
@@ -43,7 +44,8 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^25.2.3",
     "git-url-parse": "^16.1.0",
-    "mocha": "^11.7.5"
+    "mocha": "^11.7.5",
+    "typescript": "^5.9.3"
   },
   "overrides": {
     "glob": "13.0.1"

@@ -202,9 +202,13 @@ Rules:
 - Reaction hook contract is `bubbleEvent(action, context)`.
 - `bubbleEvent(action, context)` is synchronous.
 - If `bubbleEvent` is not implemented on an entity, that entity contributes nothing.
-- Hooks may append reaction instructions/events.
+- Bubble contributions are data-only and may include:
+  - `render.lines`
+  - `postCommit` (delivery-only broadcast instructions)
+- Bubble contributions must not include mutation operations.
+- If forbidden bubble keys are returned (for example `operations`), dispatcher logs a contract error, ignores forbidden content, and continues.
 - Hooks must not directly mutate world state or emit output.
-- Bubble contributions are data-only and may be evaluated repeatedly without changing world state.
+- Bubble contributions may be evaluated repeatedly without changing world state.
 - Bubble hooks cannot deny an action that has already passed Capture/Target.
 - Hooks must be deterministic for identical input/state.
 
@@ -219,13 +223,8 @@ Determinism constraints for bubble hooks:
 
 Rules:
 
-- Merge base plan + bubble contributions into one plan.
-- Merge semantics:
-  - operation order is deterministic and append-only
-  - base plan operations run first, then bubble operations in bubble phase order
-  - no dedupe
-  - no conflict resolution layer beyond operation order
-  - validation/failure is handled by mutator apply
+- Commit applies the Target/base mutation plan only.
+- Bubble does not contribute mutation operations.
 - Apply with compensating rollback:
   - mutator applies operations in order
   - if one operation fails, mutator runs recorded undo handlers in reverse order
@@ -239,6 +238,15 @@ Rules:
 - Output derives from committed semantic events.
 - Delivery order is deterministic.
 - No success narration before successful commit.
+- Post-commit delivery queue executes only after successful commit and render.
+- Post-commit queue merge order is deterministic:
+  - command success envelope `postCommit` first
+  - bubble `postCommit` second (bubble subject order)
+- Post-commit in v1 is delivery-only broadcast DSL, not mutation.
+- Post-commit dispatch failures are best-effort:
+  - instruction failure is logged and counted
+  - remaining instructions continue
+  - command outcome remains success when commit already succeeded
 
 Non-command render path:
 

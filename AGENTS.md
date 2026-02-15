@@ -30,6 +30,16 @@ Agents working in this repository must act as **senior maintainers**.
 - No “cleanup” refactors for style or aesthetics.
 - No new features beyond maintenance and playability fixes.
 
+## Bundle layering boundary
+
+For `bundles/bundle-rantamuta`, maintain a strict separation between runtime infrastructure and authored game content:
+
+- `lib/**` and `commands/**` are content-agnostic runtime layers.
+- `areas/**` contains content-specific behavior, IDs, scripts, and puzzle logic.
+- Runtime layers must not hardcode area/room/item IDs, puzzle names, or area-specific selectors.
+- Dependency direction is one-way: `areas/**` may depend on runtime helpers; runtime layers must not depend on area content.
+- If runtime behavior needs content context, pass it as data from area scripts/command results rather than embedding content references in runtime modules.
+
 ## Runtime compatibility policy
 
 - Target runtime: **Node 22 LTS**.

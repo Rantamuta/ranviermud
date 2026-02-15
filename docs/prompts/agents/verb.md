@@ -82,6 +82,9 @@ Print this table and fill every row with `KNOWN` or `UNKNOWN`:
 8. For success narration, declare and apply a deterministic label policy (prefer resolved spans when present; otherwise fall back to entity names).
 9. Do not mutate `context`, `context.entityResolution`, or any bound entity during planning. Treat them as immutable inputs.
 10. Provide a failure-output matrix for this verb covering resolver/planner/capture/commit failure codes and where text mapping is owned.
+11. `postCommit` is delivery-only broadcast data. Do not use it for mutation.
+12. `postCommit` payloads must use selector fields (`targetSelector`, `exceptSelector`) and must not carry raw object pointers.
+13. Bubble contributions may include `render.lines` and/or `postCommit` only; bubble must not return mutation operations.
 
 ## Tests required
 
@@ -146,6 +149,8 @@ Run and report:
 - Use stable failure codes; map messages in command metadata (`errorMessages`)
 - If new mutation behavior is needed, add/extend mutator instruction handlers atomically and safely
 - Success paths must render player-visible feedback via render payload and/or bubble render additions unless explicitly declared as intentionally silent.
+- If using `postCommit`, keep instructions broadcast-only and selector-driven.
+- Bubble reaction data must remain non-mutating (`render` + `postCommit` only).
 
 ## Deliverables
 
