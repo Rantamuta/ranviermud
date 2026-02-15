@@ -164,7 +164,7 @@ function parseEntityLiteral(input) {
         continue;
       }
       const key = stripQuotes(pair.slice(0, idx).trim());
-      const value = stripQuotes(pair.slice(idx + 1).trim());
+      const value = parseRelaxedScalar(pair.slice(idx + 1).trim());
       if (key) {
         obj[key] = value;
       }
@@ -182,6 +182,35 @@ function parseEntityLiteral(input) {
 function stripQuotes(value) {
   const trimmed = normalize(value);
   return trimmed.replace(/^["']|["']$/g, '');
+}
+
+/**
+ * Parse one relaxed object scalar from CLI input.
+ *
+ * Examples:
+ * - `true` -> boolean true
+ * - `false` -> boolean false
+ * - `null` -> null
+ * - quoted strings and bare tokens -> string
+ *
+ * @param {string} value
+ * @returns {string | boolean | null}
+ */
+function parseRelaxedScalar(value) {
+  const trimmed = normalize(value);
+  const unquoted = stripQuotes(trimmed);
+  const lower = unquoted.toLowerCase();
+
+  if (lower === 'true') {
+    return true;
+  }
+  if (lower === 'false') {
+    return false;
+  }
+  if (lower === 'null') {
+    return null;
+  }
+  return unquoted;
 }
 
 function printUsage() {
