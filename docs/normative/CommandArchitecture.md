@@ -46,7 +46,7 @@ Rules:
     - `n` -> `go north`
     - `east` -> `go east`
     - `l` -> `look`
-    - `x <thing>` -> `look at <thing>`
+    - `x <thing>` -> `look <thing>`
 - Normalize and parse canonical input into command artifact/context.
 - Parse artifact must preserve both:
   - `actorInput` (raw user text, unexpanded)
