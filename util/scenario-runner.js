@@ -24,6 +24,7 @@
  * - `--playerEmit:<event> [args]`: emit player events (e.g., `--playerEmit:move east`).
  * - `--failOnUnknown`: exit non-zero if any unknown commands are encountered.
  * - `--json`: emit machine-readable JSON (includes log capture events).
+ * - `--whitespace`: with --json, include blank/ANSI-only output lines.
  */
 const fs = require('fs');
 const path = require('path');
@@ -47,6 +48,7 @@ function printHelp() {
   console.log('       --scenario             load directives from .scenario files');
   console.log('       --failOnUnknown        exit non-zero if any unknown commands are encountered');
   console.log('       --json                 emit machine-readable JSON output');
+  console.log('       --whitespace           with --json, keep blank/ANSI-only output lines');
   console.log('       --seedInventory        seed an item into player inventory (repeatable)');
   console.log('       --seedRoomItem         seed an item into the current room (repeatable)');
   console.log('Boots the engine in no-transport mode, loads bundles, and executes commands through InputEvent "main".');
@@ -507,6 +509,27 @@ function flushOutput(output, emitOutput) {
 }
 
 /**
+ * @param {string} text
+ * @returns {string}
+ */
+function stripAnsi(text) {
+  return String(text).replace(
+    // Adapted ANSI escape matcher (CSI and related sequences).
+    // eslint-disable-next-line no-control-regex
+    /[\u001B\u009B][[\]()#;?]*(?:(?:(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-ntqry=><]))/g,
+    ''
+  );
+}
+
+/**
+ * @param {string} text
+ * @returns {boolean}
+ */
+function isBlankOrAnsiOnly(text) {
+  return stripAnsi(text).trim().length === 0;
+}
+
+/**
  * @param {*} value
  * @returns {value is { parse?: Record<string, *>, lookup?: Record<string, *>, phases?: Record<string, *>, outcome?: Record<string, *> }}
  */
@@ -706,6 +729,7 @@ async function main() {
   const seedRefs = scenarioConfig.seedRefs;
   const failOnUnknown = args.includes('--failOnUnknown');
   const jsonOutput = args.includes('--json');
+  const includeWhitespace = args.includes('--whitespace');
 
   if (!parsedCommands.length) {
     throw new Error('No commands were provided to execute');
@@ -718,7 +742,13 @@ async function main() {
     }
   };
   const emitOutput = jsonOutput
-    ? (text) => emitEvent({ type: 'output', text })
+    ? (text) => {
+      const line = String(text);
+      if (!includeWhitespace && isBlankOrAnsiOnly(line)) {
+        return;
+      }
+      emitEvent({ type: 'output', text: line });
+    }
     : null;
   const logCapture = jsonOutput ? createLogCapture(emitEvent) : null;
   activeLogCapture = logCapture;
