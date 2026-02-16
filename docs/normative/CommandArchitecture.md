@@ -195,6 +195,43 @@ Rules:
   contribute semantic-event instructions.
 - Must not mutate world state directly.
 
+Optional entity target-contribution surface:
+
+- Commands may optionally consult bound entities for target-phase contribution
+  data after Entity Resolution and after Capture has passed.
+- This surface is data-only and must not perform side effects.
+- Contribution hooks are advisory to the command; command logic remains final
+  authority over what is accepted into the target result envelope.
+- Contribution data may influence:
+  - success narration override/replacement
+  - additional target-approved mutator instructions
+- Contribution data must not:
+  - deny/veto an action (veto ownership remains Capture)
+  - mutate world state
+  - emit audience output directly
+
+Target contribution contract:
+
+- Hook name: `targetContribution(action, context)` (synchronous)
+- Return values:
+  - `null`/`undefined` => no contribution
+  - object contribution payload => candidate contribution
+- Invalid contribution payloads must be treated as no contribution or ignored
+  with diagnostics; they must not crash command execution.
+
+Target contribution precedence:
+
+1. command baseline target plan/render
+2. target contributions from bound entities (direct/indirect as applicable),
+   in command-declared precedence
+3. command validation/normalization pass (final authority)
+
+Layering rule:
+
+- Runtime infrastructure (`lib/**`, `commands/**`) must not hardcode
+  area/item/room IDs for target contributions.
+- Content-specific contribution behavior belongs in `areas/**` scripts/metadata.
+
 ### 4) Bubble (reaction phase)
 
 Order (reverse specificity):
@@ -274,6 +311,7 @@ Non-command render path:
 Two hook kinds are used across phases:
 
 - Policy hook (capture): allow/deny only.
+- Target contribution hook (target): data-only contribution, no veto, no direct mutation/output.
 - Reaction hook (bubble): `bubbleEvent(action, context)` appends semantic-event instructions only.
 
 This split prevents veto/mutation ambiguity and keeps behavior predictable.
