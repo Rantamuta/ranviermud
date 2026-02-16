@@ -204,7 +204,7 @@ Optional entity target-contribution surface:
   authority over what is accepted into the target result envelope.
 - Contribution data may influence:
   - success narration override/replacement
-  - additional target-approved mutator instructions
+  - additional target-approved mutator instructions (deferred)
 - Contribution data must not:
   - deny/veto an action (veto ownership remains Capture)
   - mutate world state
@@ -219,12 +219,66 @@ Target contribution contract:
 - Invalid contribution payloads must be treated as no contribution or ignored
   with diagnostics; they must not crash command execution.
 
+Target contribution payload (v1, locked):
+
+```js
+{
+  narration?: {
+    mode: 'replace' | 'append',
+    instructions: Array<{ type: 'semanticEvent', ... }>
+  }
+}
+```
+
+Payload rules (v1):
+
+- `narration.instructions` is required when `narration` is present.
+- For action commands, `narration.instructions` entries must be
+  `semanticEvent` instructions.
+- Empty instruction arrays are treated as no contribution.
+- Unknown payload keys are ignored.
+
+Action argument shape passed to target contributions:
+
+```js
+{
+  phase: 'target',
+  verbId: string,
+  role: 'direct' | 'indirect',
+  relationTokenCanonical: string | null,
+}
+```
+
+Contribution merge semantics (v1):
+
+1. Command produces baseline Target result envelope.
+2. Candidate contributors are evaluated in this precedence order:
+   - direct target
+   - indirect target
+3. First valid `narration` contribution wins.
+4. Apply winner relative to command baseline:
+   - `mode: 'replace'` => replace Target success `render.instructions`
+   - `mode: 'append'` => append to Target success `render.instructions`
+5. Bubble render instructions are merged later in normal Bubble order; target
+   contribution precedence does not alter Bubble ordering.
+
+Failure/invalid behavior (v1):
+
+- Hook throws => log diagnostics and ignore that contribution.
+- Invalid payload => log diagnostics and ignore that contribution.
+- No valid contribution => baseline command target render behavior remains.
+
 Target contribution precedence:
 
 1. command baseline target plan/render
 2. target contributions from bound entities (direct/indirect as applicable),
-   in command-declared precedence
+   with fixed v1 precedence: direct target, then indirect target
 3. command validation/normalization pass (final authority)
+
+Scope note for v1:
+
+- Target contribution support in v1 is narration-only (`narration` payload).
+- Plan augmentation by target contributions is explicitly deferred.
 
 Layering rule:
 
