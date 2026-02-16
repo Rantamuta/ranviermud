@@ -23,7 +23,7 @@ This directory contains behavior contracts that are normative for this repositor
 ## Proposed normative extensions (in review)
 
 - `SemanticMessaging.md`
-  - Draft semantic-event render/dispatch contract for perspective-aware audience messaging via post-commit delivery.
+  - Draft semantic-event render/dispatch contract for perspective-aware audience messaging via render-phase delivery instructions.
 
 ## Precedence
 
