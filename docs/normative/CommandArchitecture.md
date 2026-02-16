@@ -22,6 +22,11 @@ Core principle:
 - Mutator executes.
 - Hooks govern policy and reactions around the verb plan.
 
+Messaging contract boundary:
+
+- This command contract applies to diegetic command execution inside this phase pipeline.
+- System commands/lifecycle output paths are outside this command messaging contract.
+
 ## Phase Model
 
 Execution phases are:
@@ -182,6 +187,12 @@ Rules:
 - Returns either:
   - failure envelope, or
   - base mutation plan.
+- Target render contributions for action commands must be semantic-event instructions
+  (`render.instructions` entries with `type: 'semanticEvent'`).
+- For action commands, Target must not contribute `render.lines`.
+- Information-only commands (for example `look`; future commands such as `read`
+  or `smell`) may contribute informational `render.lines` payloads and may also
+  contribute semantic-event instructions.
 - Must not mutate world state directly.
 
 ### 4) Bubble (reaction phase)
@@ -203,8 +214,8 @@ Rules:
 - `bubbleEvent(action, context)` is synchronous.
 - If `bubbleEvent` is not implemented on an entity, that entity contributes nothing.
 - Bubble contributions are data-only and may include:
-  - `render.lines`
-  - `postCommit` (delivery-only broadcast instructions)
+  - `render.instructions` with `type: 'semanticEvent'`
+- Bubble contributions must not include `render.lines`.
 - Bubble contributions must not include mutation operations.
 - If forbidden bubble keys are returned (for example `operations`), dispatcher logs a contract error, ignores forbidden content, and continues.
 - Hooks must not directly mutate world state or emit output.
@@ -235,15 +246,19 @@ Rules:
 
 Rules:
 
-- Output derives from committed semantic events.
+- For action commands, output derives from committed semantic events.
 - Delivery order is deterministic.
 - No success narration before successful commit.
-- Post-commit delivery queue executes only after successful commit and render.
-- Post-commit queue merge order is deterministic:
-  - command success envelope `postCommit` first
-  - bubble `postCommit` second (bubble subject order)
-- Post-commit in v1 is delivery-only broadcast DSL, not mutation.
-- Post-commit dispatch failures are best-effort:
+- Render-phase instruction queue executes only after successful commit.
+- Render queue merge order is deterministic:
+  - command `render.instructions` first
+  - bubble `render.instructions` second (bubble subject order)
+- Render instructions in v1 are delivery-only DSL (`broadcast` / `semanticEvent`), not mutation.
+- Target and Bubble instructions for action commands in v1 must be
+  `semanticEvent` instructions.
+- Information-only commands may render informational `render.lines` output in
+  Render/Dispatch and may additionally enqueue semantic-event instructions.
+- Render dispatch failures are best-effort:
   - instruction failure is logged and counted
   - remaining instructions continue
   - command outcome remains success when commit already succeeded
@@ -259,7 +274,7 @@ Non-command render path:
 Two hook kinds are used across phases:
 
 - Policy hook (capture): allow/deny only.
-- Reaction hook (bubble): `bubbleEvent(action, context)` appends instructions/events only.
+- Reaction hook (bubble): `bubbleEvent(action, context)` appends semantic-event instructions only.
 
 This split prevents veto/mutation ambiguity and keeps behavior predictable.
 

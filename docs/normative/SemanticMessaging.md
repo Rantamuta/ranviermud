@@ -60,9 +60,18 @@ Rules:
 - no semantic event delivery occurs before successful commit
 - delivery failures are best-effort and do not roll back committed state
 
+Contract boundary:
+
+- For action commands inside the command pipeline, Target and Bubble messaging
+  contributions must use semantic-event instructions.
+- Information-only commands (for example `look`; future commands such as `read`
+  or `smell`) may include non-semantic informational line output and may
+  optionally also contribute semantic-event instructions.
+- System commands/lifecycle output are outside this command messaging contract.
+
 ## Instruction Contract
 
-v1 adds a post-commit instruction type:
+v1 adds a render instruction type:
 
 - `type: 'semanticEvent'`
 
@@ -320,7 +329,7 @@ Failure handling:
 
 - log structured error
 - skip invalid instruction
-- continue remaining post-commit instructions
+- continue remaining render instructions
 
 ## Determinism Requirements
 
@@ -357,14 +366,30 @@ Recommended stable codes for telemetry:
 
 These are diagnostics codes. Player-facing fallback messaging remains command/dispatch owned.
 
-## Integration With Existing Post-Commit DSL
+## Integration With Render DSL
 
-`semanticEvent` is additive. Existing `broadcast` instructions remain valid.
+`semanticEvent` is additive. Existing `broadcast` instructions remain valid
+where not restricted by command-phase contracts below.
+
+Bubble-phase contract (Command Architecture phase 4):
+
+- Bubble reactions must contribute semantic messaging only.
+- Bubble contributions are limited to `render.instructions` entries with `type: 'semanticEvent'`.
+- Bubble reactions must not contribute `render.lines`.
+- Bubble reactions must not contribute `broadcast` instructions.
+
+Target-phase contract (Command Architecture phase 3):
+
+- For action commands, Target messaging contributions are limited to
+  `render.instructions` entries with `type: 'semanticEvent'`.
+- For action commands, Target must not contribute `render.lines`.
+- Information-only commands may emit informational `render.lines` and may
+  additionally enqueue semantic-event instructions.
 
 Queue ordering:
 
-1. command `postCommit` contributions
-2. bubble `postCommit` contributions
+1. command `render.instructions` contributions
+2. bubble `render.instructions` contributions
 
 Within each contribution list, declaration order is preserved.
 

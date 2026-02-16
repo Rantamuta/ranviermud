@@ -53,7 +53,7 @@ Entity resolution:
 Mutation/commit:
 
 - `bundles/bundle-rantamuta/lib/session/mutator.js`
-- `bundles/bundle-rantamuta/lib/session/post-commit-dispatch.js`
+- `bundles/bundle-rantamuta/lib/session/render-dispatch.js`
 - `bundles/bundle-rantamuta/lib/session/semantic-message.js`
 
 Semantic messaging harness (tooling):
@@ -219,7 +219,7 @@ Bubble contributions are accumulated from:
 Contribution shape accepted:
 
 1. `{ render: { lines: [...] } }`
-2. `{ postCommit: [...] }`
+2. `{ render: { instructions: [...] } }`
 3. arrays of contribution objects
 
 Bubble does not veto.
@@ -259,10 +259,10 @@ Invariant enforcement in mutator:
 1. Failure messages resolved by dispatcher (`command.metadata.errorMessages` then defaults).
 2. Success lines rendered only after successful commit.
 3. Bubble-added render lines append after target render lines.
-4. Post-commit delivery queue runs after render (best-effort, no rollback impact).
+4. Render delivery instructions execute in Render/Dispatch after commit (best-effort, no rollback impact).
 5. Prompt is emitted at end when player/socket is still active.
 
-Current post-commit delivery DSL (v1):
+Current render delivery DSL (v1):
 
 1. instruction types:
    - `broadcast`
@@ -279,8 +279,8 @@ Current post-commit delivery DSL (v1):
 
 Queue merge and execution order:
 
-1. command success envelope `postCommit` entries first,
-2. bubble `postCommit` entries second (bubble subject order),
+1. command `render.instructions` entries first,
+2. bubble `render.instructions` entries second (bubble subject order),
 3. execute after successful commit and after render lines are sent.
 
 `semanticEvent` runtime behavior (current implementation):
@@ -347,11 +347,11 @@ Examples:
    - direct and directIndirect
    - direct scope: `player.inventory`
    - indirect scope: `player.inventory`, `room.items`
-   - success path contributes `postCommit` `semanticEvent` narration.
+   - success path contributes `render.instructions` `semanticEvent` narration.
 4. `take`:
    - direct only
    - scope includes nested room items and nested carried containers.
-   - success path contributes `postCommit` `semanticEvent` narration.
+   - success path contributes `render.instructions` `semanticEvent` narration.
 
 ## Room details and inspectables
 
@@ -422,8 +422,8 @@ Bell Tower examples:
 
 1. `ritualPutTarget.js`:
    - validates accepted offerings on indirect `put`,
-   - contributes success flavor via bubble render lines,
-   - enqueues ritual-completion post-commit broadcasts when the final required offering is planned,
+   - contributes success flavor via render instructions,
+   - enqueues ritual-completion render broadcasts when the final required offering is planned,
    - syncs item descriptions based on contained ritual item.
 2. `bellCryptGate.js`:
    - defines render predicates for slab/runes state,
