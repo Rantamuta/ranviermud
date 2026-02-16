@@ -1,5 +1,9 @@
 # Verb creation checklist
 
+See also:
+
+- `docs/prompts/VerbTemplate.md` (shared preflight + command skeleton + test checklist)
+
 ## Design the verb clearly up front
 
 * [ ] Decide exactly what this verb is called, what short forms it supports, and what players are allowed to type.
