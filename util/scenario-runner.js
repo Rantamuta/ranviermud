@@ -531,14 +531,6 @@ function isBlankOrAnsiOnly(text) {
 
 /**
  * @param {*} value
- * @returns {value is { parse?: Record<string, *>, lookup?: Record<string, *>, phases?: Record<string, *>, outcome?: Record<string, *> }}
- */
-function isCommandTraceInternal(value) {
-  return !!value && typeof value === 'object';
-}
-
-/**
- * @param {*} value
  * @returns {string | null}
  */
 function nullableString(value) {
@@ -546,49 +538,44 @@ function nullableString(value) {
 }
 
 /**
- * @param {string} raw
- * @param {*} trace
- * @param {object} fallbackLookup
- * @param {boolean} fallbackLookup.commandFound
- * @param {string | null} fallbackLookup.commandName
- * @param {string | null} fallbackLookup.alias
+ * Build the stable JSON run payload from runner-observable data.
+ *
+ * Scenario runner intentionally does not depend on internal command-dispatch
+ * telemetry. This keeps the JSON contract stable even if dispatch internals
+ * change.
+ *
+ * @param {Record<string, *>} parsedInput
+ * @param {object} lookup
+ * @param {boolean} lookup.commandFound
+ * @param {string | null} lookup.commandName
+ * @param {string | null} lookup.alias
+ * @param {string} [code]
  * @returns {{ parse: Record<string, *>, lookup: Record<string, *>, phases: Record<string, *>, outcome: Record<string, *> }}
  */
-function mapTraceForRunEvent(raw, trace, fallbackLookup) {
-  const parsed = parseInput(raw);
-  const parseSource = trace && trace.parse && typeof trace.parse === 'object'
-    ? trace.parse
-    : parsed;
-  const lookupSource = trace && trace.lookup && typeof trace.lookup === 'object'
-    ? trace.lookup
-    : fallbackLookup;
-  const phasesSource = trace && trace.phases && typeof trace.phases === 'object'
-    ? trace.phases
-    : {};
-  const outcomeSource = trace && trace.outcome && typeof trace.outcome === 'object'
-    ? trace.outcome
-    : { ok: false, phase: 'lookup', code: 'UNKNOWN_COMMAND' };
-
+function mapRunEvent(parsedInput, lookup, code) {
+  const commandFound = !!lookup.commandFound;
+  const outcomeCode = code || (commandFound ? 'OK' : 'UNKNOWN_COMMAND');
+  const outcomeOk = outcomeCode === 'OK';
   return {
     parse: {
-      intentToken: nullableString(parseSource.intentToken),
-      canonicalInput: typeof parseSource.canonicalInput === 'string' ? parseSource.canonicalInput : '',
-      normalizedInput: typeof parseSource.normalizedInput === 'string' ? parseSource.normalizedInput : '',
-      primaryTargetSpan: Array.isArray(parseSource.primaryTargetSpan) ? parseSource.primaryTargetSpan : null,
-      relationToken: nullableString(parseSource.relationToken),
-      secondaryTargetSpan: Array.isArray(parseSource.secondaryTargetSpan) ? parseSource.secondaryTargetSpan : null,
+      intentToken: nullableString(parsedInput.intentToken),
+      canonicalInput: typeof parsedInput.canonicalInput === 'string' ? parsedInput.canonicalInput : '',
+      normalizedInput: typeof parsedInput.normalizedInput === 'string' ? parsedInput.normalizedInput : '',
+      primaryTargetSpan: Array.isArray(parsedInput.primaryTargetSpan) ? parsedInput.primaryTargetSpan : null,
+      relationToken: nullableString(parsedInput.relationToken),
+      secondaryTargetSpan: Array.isArray(parsedInput.secondaryTargetSpan) ? parsedInput.secondaryTargetSpan : null,
     },
     lookup: {
-      commandFound: !!lookupSource.commandFound,
-      commandName: nullableString(lookupSource.commandName),
-      alias: nullableString(lookupSource.alias),
+      commandFound,
+      commandName: nullableString(lookup.commandName),
+      alias: nullableString(lookup.alias),
     },
-    phases: phasesSource,
+    phases: {},
     outcome: {
-      ok: !!outcomeSource.ok,
-      phase: nullableString(outcomeSource.phase) || (outcomeSource.ok ? 'success' : 'runtime'),
-      code: nullableString(outcomeSource.code) || (outcomeSource.ok ? 'OK' : 'COMMAND_FAILED'),
-      errorTag: nullableString(outcomeSource.errorTag),
+      ok: outcomeOk,
+      phase: outcomeOk ? 'success' : 'lookup',
+      code: outcomeCode,
+      errorTag: null,
     },
   };
 }
@@ -845,7 +832,10 @@ async function main() {
       continue;
     }
 
-    const intentToken = resolveCanonicalIntent(commandSpec.raw);
+    const parsedInput = /** @type {Record<string, *>} */ (parseInput(commandSpec.raw));
+    const intentToken = typeof parsedInput.intentToken === 'string'
+      ? parsedInput.intentToken
+      : resolveCanonicalIntent(commandSpec.raw);
     const { command, alias } = resolveCommandExact(GameState, intentToken);
     const fallbackLookup = {
       commandFound: !!command,
@@ -853,17 +843,12 @@ async function main() {
       alias: alias || null,
     };
 
-    /** @type {Record<string, *> | null} */
-    let commandTrace = null;
     for (const listener of inputListeners) {
-      const listenerResult = await listener(inputSession, commandSpec.raw);
-      if (isCommandTraceInternal(listenerResult)) {
-        commandTrace = listenerResult;
-      }
+      await listener(inputSession, commandSpec.raw);
     }
 
     if (runEvent) {
-      Object.assign(runEvent, mapTraceForRunEvent(commandSpec.raw, commandTrace, fallbackLookup));
+      Object.assign(runEvent, mapRunEvent(parsedInput, fallbackLookup));
       const outcome = runEvent.outcome && typeof runEvent.outcome === 'object'
         ? /** @type {Record<string, *>} */ (runEvent.outcome)
         : null;
@@ -871,7 +856,7 @@ async function main() {
         unknownCount += 1;
         emitEvent({ type: 'unknown', index: i + 1, raw: commandSpec.raw });
       }
-    } else if (commandTrace && commandTrace.outcome && commandTrace.outcome.code === 'UNKNOWN_COMMAND') {
+    } else if (!fallbackLookup.commandFound) {
       unknownCount += 1;
     }
 
