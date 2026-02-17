@@ -116,7 +116,7 @@ Treating `in` and `into` as distinct semantic relationships can create unintende
 
 ### Intransitive offramp
 
-If the selected verb rule is `intransitive` and the input satisfies that rule, Entity Resolution succeeds immediately with an empty binding set. No scope search, role binding, or object disambiguation is performed, and command flow continues to Capture/Target using the intransitive resolution result.
+If the selected verb rule is `intransitive` and the input satisfies that rule, Entity Resolution succeeds immediately with an empty binding set. No scope search, role binding, or object disambiguation is performed, and command flow continues to Capture/Plan using the intransitive resolution result.
 
 ### Scope Declaration
 
@@ -139,7 +139,7 @@ Nested traversal policy:
 - Resolver must evaluate all candidates at depth `N` before traversing to depth `N+1` within the same scope.
 - Resolver must enforce cycle protection when traversing nested containers.
 - Resolver may bind deeply nested matches found within the configured depth limit.
-- Reachability/usability of a found entity is validated in later phases (Capture/Target), not by Entity Resolution.
+- Reachability/usability of a found entity is validated in later phases (Capture/Plan), not by Entity Resolution.
 - traversal order is:
   1. scope order
   2. depth level (shallow to deep)
@@ -313,7 +313,7 @@ Phase ownership note:
 
 - Entity Resolution owns form/scope/binding/disambiguation failures.
 - Capture owns policy veto failures.
-- Target phase owns verb-planner feasibility failures after successful binding.
+- Plan phase owns verb-planner feasibility failures after successful binding.
 
 Failure message ownership:
 
@@ -344,7 +344,7 @@ Failure message ownership:
   - Missing role-routed hooks are treated as allow/no objection for that role.
   - For data-defined entities (for example YAML-authored items), capture helpers may use declarative metadata policy (for example `metadata.permissions`) when no runtime method is present.
   - Capture evaluates checks in declared order and stops at first veto.
-- Entity Resolution -> Target (planner)
+- Entity Resolution -> Plan (planner)
   - Success path: pass bound context into command planner.
   - Failure path: return structured resolver failure envelope.
 - Non-boundaries

@@ -164,7 +164,7 @@ The system binds words to concrete things in the world. This phase is **read-onl
 
 This is the "veto" phase, where designers get to stop the action. Maybe the room is dark, or the area is stormy, or the stars are not aligned, or the player is too drunk. The world, then the quest system, then the area, then the room and then finally the player objects all get a chance to see the action and send back a "Nope". That's all they are allowed to do at this stage. The first deny wins. Assuming the command passes the gauntlet, we move to...
 
-### Phase 3: Target
+### Phase 3: Plan
 
 This is the main phase where the verb assigns instructions to the queue. We don't want to make changes just yet, but this is where the changes are decided. This is “the verb script” in bundle terms. It is a **planner**. It decides: given the bound targets and context, do we succeed, and if so what mutation plan should be committed. No direct mutation here. Depending on the verb, the target objects might get a chance to override the default behavior and default success message of the verb.
 
@@ -376,7 +376,7 @@ These requirements are written as engineering constraints, but they exist to pro
 10. **Bubble contributions may include render data only; bubble must not return mutation operations.**
     This is the normative model. (If the implementation currently allows more, treat that as legacy and keep new verbs clean.)
 
-11. **If using `targetContribution`, it is advisory data only.**
+11. **If using `planDirect` / `planIndirect`, those contributions are advisory data only.**
     No veto, no mutation, no direct output.
 
 ---
@@ -391,7 +391,7 @@ The test list is not about code coverage. It is about proving your verb’s play
 * scope precedence and deterministic tie behavior
 * ambiguity vs indistinguishable auto-pick (if applicable)
 * resolver has no mutation/output side effects
-* dispatch integration path for this verb (`resolve -> capture -> target -> commit -> render`)
+* dispatch integration path for this verb (`resolve -> capture -> plan -> commit -> render`)
 * happy-path success rendering assertions
 
 Note: “ambiguity vs indistinguishable” is an explicit part of the resolver contract. If you design a verb that can commonly hit ambiguous targets, you should expect to design how that feels.
@@ -493,7 +493,7 @@ Use this when reviewing a verb design or a PR. It is phrased as “what to verif
 ### Respect phase boundaries
 
 * [ ] No re-parse or re-resolve in the command.
-* [ ] Target returns envelope only (`ok true plan` or `ok false error`).
+* [ ] Plan returns envelope only (`ok true plan` or `ok false error`).
 * [ ] No direct world mutation in the command.
 * [ ] Verb implementation PR touches only `commands/`, `lib/`, and `tests/` (no `areas/**` edits).
 * [ ] Capture checks are read-only.
@@ -508,11 +508,11 @@ Use this when reviewing a verb design or a PR. It is phrased as “what to verif
 * [ ] Success narration contract is explicit.
 * [ ] Label policy is deterministic.
 * [ ] New mutation types, if needed, are mutator instructions with rollback support.
-* [ ] If using `targetContribution`, it is data-only and command-validated.
+* [ ] If using `planDirect` / `planIndirect`, contributions are data-only and command-validated.
 
 ### Test at the right levels
 
-* [ ] Target planner unit tests (success + failure).
+* [ ] Plan-phase unit tests (success + failure).
 * [ ] Resolver tests (rule matching, failure behavior, scope order).
 * [ ] Relation normalization tests (if relation-bearing).
 * [ ] Ambiguity/disambiguation tests (if applicable).
