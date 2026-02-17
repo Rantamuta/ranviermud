@@ -253,15 +253,20 @@ Supported participant pronouns in v1:
 Verb inflection rules in v1:
 
 1. Subject rule:
-  - v1 default grammatical subject is `actor`.
-  - if recipient is the subject, verb remains base form.
-  - if recipient is not the subject, renderer inflects to third-person singular.
+
+- v1 default grammatical subject is `actor`.
+- if recipient is the subject, verb remains base form.
+- if recipient is not the subject, renderer inflects to third-person singular.
+
 2. Inflection pipeline (deterministic order):
-  - explicit irregular dictionary (highest priority)
-  - targeted suffix rules
-  - deterministic fallback rules
+
+- explicit irregular dictionary (highest priority)
+- targeted suffix rules
+- deterministic fallback rules
+
 3. Contraction handling:
-  - contractions are treated as one lexical unit for inflection (for example `don't`, `aren't`).
+
+- contractions are treated as one lexical unit for inflection (for example `don't`, `aren't`).
 
 v1 explicit irregular dictionary:
 
@@ -415,7 +420,7 @@ Canonical event:
 Possible renders:
 
 - actor: `You place the clapper into the reliquary.`
-- others: `Rendall places the clapper into the reliquary.`
+- others: `Renttu places the clapper into the reliquary.`
 
 ## Deferred
 

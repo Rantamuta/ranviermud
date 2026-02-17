@@ -234,7 +234,7 @@ This system uses Semantic Messaging as the sole output mechanism with one requir
 Result:
 
 - actor sees: `You say, "<expanded utterance>".`
-- others see: `Rendall says, "<expanded utterance>".`
+- others see: `Renttu says, "<expanded utterance>".`
 - target NPC does not receive this text line
 
 1. NPC reply utterance

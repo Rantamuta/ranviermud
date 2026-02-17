@@ -200,7 +200,7 @@ Semantic message templates let one event render differently for actor, target, a
 Example idea:
 
 - actor sees: `You take the seal.`
-- others see: `Rendall takes the seal.`
+- others see: `Renttu takes the seal.`
 
 Useful placeholders:
 
