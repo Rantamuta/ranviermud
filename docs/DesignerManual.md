@@ -433,6 +433,218 @@ When introducing or changing attributes:
    - effects that modify those stats
    - resource-spending actions
 
+## Quests
+
+Quests are how you turn world actions into longer-form player goals.
+
+A quest usually answers:
+
+- what the player needs to do
+- how the game tracks progress
+- what the player gets when it is done
+
+For designers, the third part is often the emotional payoff. That is where quest rewards come in.
+
+### Quest Rewards
+
+Quest rewards are the outcomes granted after a quest completes.
+
+You define them in quest data as:
+
+- `rewards:`
+- each reward entry has:
+  - `type` (which reward to run)
+  - `config` (its settings)
+
+Example quest snippet:
+
+```yml
+- id: bellTrial
+  title: "Trial of the Bell"
+  description: "Carry the consecrated token to the crypt altar."
+  goals:
+    - type: fetch
+      config:
+        item: rantamuta:bellToken
+        count: 1
+  rewards:
+    - type: experience
+      config:
+        amount: 250
+    - type: unlockFlag
+      config:
+        key: cryptAccess
+        value: true
+```
+
+#### Why designers should care about rewards
+
+Rewards are not only "numbers."
+
+They are your pacing and story tools:
+
+- Progression reward: XP, currency, training resources.
+- Access reward: unlock a door route, ritual state, or quest chain.
+- Identity reward: title tags, faction standing, reputation markers.
+- Utility reward: a key item, recipe item, or consumable starter pack.
+- World-state reward: set a flag that changes room text or NPC reactions.
+
+Good reward design supports motivation:
+
+- Short quest: immediate tangible value.
+- Mid quest: progression plus utility.
+- Arc quest: permanent unlock plus visible world response.
+
+#### How quest rewards are connected
+
+There are two places to author:
+
+1. Quest data (`areas/<area>/quests.yml`) chooses reward `type` + `config`.
+2. Reward implementation (`quest-rewards/<type>.js`) defines what that type does.
+
+Important naming rule:
+
+- reward `type` must match the reward file name.
+- `quest-rewards/experience.js` => `type: experience`
+
+#### Friendly implementation pattern
+
+Reward files live in:
+
+- `bundles/<bundle>/quest-rewards/<type>.js`
+
+Minimal reward template:
+
+```js
+'use strict';
+
+module.exports = (srcPath) => {
+  const QuestReward = require(srcPath + 'QuestReward');
+
+  return class ExperienceReward extends QuestReward {
+    static reward(GameState, quest, config, player) {
+      const amount = Number(config.amount || 0);
+      player.experience += amount;
+    }
+
+    static display(GameState, quest, config, player) {
+      return `${Number(config.amount || 0)} XP`;
+    }
+  };
+};
+```
+
+Notes:
+
+- `reward(...)` is the important one for gameplay.
+- `display(...)` is optional text formatting for UI layers that choose to call it.
+
+#### Example reward ideas (designer-focused)
+
+Example 1: Classic XP reward
+
+```js
+// quest-rewards/experience.js
+'use strict';
+
+module.exports = (srcPath) => {
+  const QuestReward = require(srcPath + 'QuestReward');
+
+  return class ExperienceReward extends QuestReward {
+    static reward(GameState, quest, config, player) {
+      player.experience += Number(config.amount || 0);
+    }
+
+    static display(GameState, quest, config, player) {
+      return `${Number(config.amount || 0)} XP`;
+    }
+  };
+};
+```
+
+Example 2: Story unlock flag reward
+
+```js
+// quest-rewards/unlockFlag.js
+'use strict';
+
+module.exports = (srcPath) => {
+  const QuestReward = require(srcPath + 'QuestReward');
+
+  return class UnlockFlagReward extends QuestReward {
+    static reward(GameState, quest, config, player) {
+      player.metadata.unlocks = player.metadata.unlocks || {};
+      player.metadata.unlocks[String(config.key || 'unknown')] = config.value !== false;
+    }
+
+    static display(GameState, quest, config, player) {
+      return `Unlocked: ${String(config.key || 'unknown')}`;
+    }
+  };
+};
+```
+
+What this is useful for:
+
+- gate a later room script check
+- branch dialogue in NPC scripts
+- alter room description fragments for that player path
+
+Example 3: Grant a specific item once
+
+```js
+// quest-rewards/grantItem.js
+'use strict';
+
+module.exports = (srcPath) => {
+  const QuestReward = require(srcPath + 'QuestReward');
+
+  return class GrantItemReward extends QuestReward {
+    static reward(GameState, quest, config, player) {
+      const itemRef = String(config.item || '');
+      if (!itemRef) return;
+      if (player.hasItem(itemRef)) return;
+
+      const area = GameState.AreaManager.getAreaByReference(itemRef);
+      const item = GameState.ItemFactory.create(area, itemRef);
+      item.hydrate(GameState);
+      GameState.ItemManager.add(item);
+      player.addItem(item);
+    }
+
+    static display(GameState, quest, config, player) {
+      return `Item: ${String(config.item || 'unknown')}`;
+    }
+  };
+};
+```
+
+What this is useful for:
+
+- key relics
+- recipe starters
+- "proof" items for follow-up quests
+
+#### Step-by-step: add a new reward end-to-end
+
+1. Choose the player outcome.
+2. Create `quest-rewards/<type>.js`.
+3. Implement `reward(...)` with that outcome.
+4. Add `display(...)` text if you want UI-friendly labels.
+5. Reference it from your quest in `areas/<area>/quests.yml` under `rewards`.
+6. Make sure an NPC points to that quest via `quests: [ "area:questId" ]` in `npcs.yml`.
+7. Run a short scenario test and verify the outcome appears in player state.
+
+#### Gotchas (important, save time here)
+
+1. File name must match reward type exactly.
+2. Reward entries run in list order; if you care about sequencing, order them deliberately.
+3. Quest completion is still recorded even if one reward errors.
+4. Reward errors are logged and the engine attempts the next reward.
+5. `display(...)` is not automatically shown by core; it is for UI/command layers that explicitly use it.
+6. If you make quests repeatable, protect one-time rewards (item grants, permanent unlocks) against duplicates.
+7. If reward code touches inventory, full inventory can block item grants; plan fallback behavior.
+
 ## Effects
 
 Effects are reusable status mechanics you can apply to players or NPCs.
