@@ -96,12 +96,17 @@ Rules:
 - Hooks must not append mutation instructions, render events, or bubble contributions.
 - First deny wins.
 - If denied, command terminates with failure envelope and does not enter Target.
-- Policy hook contract is `allowAction(action, context)`.
-- `allowAction(action, context)` is synchronous.
-- If `allowAction` is not implemented on an entity, that entity is treated as "no objection" (allow).
+- Capture runs in two steps:
+  - command-level `captureChecks` functions (if declared)
+  - shared policy evaluation on ordered capture subjects
+- Runtime policy hooks are role-routed:
+  - direct role: `canDirect(actor, verbId, context)`
+  - indirect role: `canIndirect(actor, verbId, relationTokenCanonical, context)`
+- `canDirect`/`canIndirect` are synchronous.
+- `canDirect`/`canIndirect` are evaluated only on bound direct/indirect entities.
 - Item/room/area/player/world YAML definitions remain data-only; they do not embed executable hook functions.
 - Declarative policy fallback may be supplied through metadata (for example `metadata.permissions`), evaluated by shared capture helpers.
-- Special-case runtime policy logic may be implemented in code behaviors/scripts that attach `allowAction`.
+- Special-case runtime policy logic may be implemented in code behaviors/scripts that attach `canDirect` / `canIndirect`.
 
 Determinism constraints for capture hooks:
 
@@ -133,7 +138,7 @@ Determinism constraints for capture hooks:
 
 Policy precedence:
 
-1. runtime `allowAction(action, context)` result when method exists and returns explicit allow/deny
+1. runtime `canDirect(...)` / `canIndirect(...)` explicit decision when applicable
 2. `metadata.permissions.verbs[verbId]` role+relation match (`direct`/`indirect` + canonical relation)
 3. `metadata.permissions.verbs[verbId]` role default / verb default
 4. `metadata.permissions.default`
@@ -142,7 +147,7 @@ Policy precedence:
 Examples:
 
 - Runtime hook wins:
-  - `allowAction(...)` returns `"The ward rejects your touch."` and metadata says `allow` -> result is deny with that runtime message.
+  - `canIndirect(...)` returns `"The ward rejects your touch."` and metadata says `allow` -> result is deny with that runtime message.
 - Role+relation match:
   - `metadata.permissions.verbs.put.indirect.relations.in = "That container rejects items."` and input is `put apple into chest` -> resolver canonicalizes `into` to `in`, policy denies with that message.
 - Role default then verb default:
@@ -151,7 +156,7 @@ Examples:
 - Metadata default:
   - No `verbs.put` entry, but `metadata.permissions.default = "Nothing may be moved here."` -> deny with that message.
 - Implicit allow:
-  - No `allowAction` method and no `metadata.permissions` entry -> action proceeds.
+  - No `canDirect`/`canIndirect` hook and no `metadata.permissions` entry -> action proceeds.
 
 Policy return normalization:
 
@@ -176,22 +181,6 @@ Policy return contract:
 - Any non-explicit/unknown value is treated as no decision (`no objection`) and evaluation continues by precedence.
 - Promise/thenable returns are not supported and are treated as invalid/non-explicit values.
 
-Role-routed capture contract (accepted-next, not yet implemented):
-
-- Dispatch should route capture-policy checks to bound role entities first, instead
-  of broad fan-out subject scanning.
-- Direct role hook:
-  - `canDirect(actor, verbId, context)`
-- Indirect role hook:
-  - `canIndirect(actor, verbId, relationTokenCanonical, context)`
-- `relationTokenCanonical` applies only to indirect-role hooks.
-- Direct-role hooks do not receive relation token arguments.
-- Both hook types may read full bound command entities from `context`
-  (`directTarget`, `indirectTarget`) when needed.
-- If role-routed hooks are not implemented on an entity, that entity is treated
-  as no objection for that role.
-- During migration, legacy `allowAction(action, context)` remains supported.
-
 ### 3) Target (verb phase)
 
 Terminology note:
@@ -209,98 +198,42 @@ Rules:
 - Returns either:
   - failure envelope, or
   - base mutation plan.
-- Target render contributions for action commands must be semantic-event instructions
-  (`render.instructions` entries with `type: 'semanticEvent'`).
-- For action commands, Target must not contribute `render.lines`.
-- Information-only commands (for example `look`; future commands such as `read`
-  or `smell`) may contribute informational `render.lines` payloads and may also
-  contribute semantic-event instructions.
+- Render payload shape is `render.messages`.
 - Must not mutate world state directly.
 
 Optional entity target-contribution surface:
 
-- Commands may optionally consult bound entities for target-phase contribution
-  data after Entity Resolution and after Capture has passed.
-- This surface is data-only and must not perform side effects.
-- Contribution hooks are advisory to the command; command logic remains final
-  authority over what is accepted into the target result envelope.
-- Contribution data may influence:
-  - success narration override/replacement
-  - additional target-approved mutator instructions (deferred)
-- Contribution data must not:
-  - deny/veto an action (veto ownership remains Capture)
-  - mutate world state
-  - emit audience output directly
+After a successful command result envelope, runtime optionally consults bound
+target entities for target-phase contributions:
 
-Target contribution contract:
+- direct target hook: `planDirect(actor, verbId, context)`
+- indirect target hook: `planIndirect(actor, verbId, relationTokenCanonical, context)`
 
-- Hook name: `targetContribution(action, context)` (synchronous)
-- Return values:
-  - `null`/`undefined` => no contribution
-  - object contribution payload => candidate contribution
-- Invalid contribution payloads must be treated as no contribution or ignored
-  with diagnostics; they must not crash command execution.
+Evaluation order is fixed:
 
-Target contribution payload (v1, locked):
+1. direct target contribution
+2. indirect target contribution
 
-```js
-{
-  narration?: {
-    mode: 'replace' | 'append',
-    instructions: Array<{ type: 'semanticEvent', ... }>
-  }
-}
-```
+Contribution return handling:
 
-Payload rules (v1):
+- `null`/`undefined` => no contribution
+- failure envelope (`{ ok:false, error }`) => fail command before Commit
+- success envelope (`{ ok:true, plan?, render? }`) => merge accepted fields
+- plain contribution object (`{ plan?, render? }`) => merge accepted fields
 
-- `narration.instructions` is required when `narration` is present.
-- For action commands, `narration.instructions` entries must be
-  `semanticEvent` instructions.
-- Empty instruction arrays are treated as no contribution.
-- Unknown payload keys are ignored.
+Accepted merge fields:
 
-Action argument shape passed to target contributions:
+- `plan.operations` (array) => appended to the commit plan
+- `render.messages` (array) => appended to the render message queue
 
-```js
-{
-  phase: 'target',
-  verbId: string,
-  role: 'direct' | 'indirect',
-  relationTokenCanonical: string | null,
-}
-```
+Invalid contribution shapes are logged and ignored (best-effort), except
+explicit contribution failures (`ok:false`) which terminate command success.
 
-Contribution merge semantics (v1):
+Target contribution hooks are data-only:
 
-1. Command produces baseline Target result envelope.
-2. Candidate contributors are evaluated in this precedence order:
-   - direct target
-   - indirect target
-3. First valid `narration` contribution wins.
-4. Apply winner relative to command baseline:
-   - `mode: 'replace'` => replace Target success `render.instructions`
-   - `mode: 'append'` => append to Target success `render.instructions`
-5. Bubble render instructions are merged later in normal Bubble order; target
-   contribution precedence does not alter Bubble ordering.
-
-Failure/invalid behavior (v1):
-
-- Hook throws => log diagnostics and ignore that contribution.
-- Invalid payload => log diagnostics and ignore that contribution.
-- No valid contribution => baseline command target render behavior remains.
-
-Target contribution precedence:
-
-1. command baseline target plan/render
-2. target contributions from bound entities (direct/indirect as applicable),
-   with fixed v1 precedence: direct target, then indirect target
-3. command validation/normalization pass (final authority)
-
-Scope note for v1:
-
-- Target contribution support in v1 is narration-only (`narration` payload).
-- Plan augmentation by target contributions is explicitly deferred.
+- must not veto Capture decisions (veto ownership remains Capture)
+- must not mutate world state directly
+- must not emit audience output directly
 
 Layering rule:
 
@@ -308,39 +241,18 @@ Layering rule:
   area/item/room IDs for target contributions.
 - Content-specific contribution behavior belongs in `areas/**` scripts/metadata.
 
-Role-routed target contribution contract (accepted-next, not yet implemented):
-
-- Direct role contribution hook:
-  - `targetDirect(actor, verbId, context)`
-- Indirect role contribution hook:
-  - `targetIndirect(actor, verbId, relationTokenCanonical, context)`
-- `relationTokenCanonical` applies only to indirect-role hooks.
-- Direct-role hooks do not receive relation token arguments.
-- Role hooks are data-only contributors; they must not mutate world state or emit
-  output.
-- Commands remain final authority over target success/failure envelopes.
-
 ### 4) Bubble (reaction phase)
 
-Order (reverse specificity):
-
-1. direct object
-2. indirect object
-3. player
-4. room
-5. area
-6. questSystem
-7. world
+Bubble is command-scoped reaction contribution.
 
 Rules:
 
 - No veto in bubble.
-- Reaction hook contract is `bubbleEvent(action, context)`.
-- `bubbleEvent(action, context)` is synchronous.
-- If `bubbleEvent` is not implemented on an entity, that entity contributes nothing.
-- Bubble contributions are data-only and may include:
-  - `render.instructions` with `type: 'semanticEvent'`
-- Bubble contributions must not include `render.lines`.
+- Bubble functions are provided through command metadata `reactions`:
+  - array of functions, or
+  - factory function `(context) => function[]`
+- Each reaction function is synchronous and receives phase `context`.
+- Bubble contributions are data-only and may include `render.messages`.
 - Bubble contributions must not include mutation operations.
 - If forbidden bubble keys are returned (for example `operations`), dispatcher logs a contract error, ignores forbidden content, and continues.
 - Hooks must not directly mutate world state or emit output.
@@ -355,25 +267,14 @@ Determinism constraints for bubble hooks:
 - Bubble hooks must not read external nondeterministic sources (time, random, network, filesystem, process-global mutable state).
 - Any randomness required in future must be supplied through deterministic context input (for example seeded source), not read ad hoc inside hooks.
 
-Role-routed bubble contract (accepted-next, not yet implemented):
-
-- Dispatch should route bubble reactions to bound role entities first.
-- Direct role reaction hook:
-  - `reactDirect(actor, verbId, context)`
-- Indirect role reaction hook:
-  - `reactIndirect(actor, verbId, relationTokenCanonical, context)`
-- `relationTokenCanonical` applies only to indirect-role hooks.
-- Direct-role hooks do not receive relation token arguments.
-- Role hooks may read full bound command entities from `context`
-  (`directTarget`, `indirectTarget`) when needed.
-- During migration, legacy `bubbleEvent(action, context)` remains supported.
-
 ### 5) Commit (transaction phase)
 
 Rules:
 
-- Commit applies the Target/base mutation plan only.
-- Bubble does not contribute mutation operations.
+- Commit applies merged operations from:
+  - command base plan (`result.plan.operations`)
+  - target contribution operations (`planDirect` / `planIndirect`)
+- Bubble does not contribute mutation operations (attempts are ignored).
 - Apply with compensating rollback:
   - mutator applies operations in order
   - if one operation fails, mutator runs recorded undo handlers in reverse order
@@ -384,18 +285,21 @@ Rules:
 
 Rules:
 
-- For action commands, output derives from committed semantic events.
+- Output derives from committed render messages and render instructions.
 - Delivery order is deterministic.
 - No success narration before successful commit.
-- Render-phase instruction queue executes only after successful commit.
+- Render/Dispatch executes only after successful commit.
 - Render queue merge order is deterministic:
-  - command `render.instructions` first
-  - bubble `render.instructions` second (bubble subject order)
-- Render instructions in v1 are delivery-only DSL (`broadcast` / `semanticEvent`), not mutation.
-- Target and Bubble instructions for action commands in v1 must be
-  `semanticEvent` instructions.
-- Information-only commands may render informational `render.lines` output in
-  Render/Dispatch and may additionally enqueue semantic-event instructions.
+  1. command success `render.messages`
+  2. target contribution `render.messages`
+  3. bubble contribution `render.messages`
+- `render.messages` supports:
+  - line strings (sent to actor)
+  - `{ type: 'line', text|message }`
+  - instruction objects
+- Delivery instruction types in runtime v1:
+  - `semanticEvent`
+  - `broadcast`
 - Render dispatch failures are best-effort:
   - instruction failure is logged and counted
   - remaining instructions continue
@@ -409,29 +313,16 @@ Non-command render path:
 
 ## Hook Kinds
 
-Two hook kinds are used across phases:
+Three hook kinds are used across phases:
 
 - Policy hook (capture): allow/deny only.
-- Target contribution hook (target): data-only contribution, no veto, no direct mutation/output.
-- Reaction hook (bubble): data-only render contribution, no veto, no direct mutation/output.
+- Target contribution hook (target): data-only contribution, no veto, no direct mutation/output (`planDirect`, `planIndirect`).
+- Reaction hook (bubble): data-only render contribution, no veto, no direct mutation/output (command metadata `reactions` functions).
 
-Role-routed hook naming (accepted-next, not yet implemented):
+Accepted-next naming (not wired in current runtime):
 
-- Capture:
-  - `canDirect(actor, verbId, context)`
-  - `canIndirect(actor, verbId, relationTokenCanonical, context)`
-- Target:
-  - `targetDirect(actor, verbId, context)`
-  - `targetIndirect(actor, verbId, relationTokenCanonical, context)`
-- Bubble:
-  - `reactDirect(actor, verbId, context)`
-  - `reactIndirect(actor, verbId, relationTokenCanonical, context)`
-
-Legacy compatibility note:
-
-- Current runtime still supports `allowAction(action, context)` and
-  `bubbleEvent(action, context)` while migration to role-routed dispatch is
-  pending.
+- `reactDirect(actor, verbId, context)`
+- `reactIndirect(actor, verbId, relationTokenCanonical, context)`
 
 This split prevents veto/mutation ambiguity and keeps behavior predictable.
 
