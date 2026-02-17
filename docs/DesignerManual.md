@@ -287,6 +287,152 @@ If you want copy-ready templates with recommended event signatures, use:
 
 - [Appendix: Behavior Templates](#behavior-templates)
 
+## Attributes
+
+Attributes are the game’s core stats/resources for characters.
+
+Think of them as:
+
+- "How much health do you have right now?"
+- "How much mana/favor/energy can this class spend?"
+- "What permanent baseline stats does this character have?"
+
+If Effects are temporary conditions ("burning", "blessed"), Attributes are the long-lived values those conditions interact with.
+
+### What attributes are useful for
+
+- health-like resources (`health`, `mana`, `energy`, `favor`)
+- combat stats (`armor`, `critical`, etc.)
+- progression stats (`strength`, `agility`, `intellect`, `stamina`)
+- any custom numeric system your game needs (for example: `corruption`, `focus`, `heat`)
+
+### Where they are defined
+
+Bundle-level attribute definitions live in:
+
+- `bundles/<bundle>/attributes.js`
+
+Engine contract:
+
+- file must export an array
+- each entry must have:
+  - `name`
+  - `base`
+- optional:
+  - `metadata`
+  - `formula: { requires: [...], fn: function (...) { ... } }`
+
+Example:
+
+```js
+// bundles/bundle-rantamuta/attributes.js
+'use strict';
+
+module.exports = [
+  { name: 'health', base: 100 },
+  { name: 'stamina', base: 20 },
+  { name: 'mana', base: 60 },
+  { name: 'armor', base: 0 },
+  {
+    name: 'maxHealth',
+    base: 100,
+    formula: {
+      requires: ['stamina'],
+      fn: function (character, current, stamina) {
+        // current starts from base (+ any effect modifiers on this attr)
+        return current + (stamina * 5);
+      },
+    },
+  },
+];
+```
+
+### How to use attributes in content
+
+1. Define your attribute list first.
+2. Make sure players/NPCs actually have those attributes.
+3. Reference attributes in effects/skills/prompts/scripts.
+
+Player/NPC data shape (both are valid):
+
+- `health: 100`
+- `health: { base: 100, delta: 0 }`
+
+Simple practical examples:
+
+- A priest class uses `favor` instead of `mana`.
+- A berserker skill spends `rage` by lowering that attribute.
+- A cursed room applies an effect that lowers `health` every tick.
+- Equipment aura effect temporarily adds `armor` and `critical`.
+
+### Reading and changing attributes in scripts
+
+Common runtime API on `Character`:
+
+- `hasAttribute('health')`
+- `getAttribute('health')` (current value)
+- `getMaxAttribute('health')` (current max, after effects/formulas)
+- `getBaseAttribute('health')` (base)
+- `raiseAttribute('health', amount)` (healing/recovery)
+- `lowerAttribute('health', amount)` (damage/cost)
+- `setAttributeBase('health', newBase)` (permanent baseline change)
+
+Use cases:
+
+- `lowerAttribute` for damage and costs.
+- `raiseAttribute` for healing/regeneration.
+- `setAttributeBase` only for permanent progression (level-up, permanent reward), not temporary buffs.
+
+### Prompt usage (player-facing UI)
+
+Prompt tokens can expose attribute values:
+
+- `%health.current%`
+- `%health.max%`
+- `%health.base%`
+
+Example prompt:
+
+```text
+[ %health.current%/%health.max% hp %mana.current%/%mana.max% mana ]
+```
+
+### Gotchas (important)
+
+1. Attribute names are compatibility-sensitive.
+   Renaming/removing a key can break loading of existing saved players that still have the old key.
+
+2. Missing definitions are hard failures.
+   If a player/NPC has an attribute that is not in `attributes.js`, hydration can fail at boot/load.
+
+3. Formulas only validate circular references at boot.
+   A formula can reference a missing attribute and still pass initial validation, then fail later at runtime when read.
+
+4. Temporary bonuses should be Effects, not base edits.
+   If you use `setAttributeBase` for a temporary buff, you risk permanent stat drift.
+
+5. Current value is not "base".
+   Current is effectively max plus delta. This matters when testing heal/damage behavior.
+
+6. Don’t assume attributes exist on new players automatically.
+   In this repo, new players are often created with `attributes: {}` first and then hydrated/populated through your runtime setup.
+
+7. Keep names simple and lower-case.
+   Prompt token parsing is strict; consistent lower-case keys avoid token surprises.
+
+### Designer workflow recommendation
+
+When introducing or changing attributes:
+
+1. Add/update `attributes.js`.
+2. Update any content that references those names (effects, prompts, scripts, skills).
+3. Verify existing saved player data still matches.
+4. Run smoke/scenario checks for:
+   - login/hydration
+   - prompt rendering
+   - effects that modify those stats
+   - resource-spending actions
+
 ## Effects
 
 Effects are reusable status mechanics you can apply to players or NPCs.
