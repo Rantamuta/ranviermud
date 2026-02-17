@@ -23,8 +23,12 @@ Primary content files:
 
 - `bundles/bundle-rantamuta/areas/<area>/rooms.yml`
 - `bundles/bundle-rantamuta/areas/<area>/items.yml`
+- `bundles/bundle-rantamuta/areas/<area>/npcs.yml`
+- `bundles/bundle-rantamuta/areas/<area>/scripts/<areaScript>.js`
 - `bundles/bundle-rantamuta/areas/<area>/scripts/rooms/*.js`
 - `bundles/bundle-rantamuta/areas/<area>/scripts/items/*.js`
+- `bundles/bundle-rantamuta/areas/<area>/scripts/npcs/*.js`
+- `bundles/bundle-rantamuta/player-events.js` (optional, bundle-level)
 
 ## Area Manifest (`manifest.yml`)
 
@@ -64,7 +68,7 @@ If `script` is set, the loader will look for:
 
 - `bundles/bundle-rantamuta/areas/<area>/scripts/<script>.js`
 
-## Scripts and Events
+## Scripts
 
 You can attach scripts directly in YAML with `script: <name>` (no `.js` extension).
 
@@ -75,8 +79,10 @@ Examples:
 
 Script files live under:
 
+- `bundles/bundle-rantamuta/areas/<area>/scripts/<areaScript>.js`
 - `bundles/bundle-rantamuta/areas/<area>/scripts/rooms/<name>.js`
 - `bundles/bundle-rantamuta/areas/<area>/scripts/items/<name>.js`
+- `bundles/bundle-rantamuta/areas/<area>/scripts/npcs/<name>.js`
 
 Script module shape:
 
@@ -84,7 +90,7 @@ Script module shape:
 module.exports = {
   listeners: {
     spawn: state => function () {
-      // `this` is the room/item entity
+      // `this` is the area/room/item/npc entity
     },
   },
 };
@@ -95,6 +101,11 @@ There is no `on` prefix.
 
 - Use `playerEnter`, not `onPlayerEnter`.
 - Use `npcLeave`, not `onNpcLeave`.
+
+Entity `script:` listeners are attached without behavior-config binding, so handlers receive event args only.
+If you need `(config, ...eventArgs)`, use a bundle `behaviors/` module instead.
+
+If YAML sets `script: <name>`, the corresponding file must exist at the expected path. Missing script references can fail bundle boot.
 
 Any emitted event can be listened to, but these are the most useful ones for area content:
 
@@ -116,7 +127,7 @@ Room listeners:
 
 Item listeners:
 
-- `spawn`: item instance is spawned/hydrated.
+- `spawn`: item instance is spawned into a room and hydrated as part of room/default-content spawn flow.
 - `updateTick`: item update tick.
 - `equip`: item was equipped by a character.
 - `unequip`: item was unequipped by a character.
@@ -124,12 +135,14 @@ Item listeners:
 
 NPC listeners:
 
-- `spawn`: NPC is spawned/hydrated.
+- `spawn`: NPC is spawned into a room and hydrated as part of room/default-content spawn flow.
 - `enterRoom`: NPC completed a room move.
 - `updateTick`: NPC update tick.
 
-Player listeners:
+Player events (separate from area/entity `script:` files):
 
+- Loaded from `bundles/<bundle>/player-events.js`.
+- Attached through `PlayerManager.events`, not via area/entity `script:` declarations.
 - `enterRoom`: player completed a room move.
 - `commandQueued`: command was queued.
 - `saved`: player was saved.
@@ -169,12 +182,13 @@ Command-phase hooks are not listeners; attach them in `spawn`:
 - `planDirect(actor, verbId, context)`: direct-target planning/render contribution.
 - `planIndirect(actor, verbId, relationTokenCanonical, context)`: indirect-target planning/render contribution.
 
-Reaction hooks (role-routed Bubble contract in the architecture docs):
+Planned reaction hooks (architecture direction; not implemented in the current `bundle-rantamuta` runtime):
 
 - `reactDirect(actor, verbId, context)`
 - `reactIndirect(actor, verbId, relationTokenCanonical, context)`
 
-Note: this is the architecture-facing contract. If your local runtime build is still on legacy/replacement hook names, keep the same behavior rules below (data-only contribution, no direct output, no mutation).
+Current runtime: use command-level `metadata.reactions` handlers in command modules for Bubble-phase render contributions.
+Treat `reactDirect`/`reactIndirect` as planning targets, not active runtime hooks, until the dispatcher is updated.
 
 What these are for:
 
@@ -187,11 +201,11 @@ What they must not do:
 - Do not mutate room/item/player state.
 - Do not veto actions (veto belongs in `canDirect` / `canIndirect`).
 
-How they are used:
+How they are planned to be used:
 
 1. The hook checks context and decides whether it wants to contribute anything.
 2. It returns a contribution payload (or `null`).
-3. The command pipeline merges that contribution and dispatches it in order.
+3. A future command pipeline revision will merge that contribution and dispatch it in order.
 
 Example (instruction contribution only):
 
@@ -219,7 +233,7 @@ this.reactDirect = (actor, verbId, context) => {
 };
 ```
 
-If you need area/room/player messaging, still return it as instructions and let the dispatcher deliver it. Do not emit output directly from the hook.
+If you need area/room/player messaging now, return Bubble render contributions from command metadata reactions and let the dispatcher deliver them. Do not emit output directly from policy/planning hooks.
 
 ## Behaviors
 
@@ -515,7 +529,8 @@ Useful pattern:
 1. Store your content data in YAML metadata on the entity.
 2. In the entity script `spawn`, attach `canDirect` / `canIndirect` for veto logic.
 3. In the same script, attach `planDirect` / `planIndirect` for context-sensitive result planning.
-4. Attach `reactDirect` / `reactIndirect` when you need post-success flavor output via dispatcher-owned instructions.
+4. Planned: attach `reactDirect` / `reactIndirect` for post-success flavor output once runtime support lands.
+5. Today: use command-level `metadata.reactions` for Bubble-phase flavor output.
 
 You must attach the script within `spawn` in order to have access to `this`, which has access to all metadata and other properties set in the `.yml` file.
 
@@ -1094,3 +1109,290 @@ Authoring rules of thumb:
 - Prefer attaching command-phase policy and plan hooks during `spawn`.
 - Use `ready` for room logic that depends on default room items/npcs.
 - Do not call `EventManager.detach` on shared emitters unless you intentionally want to remove all listeners for that event name.
+
+### Effect Templates
+
+**Effect Cookbook (for this Ranvier build)**  
+Use these in `bundles/bundle-rantamuta/effects/*.js` (filename = effect id).
+
+#### **Before You Start (important for this engine version)**
+
+- Create with `state.EffectFactory.create(id)` and then mutate instance fields.
+- Do not pass per-instance overrides into `create(id, config, state)` in this build; they leak into future instances.
+- If you rely on pause/deactivate semantics for damage modifiers, guard manually with `if (this.paused || !this.active) return current;`.
+
+```js
+// Safe helper you can reuse in commands/skills/items
+function applyEffect(state, target, effectId, opts = {}) {
+  const effect = state.EffectFactory.create(effectId); // no overrides here
+  Object.assign(effect.config, opts.config || {});
+  Object.assign(effect.state, opts.state || {});
+  return target.addEffect(effect);
+}
+```
+
+## 1. DoT (Burn)
+
+```js
+// bundles/bundle-rantamuta/effects/burn.js
+'use strict';
+
+module.exports = {
+  config: {
+    name: 'Burning',
+    description: 'Taking fire damage over time.',
+    type: 'dot.burn',
+    duration: 10000,
+    tickInterval: 1,
+    unique: true,
+    refreshes: true,
+  },
+  state: {
+    amountPerTick: 8,
+    attribute: 'health',
+  },
+  listeners: {
+    effectRefreshed: function (newEffect) {
+      this.startedAt = Date.now(); // true refresh
+      if (newEffect && newEffect.state && Number.isFinite(newEffect.state.amountPerTick)) {
+        this.state.amountPerTick = newEffect.state.amountPerTick;
+      }
+    },
+    updateTick: function () {
+      if (!this.target) return;
+      this.target.lowerAttribute(this.state.attribute, this.state.amountPerTick);
+    },
+  },
+};
+```
+
+## 2. HoT (Regeneration)
+
+```js
+// bundles/bundle-rantamuta/effects/regen.js
+'use strict';
+
+module.exports = {
+  config: {
+    name: 'Regenerate',
+    description: 'Recovering over time.',
+    type: 'regen',
+    duration: 'inf', // set to Infinity at runtime if you set from code
+    tickInterval: 3,
+    unique: true,
+    hidden: true,
+  },
+  state: {
+    amountPerTick: 15,
+    attribute: 'health',
+  },
+  listeners: {
+    updateTick: function () {
+      if (!this.target) return;
+      this.target.raiseAttribute(this.state.attribute, this.state.amountPerTick);
+    },
+  },
+};
+```
+
+## 3. Shield (Damage Pool)
+
+```js
+// bundles/bundle-rantamuta/effects/shield.js
+'use strict';
+
+module.exports = {
+  config: {
+    name: 'Magic Shield',
+    description: 'Absorbs incoming damage.',
+    type: 'shield',
+    duration: 15000,
+    unique: true,
+  },
+  state: {
+    remaining: 120,
+  },
+  modifiers: {
+    incomingDamage: function (_damage, current) {
+      if (this.paused || !this.active) return current;
+      const blocked = Math.min(current, Math.max(0, this.state.remaining));
+      this.state.remaining -= blocked;
+      if (this.state.remaining <= 0) {
+        this.remove();
+      }
+      return current - blocked;
+    },
+  },
+};
+```
+
+## 4. Equipment Aura (Persistent Stat Bonus)
+
+```js
+// bundles/bundle-rantamuta/effects/equip.js
+'use strict';
+
+module.exports = {
+  config: {
+    name: 'Equip Bonus',
+    type: 'equip.generic',
+    duration: Infinity,
+    hidden: true,
+    persists: true,
+    unique: true,
+  },
+  state: {
+    slot: 'wield',
+    stats: { critical: 1, armor: 0 },
+  },
+  modifiers: {
+    attributes: function (attrName, current) {
+      if (this.paused || !this.active) return current;
+      const bonus = Number(this.state.stats && this.state.stats[attrName]) || 0;
+      return current + bonus;
+    },
+  },
+};
+```
+
+Apply it with slot-specific type so each slot can coexist:
+
+```js
+const effect = state.EffectFactory.create('equip');
+effect.config.type = `equip.${slot}`;
+effect.config.name = `Equip: ${slot}`;
+effect.state.slot = slot;
+effect.state.stats = { armor: 20 };
+target.addEffect(effect);
+```
+
+## 5. Stacking Poison
+
+```js
+// bundles/bundle-rantamuta/effects/poison.js
+'use strict';
+
+module.exports = {
+  config: {
+    name: 'Poisoned',
+    type: 'dot.poison',
+    duration: 12000,
+    tickInterval: 2,
+    unique: true,
+    maxStacks: 5,
+    refreshes: true, // refresh once max stacks reached
+  },
+  state: {
+    basePerStack: 3,
+  },
+  listeners: {
+    effectStackAdded: function () {
+      this.startedAt = Date.now();
+    },
+    effectRefreshed: function () {
+      this.startedAt = Date.now();
+    },
+    updateTick: function () {
+      if (!this.target) return;
+      const stacks = Number(this.state.stacks) || 1;
+      this.target.lowerAttribute('health', stacks * this.state.basePerStack);
+    },
+  },
+};
+```
+
+## 6. Refreshing Buff (with real refresh)
+
+```js
+// bundles/bundle-rantamuta/effects/battleFocus.js
+'use strict';
+
+module.exports = {
+  config: {
+    name: 'Battle Focus',
+    type: 'buff.focus',
+    duration: 15000,
+    unique: true,
+    refreshes: true,
+  },
+  state: {
+    critBonus: 5,
+  },
+  modifiers: {
+    attributes: {
+      critical: function (current) {
+        if (this.paused || !this.active) return current;
+        return current + this.state.critBonus;
+      },
+    },
+  },
+  listeners: {
+    effectRefreshed: function (newEffect) {
+      this.startedAt = Date.now();
+      if (newEffect && newEffect.state && Number.isFinite(newEffect.state.critBonus)) {
+        this.state.critBonus = newEffect.state.critBonus;
+      }
+    },
+  },
+};
+```
+
+## 7. Soft Crowd Control Flag (command-checked)
+
+```js
+// bundles/bundle-rantamuta/effects/stunned.js
+'use strict';
+
+module.exports = {
+  config: {
+    name: 'Stunned',
+    description: 'Cannot act.',
+    type: 'cc.stun',
+    duration: 3000,
+    unique: true,
+  },
+};
+```
+
+In command/skill execution gate:
+
+```js
+if (player.hasEffectType('cc.stun')) {
+  Broadcast.sayAt(player, 'You are stunned and cannot act.');
+  return;
+}
+```
+
+## 8. Cooldown Groups (skill-level pattern)
+
+Use built-in cooldown effect behavior by skill config:
+
+```js
+// bundles/bundle-rantamuta/skills/slash.js
+cooldown: { group: 'martial', length: 8 }
+```
+
+```js
+// bundles/bundle-rantamuta/skills/cleave.js
+cooldown: { group: 'martial', length: 8 }
+```
+
+Both share one cooldown group (`skillgroup:martial`) through `Skill.getCooldownId()`.
+
+## 9. Applying Effects from Commands/Items/Skills
+
+```js
+const effect = state.EffectFactory.create('burn');
+effect.config.duration = 6000;
+effect.state.amountPerTick = 12;
+target.addEffect(effect);
+```
+
+## 10. Recommended Defaults
+
+- Use explicit `config.type` taxonomy like `dot.burn`, `buff.haste`, `equip.wield`.
+- For finite buffs/debuffs, set `unique: true` and choose one of:
+  - `refreshes: true` + `effectRefreshed` handler.
+  - `maxStacks > 0` + stack handlers.
+- For hidden bookkeeping effects (`equip`, internal flags), set `hidden: true`.
+- For load-safe effects on players, keep `persists: true` only when necessary.
