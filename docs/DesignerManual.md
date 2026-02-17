@@ -26,6 +26,44 @@ Primary content files:
 - `bundles/bundle-rantamuta/areas/<area>/scripts/rooms/*.js`
 - `bundles/bundle-rantamuta/areas/<area>/scripts/items/*.js`
 
+## Area Manifest (`manifest.yml`)
+
+Each area folder must include:
+
+- `bundles/bundle-rantamuta/areas/<area>/manifest.yml`
+
+The area loader discovers areas by scanning for that file. If an area folder has no `manifest.yml`, it is skipped.
+
+### What to put in `manifest.yml`
+
+Supported manifest fields:
+
+- `title` (recommended and treated as required for normal content)
+- `metadata` (optional object for area-level custom data)
+- `script` (optional area script name, no `.js`)
+- `behaviors` (optional area behavior map)
+
+Minimal example:
+
+```yml
+title: "Rantamuta"
+```
+
+With optional fields:
+
+```yml
+title: "Rantamuta"
+script: "rantamutaArea"
+metadata:
+  theme: "ruins"
+behaviors:
+  example-behavior: true
+```
+
+If `script` is set, the loader will look for:
+
+- `bundles/bundle-rantamuta/areas/<area>/scripts/<script>.js`
+
 ## Scripts and Events
 
 You can attach scripts directly in YAML with `script: <name>` (no `.js` extension).
