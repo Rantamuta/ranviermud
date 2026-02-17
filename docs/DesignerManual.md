@@ -52,29 +52,136 @@ module.exports = {
 };
 ```
 
-For rooms, the important event names are:
+Listeners are event handlers. The key in `listeners` must exactly match an event name emitted by the engine.
+There is no `on` prefix.
 
-- `spawn`
-- `playerEnter`
-- `playerLeave`
-- `npcEnter`
-- `npcLeave`
-- `updateTick`
+- Use `playerEnter`, not `onPlayerEnter`.
+- Use `npcLeave`, not `onNpcLeave`.
 
-Note:
+Any emitted event can be listened to, but these are the most useful ones for area content:
 
-- Event names are exact. Use `playerEnter`, not `playerEnters`.
-- `allowAction` is not an event name. If needed, assign `this.allowAction = (...) => ...` inside `spawn`.
-- `bubbleEvent` is not an event name. If needed, assign `this.bubbleEvent = (...) => ...` inside `spawn`.
+Area listeners:
 
-Command-pipeline hooks you can attach in `spawn`:
+- `roomAdded`: fires when a room is added to the area.
+- `roomRemoved`: fires when a room is removed from the area.
+- `updateTick`: fires on area update ticks.
 
-- `allowAction(action, context)`:
-  - Called during Capture.
-  - Return allow/deny (or a deny message string) to permit or block the action.
-- `bubbleEvent(action, context)`:
-  - Called during Bubble after the command plan is valid.
-  - Return extra render lines and/or extra operations to contribute to the final plan.
+Room listeners:
+
+- `spawn`: room object is created; runs before default room items/NPCs are hydrated.
+- `ready`: room finished hydrating and has default contents.
+- `playerEnter`: a player enters the room.
+- `playerLeave`: a player leaves the room.
+- `npcEnter`: an NPC enters the room.
+- `npcLeave`: an NPC leaves the room.
+- `updateTick`: room update tick.
+
+Item listeners:
+
+- `spawn`: item instance is spawned/hydrated.
+- `updateTick`: item update tick.
+- `equip`: item was equipped by a character.
+- `unequip`: item was unequipped by a character.
+- `playerEnter` / `playerLeave` / `npcEnter` / `npcLeave`: proxied from the room while the item is in that room.
+
+NPC listeners:
+
+- `spawn`: NPC is spawned/hydrated.
+- `enterRoom`: NPC completed a room move.
+- `updateTick`: NPC update tick.
+
+Player listeners:
+
+- `enterRoom`: player completed a room move.
+- `commandQueued`: command was queued.
+- `saved`: player was saved.
+- `updateTick`: player update tick.
+
+How to use these in practice:
+
+1. `spawn`: initialize script-owned helpers on `this` using YAML metadata.
+2. `playerEnter`: trigger ambient narrative when someone arrives.
+3. `ready`: perform setup that depends on default room contents being present.
+4. `updateTick`: drive periodic behavior (sparingly).
+
+Examples:
+
+```js
+module.exports = {
+  listeners: {
+    spawn: state => function onSpawn() {
+      // attach command-phase policy hooks used by bundle command dispatch
+      this.canDirect = (actor, verbId, context) => {
+        if (verbId === 'take') return 'The reliquary is set into the stonework.';
+        return null;
+      };
+    },
+    playerEnter: state => function onPlayerEnter(player, prevRoom) {
+      // ambient room reaction
+      // (use your bundle's normal output utilities/broadcast path)
+    },
+  },
+};
+```
+
+Command-phase hooks are not listeners; attach them in `spawn`:
+
+- `canDirect(actor, verbId, context)`: direct-target capture veto/allow.
+- `canIndirect(actor, verbId, relationTokenCanonical, context)`: indirect-target capture veto/allow.
+- `planDirect(actor, verbId, context)`: direct-target planning/render contribution.
+- `planIndirect(actor, verbId, relationTokenCanonical, context)`: indirect-target planning/render contribution.
+
+Reaction hooks (role-routed Bubble contract in the architecture docs):
+
+- `reactDirect(actor, verbId, context)`
+- `reactIndirect(actor, verbId, relationTokenCanonical, context)`
+
+Note: this is the architecture-facing contract. If your local runtime build is still on legacy/replacement hook names, keep the same behavior rules below (data-only contribution, no direct output, no mutation).
+
+What these are for:
+
+- Add flavor or audience output instructions after Target has succeeded.
+- Return data only. The dispatcher owns delivery.
+
+What they must not do:
+
+- Do not call `Broadcast.*` directly.
+- Do not mutate room/item/player state.
+- Do not veto actions (veto belongs in `canDirect` / `canIndirect`).
+
+How they are used:
+
+1. The hook checks context and decides whether it wants to contribute anything.
+2. It returns a contribution payload (or `null`).
+3. The command pipeline merges that contribution and dispatches it in order.
+
+Example (instruction contribution only):
+
+```js
+this.reactDirect = (actor, verbId, context) => {
+  if (verbId !== 'pull') return null;
+
+  return {
+    render: {
+      messages: [
+        {
+          type: 'semanticEvent',
+          template: '{actor.You} {verb:pull} down on {object.direct}.',
+          audiencePolicy: 'self_and_others',
+          participants: {
+            actor: { selector: 'currentPlayer' },
+          },
+          objectText: {
+            direct: 'the bell rope',
+          },
+        },
+      ],
+    },
+  };
+};
+```
+
+If you need area/room/player messaging, still return it as instructions and let the dispatcher deliver it. Do not emit output directly from the hook.
 
 ## Current Play Commands
 
@@ -316,8 +423,9 @@ If an area needs special behavior ("this altar only accepts one relic"), impleme
 Useful pattern:
 
 1. Store your content data in YAML metadata on the entity.
-2. In the entity script `spawn`, attach `allowAction` for veto logic.
-3. In the same script, attach `bubbleEvent` for post-success flavor output.
+2. In the entity script `spawn`, attach `canDirect` / `canIndirect` for veto logic.
+3. In the same script, attach `planDirect` / `planIndirect` for context-sensitive result planning.
+4. Attach `reactDirect` / `reactIndirect` when you need post-success flavor output via dispatcher-owned instructions.
 
 You must attach the script within `spawn` in order to have access to `this`, which has access to all metadata and other properties set in the `.yml` file.
 
