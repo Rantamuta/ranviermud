@@ -34,7 +34,7 @@ Execution phases are:
 0. Receive Input
 1. Entity Resolution
 2. Capture
-3. Target
+3. Target (planning phase; term "Plan" will replace "Target" in a future revision)
 4. Bubble
 5. Commit
 6. Render/Dispatch
@@ -176,7 +176,29 @@ Policy return contract:
 - Any non-explicit/unknown value is treated as no decision (`no objection`) and evaluation continues by precedence.
 - Promise/thenable returns are not supported and are treated as invalid/non-explicit values.
 
+Role-routed capture contract (accepted-next, not yet implemented):
+
+- Dispatch should route capture-policy checks to bound role entities first, instead
+  of broad fan-out subject scanning.
+- Direct role hook:
+  - `canDirect(actor, verbId, context)`
+- Indirect role hook:
+  - `canIndirect(actor, verbId, relationTokenCanonical, context)`
+- `relationTokenCanonical` applies only to indirect-role hooks.
+- Direct-role hooks do not receive relation token arguments.
+- Both hook types may read full bound command entities from `context`
+  (`directTarget`, `indirectTarget`) when needed.
+- If role-routed hooks are not implemented on an entity, that entity is treated
+  as no objection for that role.
+- During migration, legacy `allowAction(action, context)` remains supported.
+
 ### 3) Target (verb phase)
+
+Terminology note:
+
+- In this document, "Target" refers to the command planning phase.
+- A future normative revision will rename this phase to "Plan" to avoid
+  confusion with direct/indirect target entities.
 
 This is the command script (example: `put.js`).
 
@@ -286,6 +308,18 @@ Layering rule:
   area/item/room IDs for target contributions.
 - Content-specific contribution behavior belongs in `areas/**` scripts/metadata.
 
+Role-routed target contribution contract (accepted-next, not yet implemented):
+
+- Direct role contribution hook:
+  - `targetDirect(actor, verbId, context)`
+- Indirect role contribution hook:
+  - `targetIndirect(actor, verbId, relationTokenCanonical, context)`
+- `relationTokenCanonical` applies only to indirect-role hooks.
+- Direct-role hooks do not receive relation token arguments.
+- Role hooks are data-only contributors; they must not mutate world state or emit
+  output.
+- Commands remain final authority over target success/failure envelopes.
+
 ### 4) Bubble (reaction phase)
 
 Order (reverse specificity):
@@ -320,6 +354,19 @@ Determinism constraints for bubble hooks:
 - Bubble hooks may read only provided context and current entity/world state.
 - Bubble hooks must not read external nondeterministic sources (time, random, network, filesystem, process-global mutable state).
 - Any randomness required in future must be supplied through deterministic context input (for example seeded source), not read ad hoc inside hooks.
+
+Role-routed bubble contract (accepted-next, not yet implemented):
+
+- Dispatch should route bubble reactions to bound role entities first.
+- Direct role reaction hook:
+  - `reactDirect(actor, verbId, context)`
+- Indirect role reaction hook:
+  - `reactIndirect(actor, verbId, relationTokenCanonical, context)`
+- `relationTokenCanonical` applies only to indirect-role hooks.
+- Direct-role hooks do not receive relation token arguments.
+- Role hooks may read full bound command entities from `context`
+  (`directTarget`, `indirectTarget`) when needed.
+- During migration, legacy `bubbleEvent(action, context)` remains supported.
 
 ### 5) Commit (transaction phase)
 
@@ -366,7 +413,25 @@ Two hook kinds are used across phases:
 
 - Policy hook (capture): allow/deny only.
 - Target contribution hook (target): data-only contribution, no veto, no direct mutation/output.
-- Reaction hook (bubble): `bubbleEvent(action, context)` appends semantic-event instructions only.
+- Reaction hook (bubble): data-only render contribution, no veto, no direct mutation/output.
+
+Role-routed hook naming (accepted-next, not yet implemented):
+
+- Capture:
+  - `canDirect(actor, verbId, context)`
+  - `canIndirect(actor, verbId, relationTokenCanonical, context)`
+- Target:
+  - `targetDirect(actor, verbId, context)`
+  - `targetIndirect(actor, verbId, relationTokenCanonical, context)`
+- Bubble:
+  - `reactDirect(actor, verbId, context)`
+  - `reactIndirect(actor, verbId, relationTokenCanonical, context)`
+
+Legacy compatibility note:
+
+- Current runtime still supports `allowAction(action, context)` and
+  `bubbleEvent(action, context)` while migration to role-routed dispatch is
+  pending.
 
 This split prevents veto/mutation ambiguity and keeps behavior predictable.
 
