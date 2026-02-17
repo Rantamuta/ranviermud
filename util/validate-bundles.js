@@ -98,7 +98,8 @@ function validateFilesystem(root, config, findings) {
     if (fs.existsSync(areasPath) && fs.statSync(areasPath).isDirectory()) {
       const areaDirs = fs.readdirSync(areasPath, { withFileTypes: true }).filter((entry) => entry.isDirectory());
       for (const areaDir of areaDirs) {
-        const manifestPath = path.join(areasPath, areaDir.name, 'manifest.yml');
+        const areaPath = path.join(areasPath, areaDir.name);
+        const manifestPath = path.join(areaPath, 'manifest.yml');
         if (!fs.existsSync(manifestPath)) {
           findings.push({
             level: 'warn',
@@ -107,6 +108,18 @@ function validateFilesystem(root, config, findings) {
             bundle,
             area: areaDir.name,
             path: path.join(relBundlePath, 'areas', areaDir.name, 'manifest.yml'),
+          });
+        }
+
+        const questsPath = path.join(areaPath, 'quests.yml');
+        if (!fs.existsSync(questsPath)) {
+          findings.push({
+            level: 'error',
+            code: 'AREA_QUESTS_FILE_MISSING',
+            message: 'Area quests.yml is missing. For questless areas create quests.yml with []',
+            bundle,
+            area: areaDir.name,
+            path: path.join(relBundlePath, 'areas', areaDir.name, 'quests.yml'),
           });
         }
       }

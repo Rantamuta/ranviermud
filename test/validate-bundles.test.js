@@ -47,10 +47,11 @@ function runValidator(root) {
     throw result.error;
   }
 
-  assert.strictEqual(result.status, 0, result.stderr || result.stdout);
-
   try {
-    return JSON.parse(result.stdout || '[]');
+    return {
+      status: result.status,
+      findings: JSON.parse(result.stdout || '[]'),
+    };
   } catch (err) {
     throw new Error(`Failed to parse validator output as JSON: ${result.stdout}`);
   }
@@ -61,12 +62,13 @@ describe('validate-bundles quests file checks', function () {
     const workspace = createWorkspace();
 
     try {
-      const findings = runValidator(workspace.root);
+      const result = runValidator(workspace.root);
+      assert.strictEqual(result.status, 1, JSON.stringify(result.findings, null, 2));
 
-      const questsMissing = findings.find((finding) => finding.code === 'AREA_QUESTS_FILE_MISSING');
+      const questsMissing = result.findings.find((finding) => finding.code === 'AREA_QUESTS_FILE_MISSING');
       assert.ok(
         questsMissing,
-        `Expected AREA_QUESTS_FILE_MISSING finding, got: ${JSON.stringify(findings, null, 2)}`
+        `Expected AREA_QUESTS_FILE_MISSING finding, got: ${JSON.stringify(result.findings, null, 2)}`
       );
       assert.match(questsMissing.message, /create .*quests\.yml.*\[\]/i);
     } finally {
@@ -79,9 +81,10 @@ describe('validate-bundles quests file checks', function () {
 
     try {
       writeText(path.join(workspace.areaRoot, 'quests.yml'), '[]\n');
-      const findings = runValidator(workspace.root);
+      const result = runValidator(workspace.root);
+      assert.strictEqual(result.status, 0, JSON.stringify(result.findings, null, 2));
 
-      const questsMissing = findings.find((finding) => finding.code === 'AREA_QUESTS_FILE_MISSING');
+      const questsMissing = result.findings.find((finding) => finding.code === 'AREA_QUESTS_FILE_MISSING');
       assert.strictEqual(questsMissing, undefined);
     } finally {
       fs.rmSync(workspace.root, { recursive: true, force: true });
