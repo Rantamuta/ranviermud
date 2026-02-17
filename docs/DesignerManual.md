@@ -287,6 +287,68 @@ If you want copy-ready templates with recommended event signatures, use:
 
 - [Appendix: Behavior Templates](#behavior-templates)
 
+## Effects
+
+Effects are reusable status mechanics you can apply to players or NPCs.
+
+Think of them as: "this character is under condition X, so stats or behavior change until it ends."
+
+Use effects when you want temporary or persistent gameplay state without hardcoding one-off logic into commands.
+
+What effects are useful for:
+
+- buffs and debuffs (`+armor`, reduced damage, damage vulnerability)
+- over-time mechanics (burning, poison, regeneration)
+- equipment-driven bonuses (while worn/wielded)
+- cooldown and gating state ("cannot use this again yet")
+- soft control states (stunned/silenced flags checked by command or skill logic)
+
+Common design examples:
+
+- Pulling a cursed lever applies a short `burn` effect that damages health over time.
+- Drinking a tonic applies a `regen` effect for 30 seconds.
+- Equipping a shield applies a hidden persistent effect that adds armor.
+- A battle shout applies a short party buff that increases critical chance.
+
+Where effect files live:
+
+- `bundles/bundle-rantamuta/effects/<effectId>.js`
+
+How effects are used in play:
+
+1. Define an effect module in `effects/`.
+2. Apply it from a command, skill, item script, or room script by creating the effect and adding it to the target.
+3. Let the engine handle duration, stacking, refresh, and tick delivery based on your config.
+4. Tune the numbers and text through repeated scenario tests.
+
+Practical authoring model:
+
+- `config`: designer-facing rules (duration, stacking, uniqueness, visibility)
+- `state`: per-instance values (magnitude, remaining shield, stacks metadata)
+- `modifiers`: direct math changes (attributes, incoming/outgoing damage)
+- `listeners`: event reactions (`updateTick`, `effectRefreshed`, etc.)
+
+Minimal apply pattern:
+
+```js
+const effect = state.EffectFactory.create('burn');
+effect.config.duration = 6000;
+effect.state.amountPerTick = 10;
+target.addEffect(effect);
+```
+
+Copy-ready templates are in the appendix:
+
+- [Appendix: Effect Templates](#effect-templates)
+- [Template: DoT (Burn)](#1-dot-burn)
+- [Template: HoT (Regeneration)](#2-hot-regeneration)
+- [Template: Shield (Damage Pool)](#3-shield-damage-pool)
+- [Template: Equipment Aura (Persistent Stat Bonus)](#4-equipment-aura-persistent-stat-bonus)
+- [Template: Stacking Poison](#5-stacking-poison)
+- [Template: Refreshing Buff](#6-refreshing-buff-with-real-refresh)
+- [Template: Soft Crowd Control Flag](#7-soft-crowd-control-flag-command-checked)
+- [Template: Cooldown Groups](#8-cooldown-groups-skill-level-pattern)
+
 ## Current Play Commands
 
 Supported command intents in `bundle-rantamuta`:
