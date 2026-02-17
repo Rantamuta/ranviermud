@@ -13,6 +13,7 @@ const nodeCmd = process.execPath;
 const argv = process.argv.slice(2);
 const runInPlace = argv.includes('--in-place');
 const keepWorktree = argv.includes('--keep-worktree');
+const force = argv.includes('--force');
 
 let workRoot = repoRoot;
 let worktreePath = null;
@@ -202,7 +203,14 @@ function buildSteps() {
     // CI: Ensure clean working tree
     {
       label: 'Ensure clean working tree',
-      run: ensureCleanWorkingTree,
+      run: () => {
+        if (force) {
+          console.log('Skipping dirty tree check (--force).');
+          return 0;
+        }
+
+        return ensureCleanWorkingTree();
+      },
     },
     // CI: Install bundles (CI)
     {
@@ -244,9 +252,13 @@ function main() {
 
   try {
     if (!runInPlace) {
-      const preflightCode = ensureRepoCleanBeforeWorktree();
-      if (preflightCode !== 0) {
-        return preflightCode;
+      if (!force) {
+        const preflightCode = ensureRepoCleanBeforeWorktree();
+        if (preflightCode !== 0) {
+          return preflightCode;
+        }
+      } else {
+        console.log('Skipping repo clean preflight (--force).');
       }
       console.log('\n==> Create isolated worktree');
       const result = createWorktree();
