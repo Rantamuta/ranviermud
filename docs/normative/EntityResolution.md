@@ -338,8 +338,10 @@ Failure message ownership:
   - Exports bound context (`directTarget`, `indirectTarget?`, `relationTokenRaw?`, `relationTokenCanonical?`, metadata) to capture checks.
   - Recommended check contract:
     - `CaptureCheck(boundContext) -> { ok: true } | { ok: false, vetoInfo }`
-  - Capture policy evaluation may call entity-level `allowAction(action, context)` when present.
-  - Missing `allowAction` is treated as allow/no objection.
+  - Capture policy evaluation may call entity-level role-routed policy hooks when present:
+    - `canDirect(actor, verbId, context)`
+    - `canIndirect(actor, verbId, relationTokenCanonical, context)`
+  - Missing role-routed hooks are treated as allow/no objection for that role.
   - For data-defined entities (for example YAML-authored items), capture helpers may use declarative metadata policy (for example `metadata.permissions`) when no runtime method is present.
   - Capture evaluates checks in declared order and stops at first veto.
 - Entity Resolution -> Target (planner)
