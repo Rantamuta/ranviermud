@@ -221,6 +221,58 @@ this.reactDirect = (actor, verbId, context) => {
 
 If you need area/room/player messaging, still return it as instructions and let the dispatcher deliver it. Do not emit output directly from the hook.
 
+## Behaviors
+
+Behaviors are reusable “event listeners” you can attach to areas, rooms, items, or NPCs to make content react to what happens in the game.
+
+Think of them as: “when this thing experiences event X, do Y.”
+
+You use behaviors when plain YAML data is not enough and you need custom rules or dynamic reactions.
+
+What behaviors are for:
+
+- custom interaction rules (allow/deny with authored messages)
+- puzzle logic that depends on current world state
+- reactive world flavor (arrival text, environmental responses)
+- periodic logic (`updateTick`) for living-feeling spaces or NPC routines
+
+Possible game examples:
+
+- An area-level weather system that tracks season and weather over time, then sends weather text only to rooms marked as outdoors.
+- A room-level weather reaction that listens for weather events and updates room/item state (for example, rain making items wet, snow adding frost/snow cover).
+- A room that changes description fragments based on current weather state (clear, raining, snowing) without changing command code.
+- An NPC routine that reacts to weather context (for example, moving indoors during storms, returning outdoors when weather clears).
+
+Where behavior files live:
+
+- `bundles/<bundle>/behaviors/area/<name>.js`
+- `bundles/<bundle>/behaviors/room/<name>.js`
+- `bundles/<bundle>/behaviors/item/<name>.js`
+- `bundles/<bundle>/behaviors/npc/<name>.js`
+
+How you attach them in content:
+
+- Add them under `behaviors:` in your YAML (manifest/room/item/npc definition), for example:
+  - `behaviors:`
+  - `weather-system: true`
+
+Very light example:
+
+```js
+module.exports = {
+  listeners: {
+    spawn: state => function (config) {
+      // this = the area/room/item/npc that owns the behavior
+      // config = your YAML behavior config object
+    },
+  },
+};
+```
+
+If you want copy-ready templates with recommended event signatures, use:
+
+- [Appendix: Behavior Templates](#behavior-templates)
+
 ## Current Play Commands
 
 Supported command intents in `bundle-rantamuta`:
@@ -627,3 +679,418 @@ Supported directives:
 - `seedInventory: <area:itemId>`
 - `seedRoomItem: <area:itemId>`
 - `command: <input text>`
+
+## Appendix
+
+### Behavior Templates
+
+Use these when you want reusable behavior modules under a bundle-level behavior path:
+
+- `bundles/<bundle>/behaviors/area/<name>.js`
+- `bundles/<bundle>/behaviors/room/<name>.js`
+- `bundles/<bundle>/behaviors/item/<name>.js`
+- `bundles/<bundle>/behaviors/npc/<name>.js`
+
+Behavior module contract:
+
+- Export shape is `module.exports = { listeners: { ... } }`.
+- Listener factory signature is `(state) => handlerFn`.
+- At runtime `this` inside `handlerFn` is the target entity instance.
+- Recommended stable handler signature is `function (config, ...eventArgs)` where `config` comes from the entity's `behaviors.<name>` map entry.
+- If you are using area/entity `script:` files instead of `behaviors/`, handlers are attached without behavior-config binding; in those scripts, use signatures without `config`.
+
+Minimal skeleton:
+
+```js
+'use strict';
+
+module.exports = {
+  listeners: {
+    spawn: state => function onSpawn(config) {
+      // Annotation:
+      // - state: global GameState from loader
+      // - config: behavior config object (or {} if behavior: true)
+      // - this: entity instance (area/room/item/npc)
+      void state;
+      void config;
+    },
+  },
+};
+```
+
+Area behavior template:
+
+```js
+'use strict';
+
+module.exports = {
+  listeners: {
+    updateTick: state => function onUpdateTick(config, gameState) {
+      // Annotation:
+      // - Event payload for area updateTick includes gameState
+      // - this is Area
+      void state;
+      void config;
+      void gameState;
+    },
+
+    roomAdded: state => function onRoomAdded(config, room) {
+      // Annotation: fires when area.addRoom(room) emits roomAdded
+      void state;
+      void config;
+      void room;
+    },
+
+    roomRemoved: state => function onRoomRemoved(config, room) {
+      void state;
+      void config;
+      void room;
+    },
+
+    metadataUpdated: state => function onMetadataUpdated(config, key, newValue, oldValue) {
+      void state;
+      void config;
+      void key;
+      void newValue;
+      void oldValue;
+    },
+
+    channelReceive: state => function onChannelReceive(config, channel, sender, rawMessage) {
+      // Annotation: emitted when area is a channel broadcast target
+      void state;
+      void config;
+      void channel;
+      void sender;
+      void rawMessage;
+    },
+  },
+};
+```
+
+Room behavior template:
+
+```js
+'use strict';
+
+module.exports = {
+  listeners: {
+    spawn: state => function onSpawn(config) {
+      // Annotation:
+      // - Room spawn happens before default room items/npcs are hydrated
+      // - Good place to attach policy/predicate helpers on `this`
+      void state;
+      this.myBehavior = { enabled: true, config };
+    },
+
+    ready: state => function onReady(config) {
+      // Annotation:
+      // - Room ready happens after default room contents are loaded
+      // - Use when setup requires spawned defaults to exist
+      void state;
+      void config;
+    },
+
+    updateTick: state => function onUpdateTick(config) {
+      void state;
+      void config;
+    },
+
+    playerEnter: state => function onPlayerEnter(config, player, prevRoom) {
+      void state;
+      void config;
+      void player;
+      void prevRoom;
+    },
+
+    playerLeave: state => function onPlayerLeave(config, player, nextRoom) {
+      void state;
+      void config;
+      void player;
+      void nextRoom;
+    },
+
+    npcEnter: state => function onNpcEnter(config, npc, prevRoom) {
+      void state;
+      void config;
+      void npc;
+      void prevRoom;
+    },
+
+    npcLeave: state => function onNpcLeave(config, npc, nextRoom) {
+      void state;
+      void config;
+      void npc;
+      void nextRoom;
+    },
+
+    metadataUpdated: state => function onMetadataUpdated(config, key, newValue, oldValue) {
+      void state;
+      void config;
+      void key;
+      void newValue;
+      void oldValue;
+    },
+  },
+};
+```
+
+Item behavior template:
+
+```js
+'use strict';
+
+module.exports = {
+  listeners: {
+    spawn: state => function onSpawn(config) {
+      // Annotation:
+      // - Good place to attach command-phase hooks:
+      //   canDirect, canIndirect, planDirect, planIndirect
+      void state;
+      void config;
+    },
+
+    updateTick: state => function onUpdateTick(config) {
+      void state;
+      void config;
+    },
+
+    equip: state => function onEquip(config, equipper) {
+      void state;
+      void config;
+      void equipper;
+    },
+
+    unequip: state => function onUnequip(config, equipper) {
+      void state;
+      void config;
+      void equipper;
+    },
+
+    // Annotation:
+    // - These movement events are proxied from Room.emit while item is in room
+    playerEnter: state => function onPlayerEnter(config, player, prevRoom) {
+      void state;
+      void config;
+      void player;
+      void prevRoom;
+    },
+
+    playerLeave: state => function onPlayerLeave(config, player, nextRoom) {
+      void state;
+      void config;
+      void player;
+      void nextRoom;
+    },
+
+    npcEnter: state => function onNpcEnter(config, npc, prevRoom) {
+      void state;
+      void config;
+      void npc;
+      void prevRoom;
+    },
+
+    npcLeave: state => function onNpcLeave(config, npc, nextRoom) {
+      void state;
+      void config;
+      void npc;
+      void nextRoom;
+    },
+
+    metadataUpdated: state => function onMetadataUpdated(config, key, newValue, oldValue) {
+      void state;
+      void config;
+      void key;
+      void newValue;
+      void oldValue;
+    },
+  },
+};
+```
+
+NPC behavior template:
+
+```js
+'use strict';
+
+module.exports = {
+  listeners: {
+    spawn: state => function onSpawn(config) {
+      // Annotation:
+      // - Initialize npc-local behavior state here
+      void state;
+      this.aiState = { startedAt: Date.now(), config };
+    },
+
+    updateTick: state => function onUpdateTick(config) {
+      // Annotation: periodic AI pulse
+      void state;
+      void config;
+    },
+
+    enterRoom: state => function onEnterRoom(config, room) {
+      void state;
+      void config;
+      void room;
+    },
+
+    attributeUpdate: state => function onAttributeUpdate(config, attrName, value) {
+      void state;
+      void config;
+      void attrName;
+      void value;
+    },
+
+    combatStart: state => function onCombatStart(config) {
+      void state;
+      void config;
+    },
+
+    combatantAdded: state => function onCombatantAdded(config, target) {
+      void state;
+      void config;
+      void target;
+    },
+
+    combatantRemoved: state => function onCombatantRemoved(config, target) {
+      void state;
+      void config;
+      void target;
+    },
+
+    combatEnd: state => function onCombatEnd(config) {
+      void state;
+      void config;
+    },
+
+    hit: state => function onHit(config, damage, target, finalAmount) {
+      void state;
+      void config;
+      void damage;
+      void target;
+      void finalAmount;
+    },
+
+    damaged: state => function onDamaged(config, damage, finalAmount) {
+      void state;
+      void config;
+      void damage;
+      void finalAmount;
+    },
+
+    heal: state => function onHeal(config, heal, target, finalAmount) {
+      void state;
+      void config;
+      void heal;
+      void target;
+      void finalAmount;
+    },
+
+    healed: state => function onHealed(config, heal, finalAmount) {
+      void state;
+      void config;
+      void heal;
+      void finalAmount;
+    },
+
+    equip: state => function onEquip(config, slot, item) {
+      void state;
+      void config;
+      void slot;
+      void item;
+    },
+
+    unequip: state => function onUnequip(config, slot, item) {
+      void state;
+      void config;
+      void slot;
+      void item;
+    },
+
+    followed: state => function onFollowed(config, target) {
+      void state;
+      void config;
+      void target;
+    },
+
+    unfollowed: state => function onUnfollowed(config, priorTarget) {
+      void state;
+      void config;
+      void priorTarget;
+    },
+
+    gainedFollower: state => function onGainedFollower(config, follower) {
+      void state;
+      void config;
+      void follower;
+    },
+
+    lostFollower: state => function onLostFollower(config, follower) {
+      void state;
+      void config;
+      void follower;
+    },
+
+    effectAdded: state => function onEffectAdded(config, effect) {
+      void state;
+      void config;
+      void effect;
+    },
+
+    effectRemoved: state => function onEffectRemoved(config) {
+      void state;
+      void config;
+    },
+
+    playerEnter: state => function onPlayerEnter(config, player, prevRoom) {
+      void state;
+      void config;
+      void player;
+      void prevRoom;
+    },
+
+    playerLeave: state => function onPlayerLeave(config, player, nextRoom) {
+      void state;
+      void config;
+      void player;
+      void nextRoom;
+    },
+
+    npcEnter: state => function onNpcEnter(config, npc, prevRoom) {
+      void state;
+      void config;
+      void npc;
+      void prevRoom;
+    },
+
+    npcLeave: state => function onNpcLeave(config, npc, nextRoom) {
+      void state;
+      void config;
+      void npc;
+      void nextRoom;
+    },
+
+    metadataUpdated: state => function onMetadataUpdated(config, key, newValue, oldValue) {
+      void state;
+      void config;
+      void key;
+      void newValue;
+      void oldValue;
+    },
+
+    channelReceive: state => function onChannelReceive(config, channel, sender, rawMessage) {
+      void state;
+      void config;
+      void channel;
+      void sender;
+      void rawMessage;
+    },
+  },
+};
+```
+
+Authoring rules of thumb:
+
+- Keep behavior handlers deterministic and narrow in scope.
+- Prefer attaching command-phase policy and plan hooks during `spawn`.
+- Use `ready` for room logic that depends on default room items/npcs.
+- Do not call `EventManager.detach` on shared emitters unless you intentionally want to remove all listeners for that event name.
