@@ -34,7 +34,7 @@ Execution phases are:
 0. Receive Input
 1. Entity Resolution
 2. Capture
-3. Target (planning phase; term "Plan" will replace "Target" in a future revision)
+3. Plan
 4. Bubble
 5. Commit
 6. Render/Dispatch
@@ -95,7 +95,7 @@ Rules:
 - Hooks must not mutate world state.
 - Hooks must not append mutation instructions, render events, or bubble contributions.
 - First deny wins.
-- If denied, command terminates with failure envelope and does not enter Target.
+- If denied, command terminates with failure envelope and does not enter Plan.
 - Capture runs in two steps:
   - command-level `captureChecks` functions (if declared)
   - shared policy evaluation on ordered capture subjects
@@ -181,13 +181,12 @@ Policy return contract:
 - Any non-explicit/unknown value is treated as no decision (`no objection`) and evaluation continues by precedence.
 - Promise/thenable returns are not supported and are treated as invalid/non-explicit values.
 
-### 3) Target (verb phase)
+### 3) Plan (verb phase)
 
-Terminology note:
+Implementation note:
 
-- In this document, "Target" refers to the command planning phase.
-- A future normative revision will rename this phase to "Plan" to avoid
-  confusion with direct/indirect target entities.
+- Runtime function/variable names still include legacy `target*` identifiers.
+- Behavior contract is Plan-phase semantics; identifier renames are deferred.
 
 This is the command script (example: `put.js`).
 
@@ -201,18 +200,18 @@ Rules:
 - Render payload shape is `render.messages`.
 - Must not mutate world state directly.
 
-Optional entity target-contribution surface:
+Optional entity plan-contribution surface:
 
 After a successful command result envelope, runtime optionally consults bound
-target entities for target-phase contributions:
+entities for Plan-phase contributions:
 
 - direct target hook: `planDirect(actor, verbId, context)`
 - indirect target hook: `planIndirect(actor, verbId, relationTokenCanonical, context)`
 
 Evaluation order is fixed:
 
-1. direct target contribution
-2. indirect target contribution
+1. direct contribution
+2. indirect contribution
 
 Contribution return handling:
 
@@ -229,7 +228,7 @@ Accepted merge fields:
 Invalid contribution shapes are logged and ignored (best-effort), except
 explicit contribution failures (`ok:false`) which terminate command success.
 
-Target contribution hooks are data-only:
+Plan contribution hooks are data-only:
 
 - must not veto Capture decisions (veto ownership remains Capture)
 - must not mutate world state directly
@@ -238,7 +237,7 @@ Target contribution hooks are data-only:
 Layering rule:
 
 - Runtime infrastructure (`lib/**`, `commands/**`) must not hardcode
-  area/item/room IDs for target contributions.
+  area/item/room IDs for plan contributions.
 - Content-specific contribution behavior belongs in `areas/**` scripts/metadata.
 
 ### 4) Bubble (reaction phase)
@@ -257,7 +256,7 @@ Rules:
 - If forbidden bubble keys are returned (for example `operations`), dispatcher logs a contract error, ignores forbidden content, and continues.
 - Hooks must not directly mutate world state or emit output.
 - Bubble contributions may be evaluated repeatedly without changing world state.
-- Bubble hooks cannot deny an action that has already passed Capture/Target.
+- Bubble hooks cannot deny an action that has already passed Capture/Plan.
 - Hooks must be deterministic for identical input/state.
 
 Determinism constraints for bubble hooks:
@@ -273,7 +272,7 @@ Rules:
 
 - Commit applies merged operations from:
   - command base plan (`result.plan.operations`)
-  - target contribution operations (`planDirect` / `planIndirect`)
+  - plan contribution operations (`planDirect` / `planIndirect`)
 - Bubble does not contribute mutation operations (attempts are ignored).
 - Apply with compensating rollback:
   - mutator applies operations in order
@@ -291,7 +290,7 @@ Rules:
 - Render/Dispatch executes only after successful commit.
 - Render queue merge order is deterministic:
   1. command success `render.messages`
-  2. target contribution `render.messages`
+  2. plan contribution `render.messages`
   3. bubble contribution `render.messages`
 - `render.messages` supports:
   - line strings (sent to actor)
@@ -316,7 +315,7 @@ Non-command render path:
 Three hook kinds are used across phases:
 
 - Policy hook (capture): allow/deny only.
-- Target contribution hook (target): data-only contribution, no veto, no direct mutation/output (`planDirect`, `planIndirect`).
+- Plan contribution hook (Plan): data-only contribution, no veto, no direct mutation/output (`planDirect`, `planIndirect`).
 - Reaction hook (bubble): data-only render contribution, no veto, no direct mutation/output (command metadata `reactions` functions).
 
 Accepted-next naming (not wired in current runtime):
@@ -328,7 +327,7 @@ This split prevents veto/mutation ambiguity and keeps behavior predictable.
 
 ## Immediate Application To `put`
 
-- `put.js` lives in Target.
+- `put.js` lives in Plan.
 - Span-to-entity binding happens in Entity Resolution before Capture.
 - Container/object/player/room/quest/world policy checks run in Capture.
 - Post-plan narrative and quest/world effects accumulate in Bubble.
@@ -336,9 +335,9 @@ This split prevents veto/mutation ambiguity and keeps behavior predictable.
 
 ## Immediate Application To `go`
 
-- `go.js` lives in Target and declares direct-only form with direct scope `room.exits`.
+- `go.js` lives in Plan and declares direct-only form with direct scope `room.exits`.
 - Direction text is resolved to a concrete exit entity in Entity Resolution.
 - Exit/world policy checks run in Capture and can veto via metadata or runtime hooks.
-- Target validates destination and door state, then returns a `movePlayer` plan.
+- Plan validates destination and door state, then returns a `movePlayer` plan.
 - Mutator commits movement atomically in Commit.
 - Destination room view renders in Render/Dispatch only after commit.
