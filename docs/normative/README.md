@@ -14,6 +14,8 @@ This directory contains behavior contracts that are normative for this repositor
   - Defines the phase model (`Receive Input` through `Render/Dispatch`), including deterministic input canonicalization before parse.
 - `EntityResolution.md`
   - Defines read-only entity binding, deterministic scope/disambiguation behavior, and resolver failure ownership.
+- `PredicateStateRendering.md`
+  - Defines predicates as the authoritative, render-only mechanism for state-dependent room description rendering (`descriptionVariants` / `descriptionFragments`).
 
 ## Related implementation docs (non-normative)
 
