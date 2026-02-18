@@ -8,6 +8,7 @@ This is an implementation manual, not a normative contract. Normative behavior l
 
 - `docs/normative/CommandArchitecture.md`
 - `docs/normative/EntityResolution.md`
+- `docs/normative/PredicateStateRendering.md`
 - `docs/normative/SemanticMessaging.md`
 
 Use this manual to answer "where does this happen in code?" and "what are the current extension points?".
@@ -61,9 +62,22 @@ Semantic messaging harness (tooling):
 
 - `util/message.js`
 
+Predicate benchmark harness (tooling):
+
+- `bundles/bundle-rantamuta/tests/benchmarks/bench-all.js`
+- `bundles/bundle-rantamuta/tests/benchmarks/bench-record.js`
+- `bundles/bundle-rantamuta/tests/benchmarks/bench-check.js`
+- `bundles/bundle-rantamuta/tests/benchmarks/predicate-baseline.json`
+
 Room rendering:
 
 - `bundles/bundle-rantamuta/lib/helpers/room-view-helper.js`
+- `bundles/bundle-rantamuta/lib/helpers/predicate-runtime.js`
+
+Area predicate registries:
+
+- `bundles/bundle-rantamuta/areas/rantamuta/predicates.js`
+- `bundles/bundle-rantamuta/areas/test/predicates.js`
 
 Reference commands:
 
@@ -391,13 +405,15 @@ Key behavior:
 2. lifecycle arrival render on login/enter-game,
 3. movement render (`go` success payload).
 
+This render path is the normative method for state-dependent room description rendering (see `docs/normative/PredicateStateRendering.md`).
+
 Composition order:
 
 1. title
 2. base/override description
 3. matching description fragments
-4. exits line
-5. visible room item lines
+4. visible room item lines
+5. exits line
 
 State expression options:
 
@@ -407,15 +423,49 @@ State expression options:
 
 Predicate execution:
 
-1. `evaluateRenderPredicate(...)` reads `room.renderPredicates[key]`.
-2. Predicate functions receive the normalized render context directly.
-3. The context object itself is shallow-frozen in `normalizeRenderContext(...)`.
-4. Predicate exceptions are swallowed and treated as `false` (fail-closed).
+1. `evaluateRenderPredicate(...)` delegates to `PredicateRuntime.evaluate(...)` (world runtime if provided, helper default otherwise).
+2. Runtime resolution is area-local through `areas/<area>/predicates.js`.
+3. Predicates receive restricted input `({ actor, q, context })`, where `actor` is a normalized read-only view.
+4. `q` is a read-only facade (`roomFlag`, `areaFlag`, `roomHasItem`, `currentContainerHasItem`, `roomContainerHasItem`, `actorHasItem`, `actorHasEffect`, `actorQuestActive`, `actorQuestCompleted`).
+5. Predicate exceptions are swallowed and treated as `false` (fail-closed).
+6. `room.renderPredicates` fallback is intentionally not used.
+
+`q` query facade methods (current):
+
+1. `q.roomFlag(roomRef, key) -> boolean`
+   Returns `true` only when the resolved room has `metadata.flags[key] === true`.
+2. `q.areaFlag(areaRef, key) -> boolean`
+   Returns `true` only when the resolved area has `metadata.flags[key] === true`.
+3. `q.roomHasItem(roomRef, itemRef) -> boolean`
+   Returns `true` when any top-level item in that room matches `itemRef`.
+4. `q.currentContainerHasItem(itemRef) -> boolean`
+   Returns `true` when the current rendered container contains `itemRef`.
+   Uses `renderContext.currentContainer` when provided; otherwise falls back to `renderContext.entity` when that entity has an inventory.
+5. `q.roomContainerHasItem(roomRef, containerRef, itemRef) -> boolean`
+   Returns `true` when any matching top-level container in the room contains `itemRef`.
+6. `q.actorHasItem(itemRef) -> boolean`
+   Returns `true` when the actor inventory contains `itemRef`.
+   Returns `false` when actor context is missing.
+7. `q.actorHasEffect(effectId) -> boolean`
+   Returns `true` when the actor has an effect matching `effectId`.
+   Returns `false` when actor context is missing.
+8. `q.actorQuestActive(questRef) -> boolean`
+   Returns `true` when `questRef` is present in actor active quests.
+   Returns `false` when actor context is missing.
+9. `q.actorQuestCompleted(questRef) -> boolean`
+   Returns `true` when `questRef` is present in actor completed quests.
+   Returns `false` when actor context is missing.
+
+Reference behavior notes:
+
+1. Refs are normalized for matching (case/whitespace tolerant).
+2. Matching is authored-ref based (`entityReference`/authored refs), not runtime UUID based.
+3. `q` exposes read-only checks only; no mutators are available.
 
 Important implementation note:
 
-1. The shallow freeze protects top-level context shape, but does not prevent mutation through nested object references (for example `context.room` internals).
-2. Predicate purity is therefore currently a contract/convention, not a hard runtime sandbox.
+1. Runtime input objects (`actor` view, `q`, and `context`) are frozen; predicate code only receives read-only helper surfaces.
+2. Predicates still run as normal JS functions and are not sandboxed from global/environment reads; purity remains a behavioral contract.
 
 ## Area script model (current pattern)
 
@@ -434,9 +484,11 @@ Bell Tower examples:
    - enqueues ritual-completion render broadcasts when the final required offering is planned,
    - syncs item descriptions based on contained ritual item.
 2. `bellCryptGate.js`:
-   - defines render predicates for slab/runes state,
+   - attaches Bell Crypt gate policy and keeps runes detail text synchronized with basin contents,
    - gates `go down` using exit metadata requirements.
-3. `*Guard.js` item scripts:
+3. `areas/rantamuta/predicates.js`:
+   - defines area-local render predicates for slab/runes state (`slab_open`, `slab_blocking`, `basin_runes_glowing`, `basin_runes_dormant`).
+4. `*Guard.js` item scripts:
    - prevent removing ritual items once placed.
 
 ## Data-driven policy in metadata
@@ -485,6 +537,15 @@ Bundle tests:
    - `tests/player.lifecycle.test.js`
 
 Root-level tests also validate scenario runner behavior and wrapper boot behavior.
+
+Performance guardrails:
+
+1. `npm run bench:all`:
+   - prints predicate/runtime, room-render, and scenario benchmark tables.
+2. `npm run bench:record`:
+   - refreshes `bundles/bundle-rantamuta/tests/benchmarks/predicate-baseline.json`.
+3. `npm run bench:check`:
+   - compares current numbers to baseline with friendly failure guidance.
 
 ## Known technical constraints and migration pressure points
 
