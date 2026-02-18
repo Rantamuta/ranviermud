@@ -1,5 +1,8 @@
 # Bundle Predicate System (v1, Restricted)
 
+> Note: normative behavior now lives in `docs/normative/PredicateStateRendering.md`.
+> This document remains as design history/context.
+
 ## Status
 
 Draft design for `bundle-rantamuta`.
