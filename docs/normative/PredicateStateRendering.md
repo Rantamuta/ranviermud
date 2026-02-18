@@ -22,7 +22,7 @@ Core rule:
 
 ## Scope
 
-In v1, this contract applies to room-view rendering paths that evaluate `when:` predicates for:
+In v1, this contract applies to room-view rendering paths that evaluate `when:` / `whenNot:` predicate gates for:
 
 - `metadata.descriptionVariants` (first-match wins)
 - `metadata.descriptionFragments` (all matching fragments append in declaration order)
@@ -195,9 +195,13 @@ Load-time registry shape/name/function errors are logged and invalid entries are
 For room descriptions:
 
 1. Evaluate `descriptionVariants` in declaration order.
-2. Use the first variant whose `when` predicate returns `true`.
-3. If no variant matches, use base room description.
-4. Evaluate `descriptionFragments` in declaration order.
-5. Append every fragment whose `when` predicate returns `true`.
+2. A variant is eligible when:
+   - `when` is absent or evaluates `true`, and
+   - `whenNot` is absent or evaluates `false`, and
+   - at least one of `when` or `whenNot` is present.
+3. Use the first eligible variant.
+4. If no variant matches, use base room description.
+5. Evaluate `descriptionFragments` in declaration order.
+6. Append every eligible fragment using the same `when` / `whenNot` rules.
 
 Evaluation is read-only and must not mutate room/world metadata.

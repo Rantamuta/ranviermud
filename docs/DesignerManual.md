@@ -972,6 +972,9 @@ Use these metadata fields on the room:
 
 - `metadata.descriptionVariants`: optional full-description replacements (first matching variant wins).
 - `metadata.descriptionFragments`: optional extra lines appended after the chosen description (all matching fragments are appended in order).
+- Each entry can use:
+  - `when: <predicateName>` to show text when predicate is true.
+  - `whenNot: <predicateName>` to show text when that predicate is not true.
 
 ## Predicates
 
@@ -1126,6 +1129,17 @@ Room description usage in YAML (`when:`):
     descriptionFragments:
       - when: does_player_have_lantern
         text: "Your lantern light reveals silver etchings along the floor."
+```
+
+Using `whenNot` for explicit fallback text:
+
+```yml
+metadata:
+  descriptionFragments:
+    - when: is_slab_open
+      text: "A heavy slab has been forced aside, revealing stone stairs descending into darkness."
+    - whenNot: is_slab_open
+      text: "A dull stone slab blocks the descent."
 ```
 
 Object-focused description example:
