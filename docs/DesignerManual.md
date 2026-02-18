@@ -1014,6 +1014,13 @@ Where predicates live:
 
 - `bundles/bundle-rantamuta/areas/<area>/predicates.js`
 
+Naming convention for predicate keys:
+
+- Use snake_case.
+- Name predicates as yes/no questions.
+- `is_`, `can_`, and `does_` are all good prefixes.
+- Examples: `is_altar_completed`, `can_descend_stairs`, `does_reliquary_contain_seal`.
+
 Small predicate example:
 
 ```js
@@ -1021,13 +1028,13 @@ Small predicate example:
 'use strict';
 
 module.exports = {
-  altar_completed: ({ q }) =>
+  is_altar_completed: ({ q }) =>
     q.roomContainerHasItem('myarea:shrine', 'myarea:altarBowl', 'myarea:moonCoin'),
 
-  player_has_lantern: ({ q }) =>
+  does_player_have_lantern: ({ q }) =>
     q.actorHasItem('myarea:lantern'),
 
-  reliquary_sealed: ({ q }) =>
+  is_reliquary_sealed: ({ q }) =>
     q.roomContainerHasItem('myarea:nave', 'myarea:reliquary', 'myarea:waxSeal'),
 };
 ```
@@ -1077,31 +1084,31 @@ One combined example:
 
 ```js
 module.exports = {
-  moonlit_observatory: ({ q }) =>
+  is_observatory_moonlit: ({ q }) =>
     q.roomFlag('myarea:observatory', 'moonlit'),
 
-  storm_over_region: ({ q }) =>
+  is_storm_over_region: ({ q }) =>
     q.areaFlag('myarea', 'stormActive'),
 
-  dagger_still_on_altar: ({ q }) =>
+  is_dagger_still_on_altar: ({ q }) =>
     q.roomHasItem('myarea:altar_room', 'myarea:ceremonialDagger'),
 
-  chest_contains_black_pearl: ({ q }) =>
+  is_black_pearl_in_chest: ({ q }) =>
     q.currentContainerHasItem('myarea:blackPearl'),
 
-  reliquary_has_wax_seal: ({ q }) =>
+  is_wax_seal_in_reliquary: ({ q }) =>
     q.roomContainerHasItem('myarea:nave', 'myarea:reliquary', 'myarea:waxSeal'),
 
-  viewer_has_lantern: ({ q }) =>
+  does_player_have_lantern: ({ q }) =>
     q.actorHasItem('myarea:lantern'),
 
-  viewer_is_blessed: ({ q }) =>
+  is_viewer_blessed: ({ q }) =>
     q.actorHasEffect('blessed'),
 
-  bell_trial_active: ({ q }) =>
+  is_bell_trial_active: ({ q }) =>
     q.actorQuestActive('myarea:bellTrial'),
 
-  crypt_rite_completed: ({ q }) =>
+  is_crypt_rite_complete: ({ q }) =>
     q.actorQuestCompleted('myarea:cryptRite'),
 };
 ```
@@ -1114,10 +1121,10 @@ Room description usage in YAML (`when:`):
   description: "A silent shrine waits in pale stone."
   metadata:
     descriptionVariants:
-      - when: altar_completed
+      - when: is_altar_completed
         text: "The shrine hums softly, as if the stone itself is singing."
     descriptionFragments:
-      - when: player_has_lantern
+      - when: does_player_have_lantern
         text: "Your lantern light reveals silver etchings along the floor."
 ```
 
@@ -1131,9 +1138,9 @@ Use predicates to change how an object is described in the room text:
   description: "Broken pews line a long hall."
   metadata:
     descriptionFragments:
-      - when: reliquary_sealed
+      - when: is_reliquary_sealed
         text: "The reliquary now holds a red wax seal, pressed into its recess."
-      - when: altar_completed
+      - when: is_altar_completed
         text: "The bronze bell above seems less cracked than before."
 ```
 
