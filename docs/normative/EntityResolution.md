@@ -354,10 +354,6 @@ Failure message ownership:
   - May emit diagnostic traces (selected rule, searched scopes, candidate sets, ranking decisions).
   - Diagnostics are non-normative to gameplay behavior.
 
-## Open Questions
-
-- <none>
-
 ## Deferred
 
 - Selector-based disambiguation inputs are deferred.

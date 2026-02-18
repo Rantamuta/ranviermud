@@ -182,7 +182,7 @@ Only after a successful commit do we narrate success. We broadcast messages to t
 
 ---
 
-# 1) Agent Prompt Template
+## 1) Agent Prompt Template
 
 Use this as copy/paste for an implementation agent. Your job is to fill in the blanks with clear intent and unambiguous constraints.
 
@@ -421,7 +421,7 @@ As a designer, that report is your audit trail: it tells you whether your semant
 
 ---
 
-# 2) Implementation Skeleton
+## 2) Implementation Skeleton
 
 You do not need to write this, but you should recognize the pieces so you can sanity-check that the implementation matches your design.
 
@@ -478,7 +478,7 @@ module.exports = {
 
 ---
 
-# 3) Human Review Checklist (Designer Edition)
+## 3) Human Review Checklist (Designer Edition)
 
 Use this when reviewing a verb design or a PR. It is phrased as “what to verify,” not “how to code.”
 
