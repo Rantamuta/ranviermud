@@ -8,6 +8,7 @@ This is an implementation manual, not a normative contract. Normative behavior l
 
 - `docs/normative/CommandArchitecture.md`
 - `docs/normative/EntityResolution.md`
+- `docs/normative/SemanticMessaging.md`
 
 Use this manual to answer "where does this happen in code?" and "what are the current extension points?".
 
@@ -70,7 +71,9 @@ Reference commands:
 - `bundles/bundle-rantamuta/commands/go.js`
 - `bundles/bundle-rantamuta/commands/take.js`
 - `bundles/bundle-rantamuta/commands/put.js`
+- `bundles/bundle-rantamuta/commands/pull.js`
 - `bundles/bundle-rantamuta/commands/inventory.js`
+- `bundles/bundle-rantamuta/commands/quit.js` (also fast-pathed in `input-events/main.js`)
 
 Reference area scripts (Bell Tower):
 
@@ -102,7 +105,7 @@ Key points:
 2. `getPassword` -> `handleGetPassword(...)`
 3. `inGame` -> `handleCommand(...)`
 
-Important detail: for `inGame`, it returns the value from `handleCommand`. Scenario tooling uses this for internal trace mapping.
+Important detail: for `inGame`, it awaits/returns `handleCommand(...)` so session input processing stays serialized.
 
 ### 3) Login and first room render
 
@@ -162,7 +165,7 @@ Nested traversal:
 Capture has two sources:
 
 1. `metadata.captureChecks` on command declarations.
-2. shared entity policy evaluation (`allowAction` + `metadata.permissions`).
+2. shared entity policy evaluation (`canDirect` / `canIndirect` + `metadata.permissions`).
 
 Policy order currently:
 
@@ -207,20 +210,20 @@ World mutation is not performed directly in command files.
 Bubble contributions are accumulated from:
 
 1. command-level `metadata.reactions`,
-2. entity `bubbleEvent(action, context)` in order:
-   - direct
-   - indirect
-   - player
-   - room
-   - area
-   - quest system
-   - world
+2. each reaction function result in declaration order.
 
 Contribution shape accepted:
 
-1. `{ render: { lines: [...] } }`
-2. `{ render: { instructions: [...] } }`
-3. arrays of contribution objects
+1. `{ render: { messages: [...] } }`
+2. arrays of contribution objects
+
+`render.messages` normalization contract:
+
+1. each message entry is either:
+   - a string line, or
+   - an instruction object (`broadcast`, `semanticEvent`, etc.)
+2. this is the unified interface for lines and instructions.
+3. runtime does **not** auto-normalize legacy `render.lines` / `render.instructions`; those shapes are treated as invalid payloads and ignored.
 
 Bubble does not veto.
 
@@ -257,9 +260,9 @@ Invariant enforcement in mutator:
 ### Phase 6: Render/Dispatch
 
 1. Failure messages resolved by dispatcher (`command.metadata.errorMessages` then defaults).
-2. Success lines rendered only after successful commit.
-3. Bubble-added render lines append after target render lines.
-4. Render delivery instructions execute in Render/Dispatch after commit (best-effort, no rollback impact).
+2. Success render queue executes only after successful commit.
+3. Queue order is deterministic: command success messages, then target-plan contributions, then bubble contributions.
+4. Lines/instructions are both represented as `render.messages` entries and executed in queue order (best-effort, no rollback impact).
 5. Prompt is emitted at end when player/socket is still active.
 
 Current render delivery DSL (v1):
@@ -279,9 +282,10 @@ Current render delivery DSL (v1):
 
 Queue merge and execution order:
 
-1. command `render.instructions` entries first,
-2. bubble `render.instructions` entries second (bubble subject order),
-3. execute after successful commit and after render lines are sent.
+1. command success `render.messages` entries first,
+2. target-plan contribution messages second (`planDirect` / `planIndirect`),
+3. bubble contribution messages third (`metadata.reactions` order),
+4. execute after successful commit.
 
 `semanticEvent` runtime behavior (current implementation):
 
@@ -295,13 +299,13 @@ Queue merge and execution order:
 
 ## Internal trace and scenario diagnostics
 
-`command-dispatch.js` emits an internal unstable trace object (`CommandTraceInternal`).
+`command-dispatch.js` currently does not emit an internal trace object.
 
 Scenario runner mapping:
 
-1. `util/scenario-runner.js` consumes traces and exports stable `run` event JSON.
+1. `util/scenario-runner.js` synthesizes stable `run` event JSON from parser output, exact command lookup, and observed execution.
 2. JSON includes parse/lookup/phases/outcome.
-3. non-JSON mode emulates player transcript style (`> <raw>` echoes and output).
+3. non-JSON mode prints each raw command line followed by captured output lines.
 
 Whitespace filtering:
 
@@ -347,11 +351,15 @@ Examples:
    - direct and directIndirect
    - direct scope: `player.inventory`
    - indirect scope: `player.inventory`, `room.items`
-   - success path contributes `render.instructions` `semanticEvent` narration.
+   - success path contributes `render.messages` `semanticEvent` narration.
 4. `take`:
    - direct only
    - scope includes nested room items and nested carried containers.
-   - success path contributes `render.instructions` `semanticEvent` narration.
+   - success path contributes `render.messages` `semanticEvent` narration.
+5. `pull`:
+   - direct only
+   - direct scope: `room.items`
+   - success path contributes `render.messages` `semanticEvent` narration (optionally overridden by target `pullSuccessMessage(...)`).
 
 ## Room details and inspectables
 
@@ -413,16 +421,16 @@ Important implementation note:
 
 Scripts in this bundle attach behavior in `listeners.spawn` (and some `ready`):
 
-1. chain/compose with previous hooks if already present,
-2. attach `allowAction` for capture policy,
-3. attach `bubbleEvent` for bubble reactions,
-4. optionally wrap mutator-facing methods (`addItem`/`removeItem`) for local state sync.
+1. attach/override capture hooks (`canDirect` / `canIndirect`),
+2. attach/override target-plan hooks (`planDirect` / `planIndirect`) where needed,
+3. optionally wrap mutator-facing methods (`addItem`/`removeItem`) for local state sync,
+4. in some scripts, wrap accessors (`getExits`) to ensure policy is attached consistently.
 
 Bell Tower examples:
 
 1. `ritualPutTarget.js`:
    - validates accepted offerings on indirect `put`,
-   - contributes success flavor via render instructions,
+   - contributes success flavor via `render.messages`,
    - enqueues ritual-completion render broadcasts when the final required offering is planned,
    - syncs item descriptions based on contained ritual item.
 2. `bellCryptGate.js`:
@@ -469,8 +477,12 @@ Bundle tests:
    - per-command contract and failure surfaces.
 6. scenario integration:
    - `tests/scenarios/scenario.basic.test.js`
-   - `tests/scenarios/scenario.bell-tower.test.js`
-   - scenario script: `tests/scenarios/bell-tower.scenario`.
+   - scenario script fixture: `tests/scenarios/bell-tower.scenario`
+7. messaging and session flow:
+   - `tests/semantic.message.test.js`
+   - `tests/input.events.main.test.js`
+   - `tests/auth.flow.test.js`
+   - `tests/player.lifecycle.test.js`
 
 Root-level tests also validate scenario runner behavior and wrapper boot behavior.
 
@@ -480,10 +492,31 @@ These are not failures, but they are current architecture pressure points worth 
 
 1. Render predicates are fail-closed on exceptions, but there is no deep runtime mutation sandbox yet.
 2. Some scripts still wrap entity mutator methods (`addItem`/`removeItem`) to synchronize derived state.
-3. Script hook contracts are synchronous (`allowAction`, `bubbleEvent`), no async policy surface.
-4. Internal command trace shape is intentionally unstable; only scenario-runner JSON is stable.
+3. Script hook contracts are synchronous (`canDirect`, `canIndirect`, `planDirect`, `planIndirect`, `metadata.reactions`), no async policy surface.
+4. Scenario-runner JSON is the stable diagnostics surface; dispatcher internals may evolve independently.
 
 For core maintainers: these pressure points are the likely candidates for engine-level abstractions (`HookRunner`, query-pass caching, first-class mutation events).
+
+## Hook surface (current)
+
+Capture-phase surfaces:
+
+1. command-level `metadata.captureChecks` (functions)
+2. entity role hooks:
+   - `canDirect(actor, verbId, context)`
+   - `canIndirect(actor, verbId, relationTokenCanonical, context)`
+3. entity declarative policy via `metadata.permissions`
+
+Target-plan surfaces:
+
+1. `directTarget.planDirect(actor, verbId, context)`
+2. `indirectTarget.planIndirect(actor, verbId, relationTokenCanonical, context)`
+3. may contribute plan operations and/or `render.messages` before commit
+
+Bubble/reaction surfaces:
+
+1. command-level `metadata.reactions` only
+2. contributions are render-only (`render.messages`) and cannot enqueue mutations
 
 ## Change guidance for maintainers
 
