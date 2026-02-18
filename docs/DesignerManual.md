@@ -808,8 +808,8 @@ Current room rendering convention (`look`, arrival render):
 
 1. room title
 2. room description
-3. exits line (`Exits: north, west`) when exits exist
-4. room item lines (`roomDesc` if present, else fallback)
+3. room item lines (`roomDesc` if present, else fallback)
+4. exits line (`Exits: north, west`) when exits exist
 
 ## Room Details (Scenery You Can Look At)
 
@@ -973,59 +973,189 @@ Use these metadata fields on the room:
 - `metadata.descriptionVariants`: optional full-description replacements (first matching variant wins).
 - `metadata.descriptionFragments`: optional extra lines appended after the chosen description (all matching fragments are appended in order).
 
-Variant example (first match wins):
+## Predicates
 
-```yml
-metadata:
-  descriptionVariants:
-    - when: ritual_complete
-      text: "The chamber rings with warm harmonic light."
-    - when: ritual_started
-      text: "A faint tremor rolls through the chamber."
-```
+Predicates are the "if checks" behind `when:` lines.
 
-Example:
+Current scope note:
 
-```yml
-- id: bell_crypt
-  title: "Bell Crypt"
-  description: "A low crypt of damp stone holds offerings and a basin etched with old runes."
-  script: bellCryptGate
-  metadata:
-    descriptionFragments:
-      - when: slab_blocking
-        text: "A dull stone slab blocks the descent."
-      - when: slab_open
-        text: "A heavy slab has been forced aside, revealing stone stairs descending into darkness."
-```
+- In v1, predicates are used for room-view descriptive state (`descriptionVariants` / `descriptionFragments`).
+- Direct `look <item>` output still comes from that target's own `description` text.
 
-Then define the predicate keys in the room script (`scripts/rooms/bellCryptGate.js`) by attaching `renderPredicates` during `spawn`:
+Easy definition:
+
+- A predicate is just a statement that is either true or false.
+
+Examples in plain language:
+
+- "Is the ritual complete?"
+- "Is the slab still blocking the stairs?"
+- "Is the player carrying the lantern?"
+- "Is the reliquary currently holding the wax seal?"
+
+If a predicate is true, the matching text is shown.  
+If it is false, that text is skipped.
+
+Why this is useful for designers:
+
+- You can write richer world descriptions without touching command code.
+- You can show progression in the environment itself.
+- You can make rooms feel reactive to player actions.
+- You can keep puzzle feedback clear and diegetic ("the world tells you what changed").
+
+Creative examples you can build:
+
+- A chapel where descriptive tone changes from fearful to peaceful as offerings are placed.
+- A forest room that adds fog lines only when a weather flag is active.
+- A study where shelves read "picked clean" only after the player has taken key books.
+- A vault door room that shows subtle clue text once the player has learned a secret.
+
+Where predicates live:
+
+- `bundles/bundle-rantamuta/areas/<area>/predicates.js`
+
+Small predicate example:
 
 ```js
+// bundles/bundle-rantamuta/areas/myarea/predicates.js
+'use strict';
+
 module.exports = {
-  listeners: {
-    spawn: state => function onSpawn() {
-      this.renderPredicates = {
-        ...(this.renderPredicates || {}),
-        slab_open: () => {
-          // return true when puzzle state says descent is open
-          return true;
-        },
-        slab_blocking: () => {
-          // return true while descent is still blocked
-          return false;
-        },
-      };
-    },
-  },
+  altar_completed: ({ q }) =>
+    q.roomContainerHasItem('myarea:shrine', 'myarea:altarBowl', 'myarea:moonCoin'),
+
+  player_has_lantern: ({ q }) =>
+    q.actorHasItem('myarea:lantern'),
+
+  reliquary_sealed: ({ q }) =>
+    q.roomContainerHasItem('myarea:nave', 'myarea:reliquary', 'myarea:waxSeal'),
 };
 ```
 
-Tips:
+### `q` Query Methods (Designer Reference)
 
-- Keep render predicates read-only; they should compute from state and return booleans.
-- Avoid side effects inside predicates.
-- Arrival render and intransitive `look` both use the same room-view builder, so this text stays consistent.
+Inside a predicate, `q` is your read-only "question toolbox."  
+Each method asks one specific true/false question.
+
+1. `q.roomFlag(roomRef, key)`
+   Example idea: "Is the observatory marked as moonlit?"
+   Example: `q.roomFlag('myarea:observatory', 'moonlit')`
+
+2. `q.areaFlag(areaRef, key)`
+   Example idea: "Is the whole region currently in storm mode?"
+   Example: `q.areaFlag('myarea', 'stormActive')`
+
+3. `q.roomHasItem(roomRef, itemRef)`
+   Example idea: "Does the altar room still contain the ceremonial dagger?"
+   Example: `q.roomHasItem('myarea:altar_room', 'myarea:ceremonialDagger')`
+
+4. `q.currentContainerHasItem(itemRef)`
+   Example idea: "Does the container this description belongs to currently hold a black pearl?"
+   Example: `q.currentContainerHasItem('myarea:blackPearl')`
+
+5. `q.roomContainerHasItem(roomRef, containerRef, itemRef)`
+   Example idea: "Is the wax seal placed in the reliquary in the nave?"
+   Example: `q.roomContainerHasItem('myarea:nave', 'myarea:reliquary', 'myarea:waxSeal')`
+
+6. `q.actorHasItem(itemRef)`
+   Example idea: "Is the player carrying a lantern, so they notice faint wall writing?"
+   Example: `q.actorHasItem('myarea:lantern')`
+
+7. `q.actorHasEffect(effectId)`
+   Example idea: "Is the player under a blessing effect, so the shrine feels warmer?"
+   Example: `q.actorHasEffect('blessed')`
+
+8. `q.actorQuestActive(questRef)`
+   Example idea: "Is the bell trial currently in progress?"
+   Example: `q.actorQuestActive('myarea:bellTrial')`
+
+9. `q.actorQuestCompleted(questRef)`
+   Example idea: "Has the player already completed the crypt rite?"
+   Example: `q.actorQuestCompleted('myarea:cryptRite')`
+
+One combined example:
+
+```js
+module.exports = {
+  moonlit_observatory: ({ q }) =>
+    q.roomFlag('myarea:observatory', 'moonlit'),
+
+  storm_over_region: ({ q }) =>
+    q.areaFlag('myarea', 'stormActive'),
+
+  dagger_still_on_altar: ({ q }) =>
+    q.roomHasItem('myarea:altar_room', 'myarea:ceremonialDagger'),
+
+  chest_contains_black_pearl: ({ q }) =>
+    q.currentContainerHasItem('myarea:blackPearl'),
+
+  reliquary_has_wax_seal: ({ q }) =>
+    q.roomContainerHasItem('myarea:nave', 'myarea:reliquary', 'myarea:waxSeal'),
+
+  viewer_has_lantern: ({ q }) =>
+    q.actorHasItem('myarea:lantern'),
+
+  viewer_is_blessed: ({ q }) =>
+    q.actorHasEffect('blessed'),
+
+  bell_trial_active: ({ q }) =>
+    q.actorQuestActive('myarea:bellTrial'),
+
+  crypt_rite_completed: ({ q }) =>
+    q.actorQuestCompleted('myarea:cryptRite'),
+};
+```
+
+Room description usage in YAML (`when:`):
+
+```yml
+- id: shrine
+  title: "Moon Shrine"
+  description: "A silent shrine waits in pale stone."
+  metadata:
+    descriptionVariants:
+      - when: altar_completed
+        text: "The shrine hums softly, as if the stone itself is singing."
+    descriptionFragments:
+      - when: player_has_lantern
+        text: "Your lantern light reveals silver etchings along the floor."
+```
+
+Object-focused description example:
+
+Use predicates to change how an object is described in the room text:
+
+```yml
+- id: nave
+  title: "Bell Nave"
+  description: "Broken pews line a long hall."
+  metadata:
+    descriptionFragments:
+      - when: reliquary_sealed
+        text: "The reliquary now holds a red wax seal, pressed into its recess."
+      - when: altar_completed
+        text: "The bronze bell above seems less cracked than before."
+```
+
+In this pattern, the object state is real, and room prose reflects it.
+
+Important rule: predicates must never change the world.
+
+- Predicates are read-only checks.
+- They should only answer true/false.
+- They should never add/remove items, set flags, move players, or open/close paths.
+
+Why this rule matters:
+
+- It keeps game logic predictable.
+- It keeps command behavior and mutation in command phases where it belongs.
+- It prevents hard-to-debug "description code changed gameplay" bugs.
+
+Practical tip:
+
+- Think of predicates as a camera lens, not a hand.
+- The lens decides what the player sees.
+- The hand (commands + mutation logic) is what changes the world.
 
 ## Scenario Runner
 
@@ -1212,7 +1342,7 @@ module.exports = {
     spawn: state => function onSpawn(config) {
       // Annotation:
       // - Room spawn happens before default room items/npcs are hydrated
-      // - Good place to attach policy/predicate helpers on `this`
+      // - Good place to attach room policy helpers on `this`
       void state;
       this.myBehavior = { enabled: true, config };
     },
