@@ -488,6 +488,7 @@ Bell Tower examples:
    - gates `go down` using exit metadata requirements.
 3. `areas/rantamuta/predicates.js`:
    - defines area-local render predicates for slab/runes state (`slab_open`, `slab_blocking`, `basin_runes_glowing`, `basin_runes_dormant`).
+   - for documentation examples, use snake_case yes/no names with `is_`, `can_`, or `does_` (for example `is_slab_open`, `can_descend`, `does_basin_contain_stone`).
 4. `*Guard.js` item scripts:
    - prevent removing ritual items once placed.
 

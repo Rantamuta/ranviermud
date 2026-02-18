@@ -64,7 +64,7 @@ Export contract:
 
 ```js
 module.exports = {
-  isExample: ({ actor, q, context }) => true,
+  is_example: ({ actor, q, context }) => true,
 };
 ```
 
@@ -74,6 +74,8 @@ Rules:
 - keys must match `^[A-Za-z_][A-Za-z0-9_]*$`
 - values must be synchronous functions
 - lookup is area-local only
+- key naming convention (authoring): use snake_case yes/no question names.
+  Preferred prefixes: `is_`, `can_`, `does_` (for example `is_slab_open`, `can_player_descend`, `does_basin_contain_stone`).
 
 Not supported in v1:
 
@@ -199,4 +201,3 @@ For room descriptions:
 5. Append every fragment whose `when` predicate returns `true`.
 
 Evaluation is read-only and must not mutate room/world metadata.
-
