@@ -28,7 +28,13 @@
     "bundles:test:contract": "node --test test/bundles.contract.test.js",
     "bundles:validate": "node util/validate-bundles.js",
     "bundles:nuke": "node util/nuke-bundles.js",
-    "scenario": "node util/scenario-runner.js"
+    "scenario": "node util/scenario-runner.js",
+    "bench:predicate": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-predicate-runtime.js",
+    "bench:room": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-room-view.js",
+    "bench:scenario": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-scenario.js",
+    "bench:all": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-all.js",
+    "bench:record": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-record.js",
+    "bench:check": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-check.js"
   },
   "dependencies": {
     "commander": "^2.19.0",
