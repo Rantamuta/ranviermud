@@ -420,6 +420,9 @@ State expression options:
 1. `room.describeForLook(context)` override hook,
 2. `metadata.descriptionVariants[]` first-match replacement,
 3. `metadata.descriptionFragments[]` additive lines.
+4. entries may gate on either:
+   - `when: <predicate>` (predicate must evaluate true),
+   - `whenNot: <predicate>` (predicate must evaluate false).
 
 Predicate execution:
 
@@ -487,7 +490,8 @@ Bell Tower examples:
    - attaches Bell Crypt gate policy and keeps runes detail text synchronized with basin contents,
    - gates `go down` using exit metadata requirements.
 3. `areas/rantamuta/predicates.js`:
-   - defines area-local render predicates for slab/runes state (`slab_open`, `slab_blocking`, `basin_runes_glowing`, `basin_runes_dormant`).
+   - defines area-local render predicates for slab/runes state (`is_slab_open`, `is_basin_runes_glowing`).
+   - paired fallback lines are authored with `whenNot` in room metadata (for example slab-blocking and runes-dormant text).
    - for documentation examples, use snake_case yes/no names with `is_`, `can_`, or `does_` (for example `is_slab_open`, `can_descend`, `does_basin_contain_stone`).
 4. `*Guard.js` item scripts:
    - prevent removing ritual items once placed.
