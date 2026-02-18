@@ -1,210 +1,224 @@
-# Bundle Predicate System (Design Proposal)
+# Bundle Predicate System (v1, Restricted)
 
 ## Status
 
-Draft design for maintenance-mode implementation in `ranviermud`.
+Draft design for `bundle-rantamuta`.
 
-This document proposes area-scoped, named predicates that can be referenced from YAML (and later inline description tags) without introducing engine-level expression evaluation.
+This version is intentionally strict. It supports descriptive tags in room and object text, and does not expose predicates to gameplay policy or mutation phases.
 
-## Problem Statement
+## Goal
 
-Current stateful room rendering supports `when: <name>` checks through `room.renderPredicates`, usually assigned by room scripts at runtime. That works, but it is:
+Provide named, area-scoped predicates for description rendering only:
 
-- Room-script centric instead of area-content centric
-- Harder to validate statically from YAML
-- Not yet a reusable contract for future inline description tags
+* room descriptions
+* room detail descriptions
+* object descriptions (items/NPCs as applicable)
+* object room lines (`roomDesc`) when rendered
 
-We want a bundle/area predicate surface where authors define named checks once and reuse them by name (`isBell`, `slab_open`, etc.) in content.
+Predicates are for text selection, not game progression. Predicate evaluation must not be consulted by any code that influences mutation planning or veto decisions.
+Predicates may depend on actor knowledge state to alter descriptive vocabulary and perception, but must not determine world mutability.
+In v1, "actor knowledge state" means only the normalized `actor` view plus actor-scoped `q` results (for example `q.actorHasItem`, `q.actorHasEffect`, `q.actorQuestActive`, `q.actorQuestCompleted`).
 
-## Goals
+## Hard Boundaries
 
-- Add area-level predicate definitions at `areas/<area>/predicate.js`.
-- Let YAML and future inline tags reference predicates by name.
-- Keep evaluation read-only and deterministic.
-- Preserve current compatibility contracts (boot sequence, bundle loading, tick behavior).
-- Keep implementation incremental and reversible.
+Predicates are available only in description render paths.
 
-## Non-Goals
+Predicates are not available in:
 
-- No general expression language.
-- No mutation API in predicates.
-- No architectural rewrite of area/script loading.
-- No changes to CLI/config contracts unless explicitly gated.
+* Capture
+* Plan
+* Commit
+* Bubble
+* lifecycle hooks (`spawn`, `ready`, `updateTick`, etc.)
 
-## File and Authoring Contract
+No script-level `predicateEvaluate(...)` API is provided in v1.
+
+## Authoring Model
 
 Each area may define:
 
-- `bundles/<bundle>/areas/<area>/predicate.js` (optional)
+```
+bundles/<bundle>/areas/<area>/predicates.js
+```
 
-Export format (v1, single supported shape):
+Export contract:
 
 ```js
 module.exports = {
-  isBell: ({ actor, state, context }) => true,
-  slab_open: ({ actor, state, context }) => false,
+  isSlabOpen: ({ actor, q, context }) => true,
+  isBellActive: ({ actor, q, context }) => false,
 };
 ```
 
 Rules:
 
-- Export must be a plain object.
-- Keys are predicate names (`^[A-Za-z_][A-Za-z0-9_]*$`).
-- Values must be synchronous functions returning `true` or `false`.
-- Predicates must be side-effect free and read-only.
+* export must be a plain object
+* key regex: `^[A-Za-z_][A-Za-z0-9_]*$`
+* values must be synchronous functions
+* only `=== true` counts as true
+* non-boolean returns evaluate to `false`
+* thrown exceptions evaluate to `false`
 
-## Standard Predicate Input
+## Tag Usage
 
-Predicate signature:
-
-- `({ actor, state, context }) => boolean`
-
-Input fields:
-
-- `actor`: read-only actor view or `null`
-- `state`: read-only query facade (no mutators)
-- `context`: read-only metadata for the call site
-
-`context` (v1):
-
-- `room`: room being rendered/evaluated, read-only view or `null`
-- `area`: current area, read-only view or `null`
-- `source`: string describing caller, e.g. `room.descriptionVariants`
-- `meta`: optional caller-defined object for future use
-
-Rationale:
-
-- Matches the requested `(actor, state, context)` intent.
-- Keeps one stable input shape across YAML predicates and future inline tags.
-- Avoids exposing full mutable engine entities directly.
-
-## Read-Only and Safety Contract
-
-JavaScript cannot prove purity, so v1 uses practical guardrails:
-
-- Evaluator deep-freezes input objects before invocation.
-- `state` is a query-only facade (no setters, no mutation methods).
-- Predicate exceptions are caught; failures evaluate to `false`.
-- Non-boolean returns evaluate to `false` and emit a warning.
-
-Design invariant:
-
-- Predicate evaluation must never be required for world progression, only for presentation and conditional checks.
-
-## Predicate Resolution Semantics
-
-Named predicate lookup:
-
-1. If name is qualified (`areaName:predicateName`), resolve that area registry directly.
-2. If name is unqualified (`predicateName`):
-   - Evaluate room-local `room.renderPredicates[predicateName]` first (legacy compatibility).
-   - Otherwise evaluate current area `predicate.js` map.
-3. If unresolved, return `false` (warn once per predicate key and source).
-
-This preserves existing behavior while allowing migration to area-level predicates.
-
-## YAML Integration
-
-No YAML shape change required.
-
-Existing fields continue to work:
-
-- `metadata.descriptionVariants[].when`
-- `metadata.descriptionFragments[].when`
+Description tags reference predicate names.
 
 Example:
 
-```yaml
-metadata:
-  descriptionVariants:
-    - when: isBell
-      text: "The old bell hums with a thin metallic resonance."
-  descriptionFragments:
-    - when: slab_open
-      text: "A stone slab has shifted, revealing steps below."
+```text
+The bell [isBellActive:hums softly|hangs silent].
 ```
 
-## Future Inline Tag Integration
+The same predicate names may also be used by declarative `when:` fields in description variant/fragment metadata if enabled by the renderer.
 
-This predicate system is the shared backend for future inline room tags.
+## Predicate Input Contract
 
-For example, in a future parser:
+Predicate signature:
 
-- `[isBell:then|else]`
+```js
+({ actor, q, context }) => boolean
+```
 
-`isBell` would resolve through the same predicate interpreter and input contract.
+### `actor`
 
-## Validation and Tooling
+Nullable viewer data (plain view, not full engine object).
 
-Extend bundle validation in two levels:
+Contract (v1):
 
-1. Load-time validation:
-   - `predicate.js` exports object map
-   - predicate keys are valid identifiers
-   - values are functions
-2. Reference validation:
-   - collect `when` keys from room YAML
-   - verify each key resolves to either room-local predicate (known at runtime) or area predicate
-   - default mode: unresolved keys are warnings
-   - strict mode: unresolved keys are errors
+```js
+actor = {
+  ref: "player:rendall",
+  name: "rendall",
+  level: 1,
+  role: 2,
+  roomRef: "rantamuta:resonance_chamber",
+  effectIds: []
+}
+```
 
-This should be integrated into `util/validate-bundles.js` engine mode so validation reflects actual boot wiring.
+Rules:
 
-## Runtime Behavior and Performance
+* actor view is read-only and frozen before predicate invocation
+* no raw Player instance is exposed
+* no direct inventory/equipment/metadata object exposure on `actor`
+* `actor` is `null` when no viewer exists in render context
+* renderer never falls back to any other actor when `actor` is `null`
 
-- Predicates are loaded once per area during area load.
-- Evaluation is synchronous.
-- During a single render pass, predicate results may be memoized per `(predicateName, actor, room, source)` to avoid duplicate calls.
-- On any evaluator error, fallback is deterministic (`false`).
+### `context`
 
-## Observability
+Plain data object, for example:
 
-Log categories:
+```js
+{
+  source: "room.description",
+  areaRef: "rantamuta",
+  roomRef: "rantamuta:bell_crypt",
+  entityRef: "rantamuta:crackedBell"
+}
+```
 
-- `predicate.load.error` (invalid export)
-- `predicate.lookup.missing` (unknown key)
-- `predicate.eval.error` (thrown function)
-- `predicate.eval.invalidReturn` (non-boolean)
+### `q` (Read-only Query Facade)
 
-Logging policy:
+Initial v1 methods:
 
-- Warn once per unique `(area, predicateName, source, code)` tuple to avoid spam.
+```js
+q.roomFlag(roomRef, key) => boolean
+q.areaFlag(areaRef, key) => boolean
+q.roomHasItem(roomRef, itemRef) => boolean
+q.currentContainerHasItem(itemRef) => boolean
+q.roomContainerHasItem(roomRef, containerRef, itemRef) => boolean
+q.actorHasItem(itemRef) => boolean
+q.actorHasEffect(effectId) => boolean
+q.actorQuestActive(questRef) => boolean
+q.actorQuestCompleted(questRef) => boolean
+```
 
-## Compatibility and Migration Plan
+Constraints:
 
-Phase 1:
+* query-only methods
+* no mutators
+* no raw engine object exposure
+* actor-dependent `q` methods return `false` when `actor` is `null`
+* actor knowledge must be inferred only from the `actor` contract and actor-scoped `q` methods
 
-- Introduce area predicate registry and interpreter.
-- Keep `room.renderPredicates` behavior unchanged.
-- Use compatibility lookup order (room-local first, area second).
+Reference semantics (v1):
 
-Phase 2:
+* `roomRef`, `containerRef`, and `itemRef` are authored content refs (`area:id`), not runtime UUIDs.
+* Predicate authors never reference runtime UUIDs.
+* `currentContainerHasItem(itemRef)` is scope-bound to the currently rendered entity instance; when no current container exists in render context, it returns `false`.
+* `roomContainerHasItem(roomRef, containerRef, itemRef)` is scope-bound to the specified room and returns `true` when any matching container instance in that room contains the item.
 
-- Migrate puzzle/room scripts that currently assign `room.renderPredicates` to area `predicate.js` where practical.
-- Keep room-local predicates only for truly room-instance dynamic logic.
+## Resolution Rules
 
-Phase 3 (optional):
+v1 lookup is area-local only:
 
-- Add inline description tag parser that calls this interpreter.
+1. resolve current area registry
+2. if key exists, evaluate
+3. if missing, return `false` and log warning
 
-Rollback:
+Not supported in v1:
 
-- If issues occur, disable area predicate lookup and continue using existing room-local behavior.
+* bundle-global predicate files
+* cross-area predicate names
+* compatibility fallback to `room.renderPredicates`
 
-## Open Questions
+## Evaluation Semantics
 
-- Should unresolved `when` keys become hard errors in non-strict mode for maintenance 1.0?
-- Do we need a config flag (for example `features.areaPredicates`) for staged rollout?
-- Should cross-area qualified predicate names be allowed by default, or only current-area lookup?
+For each tag or `when` check:
 
-## Minimal Test Matrix
+1. resolve predicate by name
+2. build `{ actor, q, context }`
+3. call synchronously
+4. treat result as `true` only when `result === true`
 
-1. Loads valid `predicate.js` and rejects invalid exports.
-2. Resolves unqualified names from room-local then area map.
-3. Resolves qualified names from explicit area.
-4. Returns `false` on missing predicates.
-5. Returns `false` on thrown predicates.
-6. Rejects non-boolean return values.
-7. Verifies input is read-only (mutation attempt fails).
-8. Confirms deterministic output across repeated evaluations.
-9. Confirms YAML `when` integration path remains unchanged.
+Failure behavior:
+
+* unknown key: `false`
+* non-boolean return: `false`
+* exception: `false`
+
+No predicate failure throws to caller.
+
+## Logging and Diagnostics
+
+Warn once per unique:
+
+```
+${areaRef}:${predicateName}:${source}:${code}
+```
+
+Codes:
+
+* `PREDICATE_MISSING`
+* `PREDICATE_INVALID_RETURN`
+* `PREDICATE_THROW`
+
+Implementation note: duplicate keys inside a single JS object literal are not reliably detectable at runtime; v1 does not guarantee duplicate-key diagnostics.
+
+## Determinism and Safety
+
+Predicates must be pure functions of `(actor, q, context)` and current in-memory world state reachable through `q`.
+
+Disallowed behavior:
+
+* randomness
+* wall-clock reads
+* external I/O
+* mutation
+
+## Migration (Reference Bundle)
+
+v1 intentionally removes `room.renderPredicates` in migrated areas.
+
+Bell Tower content is migrated to area predicates and description tags/`when` usage under the new contract. No compatibility shim is included in v1.
+
+## Minimal Implementation Checklist
+
+1. add area predicate loader for `areas/<area>/predicates.js`
+2. add predicate evaluation service (render-only callable)
+3. wire service into room/object description rendering paths
+4. wire service into description `when:` evaluation (if enabled)
+5. add load-time validation for export shape
+6. add warn-once diagnostics for missing/invalid/throwing predicates
+7. migrate Bell Tower predicates to area registry
+8. remove `room.renderPredicates` usage from migrated content
