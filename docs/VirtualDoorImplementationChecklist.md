@@ -87,7 +87,7 @@ Purpose:
   - closed+unlocked -> auto `open`, move
   - locked+matching key -> auto `unlockAndOpen`, move
   - locked+no key -> fail in capture/plan
-- [ ] [Required] `go` composed door+movement success suppresses generic movement leave/arrive duplication.
+- [x] [Required] `go` composed door+movement success suppresses generic movement leave/arrive duplication.
 
 ## 6) Key Validation and Messaging
 
