@@ -262,6 +262,9 @@ When virtualized:
 
 - one runtime state is authoritative for the passage
 - mutations write through to both underlying directional door records
+- reflection to both directional records is one logical mutator operation
+- implementations may perform two underlying writes, but only within one commit instruction boundary
+- if reflection cannot complete, mutation fails as a unit and restores both directional records to pre-operation state
 
 Load-time reconciliation (when paired directional records disagree):
 
@@ -283,6 +286,8 @@ Invariant enforcement location:
 - Invariants are enforced only in the VirtualDoor mutation API.
 - Commands, plan builders, and message layers must not duplicate invariant logic.
 - Mutator instructions targeting virtualized edges must delegate to VirtualDoor mutation methods.
+- For virtualized pairs, command surfaces and scripts must not call legacy directional methods directly (`room.openDoor`, `room.closeDoor`, `room.lockDoor`, `room.unlockDoor`).
+- Monkeypatching `Room` methods is not required in v1; preferred enforcement is centralized routing in bundle-owned paths.
 
 When not virtualized (`virtualDoor: false` on either side):
 

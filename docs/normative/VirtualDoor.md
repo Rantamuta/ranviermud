@@ -125,6 +125,12 @@ For a virtualized pair:
 2. VirtualDoor computes one effective logical door state for the pair.
 3. On successful commit, VirtualDoor must reflect that state to both directional door records.
 
+Commit atomicity requirement:
+
+- Reflection to both directional records is one logical mutator operation.
+- Implementations may perform two underlying writes, but they must occur within one commit instruction boundary.
+- If reflection cannot be completed, operation must fail as a unit and restore pre-operation door state for both directional records.
+
 Load/reload reconciliation for paired directional records:
 
 1. Normalize each directional side first:
@@ -140,6 +146,12 @@ Load/reload reconciliation for paired directional records:
 3. Persist/reflect that effective state to both directional records for the pair.
 
 Direct mutation of backing directional records for a virtualized pair is out of contract.
+
+Single write-path discipline:
+
+- For virtualized pairs, command surfaces, mutator instructions, and scripted door-state changes must route through VirtualDoor service APIs.
+- Calling legacy directional methods directly (`room.openDoor`, `room.closeDoor`, `room.lockDoor`, `room.unlockDoor`) for virtualized pairs is out of contract.
+- Monkeypatching `Room` methods is not required in v1; preferred enforcement is centralized routing in bundle-owned code paths.
 
 When a pair is non-virtualized:
 
