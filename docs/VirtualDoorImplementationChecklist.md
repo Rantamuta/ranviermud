@@ -76,7 +76,7 @@ Purpose:
   - `close <door>`
   - `lock <door>` (optional `with <key>`)
   - `unlock <door>` (optional `with <key>`)
-- [ ] [Required] Command-to-mutation mapping:
+- [x] [Required] Command-to-mutation mapping:
   - `open` -> `open`
   - `close` -> `close`
   - `lock` -> `closeAndLock`
