@@ -187,7 +187,7 @@ All comparisons MUST use the same `eps` value.
 Branch order is fixed. The first matching clause MUST be taken.
 
 ```text
-if SlopeMag[x,y] < flatSlopeThreshold:
+if SlopeMag[x,y] < landform.flatSlopeThreshold:
 
     # Flat local minima (gentle basin)
     if lowerCount == 0 and higherCount > 0:
@@ -245,17 +245,17 @@ The following parameters MUST be defined in Appendix A:
 
 ## 6.1 Flow Direction (D8) — Tie-Breaking (Normative, Hash-Based)
 
-For each tile, choose downhill neighbor with maximal positive `drop = H[c] - H[n]` above `minDropThreshold`, else `NONE`.
+For each tile, choose downhill neighbor with maximal positive `drop = H[c] - H[n]` above `hydrology.minDropThreshold`, else `NONE`.
 
-When selecting the downhill neighbor with maximal drop, multiple candidates may have equal drop within `tieEps`.
+When selecting the downhill neighbor with maximal drop, multiple candidates may have equal drop within `hydrology.tieEps`.
 
-If two or more neighbors have identical drop within `tieEps`, tie-breaking MUST be deterministic and MUST use the following hash-based rule.
+If two or more neighbors have identical drop within `hydrology.tieEps`, tie-breaking MUST be deterministic and MUST use the following hash-based rule.
 
 ### Tie-Break Rule (Normative)
 
 Let:
 
-- `T = ordered list of tied downhill candidate neighbors` (candidates with maximal drop within `tieEps`), in `Dir8` numeric order.
+- `T = ordered list of tied downhill candidate neighbors` (candidates with maximal drop within `hydrology.tieEps`), in `Dir8` numeric order.
 - `|T| = number of tied candidates`.
 
 If `|T| == 1`, select that candidate.
@@ -290,7 +290,7 @@ The hash function MUST be defined exactly as follows:
 
 All operations are 64-bit unsigned integer operations with wraparound.
 
-This tie-break rule MUST be applied whenever multiple downhill candidates are tied within `tieEps`.
+This tie-break rule MUST be applied whenever multiple downhill candidates are tied within `hydrology.tieEps`.
 
 ## 6.2 Flow Accumulation
 
@@ -305,7 +305,7 @@ This tie-break rule MUST be applied whenever multiple downhill candidates are ti
 
 ## 6.4 Lakes and Basins
 
-- Lake candidate: `Landform==basin && SlopeMag<lakeFlatSlopeThreshold && FA_N>=lakeAccumThreshold`.
+- Lake candidate: `Landform==basin && SlopeMag<hydrology.lakeFlatSlopeThreshold && FA_N>=hydrology.lakeAccumThreshold`.
 - Flood-fill connected lake candidates (`LakeMask=true`).
 
 ## 6.5 Streams (Normative)
@@ -334,8 +334,8 @@ A tile is a stream tile iff:
 ```text
 isStream[x,y] =
     (LakeMask[x,y] == false) AND
-    (FA_N[x,y] >= streamAccumThreshold) AND
-    (SlopeMag[x,y] >= streamMinSlopeThreshold)
+    (FA_N[x,y] >= hydrology.streamAccumThreshold) AND
+    (SlopeMag[x,y] >= hydrology.streamMinSlopeThreshold)
 ```
 
 Notes (normative clarifications):
@@ -366,28 +366,28 @@ Rules:
 - Initialization: all water tiles have distance `0` and are enqueued initially
 - BFS proceeds outward in FIFO order, assigning the first-seen distance to each tile
 - Distances MUST be computed over the full grid (including `NonPlayable` tiles)
-- `distWater` for any tile is capped at `waterProxMaxDist`
+- `distWater` for any tile is capped at `hydrology.waterProxMaxDist`
 
 Capping rule (normative):
 
-- `distWater[x,y] = min(distWater[x,y], waterProxMaxDist)`
+- `distWater[x,y] = min(distWater[x,y], hydrology.waterProxMaxDist)`
 
-If no water tile exists in the map, then `distWater[x,y] = waterProxMaxDist` for all tiles.
+If no water tile exists in the map, then `distWater[x,y] = hydrology.waterProxMaxDist` for all tiles.
 
 ### 6.6.3 Moisture Components (Normative)
 
 Let parameters be:
 
-- `moistureAccumStart`
-- `flatnessThreshold`
-- `waterProxMaxDist`
+- `hydrology.moistureAccumStart`
+- `hydrology.flatnessThreshold`
+- `hydrology.waterProxMaxDist`
 - weights `wA`, `wF`, `wP`
 
 Compute:
 
-- `wet_accum = clamp01((FA_N[x,y] - moistureAccumStart) / (1 - moistureAccumStart))`
-- `wet_flat = clamp01((flatnessThreshold - SlopeMag[x,y]) / flatnessThreshold)`
-- `wet_prox = clamp01(1 - distWater[x,y] / waterProxMaxDist)`
+- `wet_accum = clamp01((FA_N[x,y] - hydrology.moistureAccumStart) / (1 - hydrology.moistureAccumStart))`
+- `wet_flat = clamp01((hydrology.flatnessThreshold - SlopeMag[x,y]) / hydrology.flatnessThreshold)`
+- `wet_prox = clamp01(1 - distWater[x,y] / hydrology.waterProxMaxDist)`
 
 - `Moisture[x,y] = clamp01(wA*wet_accum + wF*wet_flat + wP*wet_prox)`
 
@@ -412,14 +412,14 @@ The following derived values MUST already be computed:
 
 Parameters (Appendix A):
 
-- `marshMoistureThreshold`
-- `marshSlopeThreshold`
+- `hydrology.marshMoistureThreshold`
+- `hydrology.marshSlopeThreshold`
 
 ### 6.7.2 Marsh Condition
 
 Define:
 
-- `marshCondition[x,y] = (Moisture[x,y] >= marshMoistureThreshold) AND (SlopeMag[x,y] < marshSlopeThreshold)`
+- `marshCondition[x,y] = (Moisture[x,y] >= hydrology.marshMoistureThreshold) AND (SlopeMag[x,y] < hydrology.marshSlopeThreshold)`
 
 ### 6.7.3 Classification Order (Normative)
 

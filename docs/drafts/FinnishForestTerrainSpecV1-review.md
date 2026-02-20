@@ -276,6 +276,7 @@ The currently integrated hardening items in `-latest` are:
 6. **Trail cost/seed/path precision**: Sections `10.2`, `10.3`, and `10.5` define explicit deterministic cost-field math, seed scoring/count/order, and Dijkstra queue/path/marking rules.
 7. **Flow-direction tie-break precision**: Section `6.1` uses a deterministic seed-and-coordinate hash-based tie-break (`tieBreakHash64`) instead of directional/center bias.
 8. **Stream-mask evaluation order precision**: Sections `6.5` and `6.7` now make `isStream` explicit and require `LakeMask`/`isStream`/`Moisture` to be computed before `WaterClass` assignment.
+9. **Qualified parameter-path precision**: Normative formulas now consistently use fully qualified parameter paths (e.g., `landform.*`, `hydrology.*`) unless explicitly locally bound.
 
 ### Next optional tightening (post-v1 draft)
 
