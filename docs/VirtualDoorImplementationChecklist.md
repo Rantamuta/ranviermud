@@ -1,0 +1,145 @@
+# VirtualDoor Implementation Checklist (v1)
+
+Source of truth:
+- `docs/normative/VirtualDoor.md` (`draft-v1`, non-binding but authoritative for current implementation target)
+
+Purpose:
+- Provide an execution checklist that is strict on required behavior and flexible on internal structure.
+- Avoid over-specifying helper names, map layouts, or parser internals unless the normative contract requires them.
+
+## 1) Service Lifecycle
+
+- [ ] [Required] Add bundle-owned VirtualDoor service module (path is implementation choice, e.g. `bundles/bundle-rantamuta/lib/doors/virtual-door-service.js`).
+- [ ] [Required] Export service lifecycle accessors:
+  - `ensureVirtualDoorService(state)` (idempotent)
+  - `getVirtualDoorService(state)` (auto-ensure)
+  - `disposeVirtualDoorService(state)`
+- [ ] [Required] Store service instances in module-local registry keyed by `state` (do not attach ad hoc fields to `GameState`).
+- [ ] [Required] Add bundle server event listener for startup/shutdown:
+  - startup prewarms `ensureVirtualDoorService(state)`
+  - shutdown disposes service
+
+## 2) Pairing and Authority
+
+- [ ] [Required] Build virtual pair detection with eligibility rules:
+  - reciprocal exits
+  - reciprocal directional door records
+  - exactly one exit each direction for the pair
+  - either side `virtualDoor: false` disables virtualization
+- [ ] [Required] Implement `lockedBy` resolution:
+  - both set and same -> use that key
+  - one set / one omitted -> use set key
+  - conflict -> non-virtual + warn
+- [ ] [Required] Implement load/reload reconciliation:
+  - `aClosed = A.closed || A.locked`
+  - `bClosed = B.closed || B.locked`
+  - `vDoor.closed = aClosed || bClosed`
+  - `vDoor.locked = A.locked || B.locked`
+  - reflect effective state to both directional records
+- [ ] [Required] Enforce invariant `locked => closed` through VirtualDoor mutation API.
+- [ ] [Required] For virtualized pairs, all door-state writes must route through VirtualDoor service APIs.
+- [ ] [Required] Direct legacy writes (`room.openDoor/closeDoor/lockDoor/unlockDoor`) are out of contract for virtualized pairs.
+- [ ] [Required] Commit atomicity:
+  - reflection to both directional records is one logical mutator operation
+  - partial failure must rollback both to pre-operation state
+
+## 3) Mutation Integration
+
+- [ ] [Required] Add canonical mutator instruction:
+  - `type: 'doorMutation'`
+  - `mutation: 'open' | 'close' | 'unlock' | 'unlockAndOpen' | 'closeAndLock'`
+  - target via direction or roomRef (and actor/fromRoomRef as needed)
+- [ ] [Required] Route `doorMutation` through VirtualDoor service mutation API.
+- [ ] [Required] Preserve idempotent success and unresolved-target `warn + noop`.
+- [ ] [Required] Keep legacy instruction aliases for compatibility:
+  - `openDoor` -> `doorMutation/open`
+  - `closeAndLockDoor` -> `doorMutation/closeAndLock`
+- [ ] [Required] Add movement de-dup support in mutator (e.g. `suppressRoomBroadcast` or equivalent) for composed `go` messages.
+
+## 4) Query Integration (`q`)
+
+- [ ] [Required] Replace provisional door query API with canonical names:
+  - `q.isDoorClosed(direction)`
+  - `q.isDoorLocked(direction)`
+  - `q.isDoorClosedBetween(roomARef, roomBRef)`
+  - `q.isDoorLockedBetween(roomARef, roomBRef)`
+- [ ] [Required] Virtualized pairs read from VirtualDoor effective state.
+- [ ] [Required] Non-virtual pairs read from directional records.
+- [ ] [Required] Unresolvable query input returns `false` and may warn.
+
+## 5) Commands and Movement
+
+- [ ] [Required] Implement command surface:
+  - `open <door>` (optional `with <key>`)
+  - `close <door>`
+  - `lock <door>` (optional `with <key>`)
+  - `unlock <door>` (optional `with <key>`)
+- [ ] [Required] Command-to-mutation mapping:
+  - `open` -> `open`
+  - `close` -> `close`
+  - `lock` -> `closeAndLock`
+  - `unlock` -> `unlock`
+- [ ] [Required] `go <direction>` auto-door behavior:
+  - no door -> move
+  - door open -> move
+  - closed+unlocked -> auto `open`, move
+  - locked+matching key -> auto `unlockAndOpen`, move
+  - locked+no key -> fail in capture/plan
+- [ ] [Required] `go` composed door+movement success suppresses generic movement leave/arrive duplication.
+
+## 6) Key Validation and Messaging
+
+- [ ] [Required] Key matching uses key definition ref (`entityReference` / `lockedBy`), not instance UUID.
+- [ ] [Required] Multiple copies of the same matching key are valid (not ambiguous).
+- [ ] [Required] Explicit `with <key phrase>` behavior:
+  - resolve phrase candidates from inventory
+  - filter by `entityReference === lockedBy`
+  - if candidates remain, choose deterministically via `EntityResolution.md` ordering
+  - chosen candidate only affects displayed key label
+  - if none remain, fail wrong-key
+  - do not fall back to other inventory keys
+- [ ] [Required] No explicit key behavior: auto-select any carried matching key for `open`/`unlock`/`lock`.
+- [ ] [Required] Implement default message matrix from `docs/normative/VirtualDoor.md` for capture-failure/idempotent/success.
+- [ ] [Required] Keep opposite-room lines as explicit cross-room delivery (not actor-room semantic `others`).
+
+## 7) Content and Test Migration
+
+- [ ] [Required] Update test content to use canonical `doorMutation` instruction payload.
+- [ ] [Required] Update test predicates to use canonical `q.isDoor*` query API.
+- [ ] [Required] Add/adjust test rooms to cover:
+  - virtualized reciprocal pair (matching `lockedBy`)
+  - non-virtual/asymmetry regression case
+  - facade bindings and fallback naming
+- [ ] [Required] Add or update automated tests:
+  - service pairing and conflict behavior
+  - reconciliation and invariants
+  - atomic rollback behavior
+  - mutation instruction behavior (+ legacy aliases)
+  - command matrix (`open/close/lock/unlock`, right/wrong/implicit key)
+  - `go` auto-open/auto-unlock-and-open and movement de-dup
+  - predicate query API behavior
+  - scenario coverage for opposite-room lines and wrong-key failures
+
+## 8) Documentation Updates on Landing
+
+- [ ] [Required] Update:
+  - `docs/normative/CommandArchitecture.md`
+  - `docs/normative/EntityResolution.md`
+  - `docs/normative/PredicateStateRendering.md`
+  - `docs/BundleRantamutaTechnicalManual.md`
+  - `docs/DesignerManual.md`
+- [ ] [Required] Move `docs/normative/VirtualDoor.md` from draft state to binding only after behavior/tests are complete.
+- [ ] [Required] Update `docs/normative/README.md` when VirtualDoor is promoted to current normative set.
+
+## 9) Decisions / Optional Choices
+
+- [ ] [Decision Needed] Strict-validation ownership/switch source (currently unresolved in normative doc).
+- [ ] [Optional] Concrete service internals (index map names, helper function names, folder layout).
+- [ ] [Optional] Whether to add parser-specific capabilities (for example unresolved indirect binding flags) if command behavior can be achieved without them.
+- [ ] [Optional] Dedicated door-command helper module (`door-command-helper.js`) for shared logic; useful but not required by contract.
+
+## 10) Done Criteria
+
+- [ ] [Required] `npm test` passes.
+- [ ] [Required] `npm run ci:local` passes.
+- [ ] [Required] No unresolved correctness regressions in final pass.
