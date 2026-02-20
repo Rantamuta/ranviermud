@@ -276,3 +276,19 @@ The three previously tracked hardening items are now integrated into `-latest`:
 
 - Add a larger-map fixture set (e.g., 32x32 and 64x64) in addition to the minimal fixture to better detect algorithmic drift.
 - Add CI/docs automation that recomputes and verifies fixture hashes on every spec-touching PR.
+
+
+---
+
+## Post-change cruft check: cross-implementation parity language
+
+After adding explicit v1 scope boundaries, the spec appears mostly clean. The main potential cruft from earlier parity hardening is now controlled as follows:
+
+- The conformance-vector sections remain useful for deterministic regression and serialization guardrails, but are now explicitly scoped to per-implementation validation in v1.
+- No additional cross-language parity requirements should be added unless a future profile explicitly opts into that goal.
+
+Recommended keep/remove decisions:
+
+- **Keep** Sections `16.1` and `16.2` (they still provide high-value reproducibility checks and stable artifact contracts).
+- **Keep** SHA-256 + canonicalization rules (they reduce ambiguity even without cross-language parity mandates).
+- **Avoid adding** stricter algorithm-level lockstep requirements (noise implementation identity, identical floating-point behavior across languages) in v1 unless parity becomes an explicit objective.

@@ -7,6 +7,12 @@
 - Binding: normative for implementers
 - Audience: engine maintainers and content pipeline developers
 
+## Non-goal Clarification: Cross-Implementation Output Parity (Normative)
+
+Cross-implementation byte-identical output parity (e.g., Node and Rust producing identical JSON bytes from identical input) is explicitly **out of scope for v1**.
+
+For v1, conformance is evaluated per implementation profile. This spec requires deterministic behavior within one implementation/runtime build, not equality across different language/runtime implementations.
+
 ## Determinism
 
 Given identical inputs (seed, parameters, and optional authored base maps), the system MUST produce identical outputs across runs **within a given implementation**.
@@ -367,6 +373,8 @@ Recommended float epsilon: `1e-6`.
 ## 16.1 Canonical Conformance Vector (Normative)
 
 Implementations MUST provide at least one canonical fixture that is versioned with this spec.
+
+In v1, fixture validation is scoped to a given implementation profile; fixtures are not, by themselves, a requirement for cross-language output equality.
 
 Required fixture fields:
 
