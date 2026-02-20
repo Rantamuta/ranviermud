@@ -37,6 +37,7 @@ This bundle intentionally avoids engine internal edits. Any behavior in this doc
 Primary runtime flow:
 
 - `bundles/bundle-rantamuta/server-events/telnet.js`
+- `bundles/bundle-rantamuta/server-events/virtual-door.js`
 - `bundles/bundle-rantamuta/input-events/main.js`
 - `bundles/bundle-rantamuta/lib/session/auth-flow.js`
 - `bundles/bundle-rantamuta/lib/session/player-lifecycle.js`
@@ -57,6 +58,8 @@ Mutation/commit:
 - `bundles/bundle-rantamuta/lib/session/mutator.js`
 - `bundles/bundle-rantamuta/lib/session/render-dispatch.js`
 - `bundles/bundle-rantamuta/lib/session/semantic-message.js`
+- `bundles/bundle-rantamuta/lib/doors/virtual-door-service.js`
+- `bundles/bundle-rantamuta/lib/doors/door-command-helper.js`
 
 Semantic messaging harness (tooling):
 
@@ -83,9 +86,14 @@ Reference commands:
 
 - `bundles/bundle-rantamuta/commands/look.js`
 - `bundles/bundle-rantamuta/commands/go.js`
+- `bundles/bundle-rantamuta/commands/open.js`
+- `bundles/bundle-rantamuta/commands/close.js`
+- `bundles/bundle-rantamuta/commands/lock.js`
+- `bundles/bundle-rantamuta/commands/unlock.js`
 - `bundles/bundle-rantamuta/commands/take.js`
 - `bundles/bundle-rantamuta/commands/put.js`
 - `bundles/bundle-rantamuta/commands/pull.js`
+- `bundles/bundle-rantamuta/commands/push.js`
 - `bundles/bundle-rantamuta/commands/inventory.js`
 - `bundles/bundle-rantamuta/commands/quit.js` (also fast-pathed in `input-events/main.js`)
 
@@ -98,6 +106,36 @@ Reference area scripts (Bell Tower):
 - `bundles/bundle-rantamuta/areas/rantamuta/scripts/rooms/bellCryptGate.js`
 - `bundles/bundle-rantamuta/areas/rantamuta/scripts/helpers/putPolicy.js`
 - `bundles/bundle-rantamuta/areas/rantamuta/scripts/helpers/exitGate.js`
+
+## VirtualDoor service internals (current concrete layout)
+
+Location and ownership:
+
+1. Runtime authority implementation lives in `bundles/bundle-rantamuta/lib/doors/virtual-door-service.js`.
+2. Lifecycle wiring lives in `bundles/bundle-rantamuta/server-events/virtual-door.js`.
+3. Shared door-command helpers live in `bundles/bundle-rantamuta/lib/doors/door-command-helper.js`.
+
+Registry and service object:
+
+1. Module-local registry key: `serviceRegistry` (`WeakMap`, keyed by `state`).
+2. Per-service indices:
+   - `pairByEdgeKey` (directed edge key -> pair)
+   - `pairByRoomRefs` (stable unordered room pair key -> pair)
+3. Legacy-write routing state:
+   - `patchedRoomMethods`
+   - `warnedLegacyWrites`
+
+Current helper/index naming in `virtual-door-service.js`:
+
+1. Key helpers: `normalizeRef`, `edgeKey`, `pairKey`.
+2. Scan/build helpers: `scanVirtualDoorPairs`, `resolvePairLockedBy`.
+3. State helpers: `reconcilePairState`, `reflectPairState`, `applyDoorMutation`.
+4. Validation helper export: `_validateVirtualDoorConfig`.
+
+Naming stability note:
+
+1. The concrete names above are current implementation choices, not cross-bundle compatibility contracts.
+2. Behavior remains governed by `docs/normative/VirtualDoor.md`.
 
 ## End-to-end runtime flow
 
@@ -256,6 +294,21 @@ Current instruction types:
 1. `noop`
 2. `transferItem`
 3. `movePlayer`
+4. `doorMutation`
+
+`doorMutation` payload:
+
+1. `type: 'doorMutation'`
+2. `mutation: 'open' | 'close' | 'unlock' | 'unlockAndOpen' | 'closeAndLock'`
+3. target by `direction` and/or `roomRef` (plus `actor` / `fromRoomRef` as needed)
+
+Routing behavior:
+
+1. mutator routes canonical door mutations through `getVirtualDoorService(state).mutateDoor(...)`,
+2. unresolved targets warn and noop (idempotent no-op semantics preserved),
+3. legacy instruction aliases are still accepted:
+   - `openDoor` -> `doorMutation/open`
+   - `closeAndLockDoor` -> `doorMutation/closeAndLock`
 
 Atomicity model:
 
@@ -361,19 +414,32 @@ Examples:
 2. `go`:
    - direct only
    - direct scope: `room.exits`
-3. `put`:
+   - auto-door plan behavior:
+     - closed+unlocked: enqueue `doorMutation/open` then `movePlayer`
+     - locked+matching key: enqueue `doorMutation/unlockAndOpen` then `movePlayer`
+     - composed door+movement messaging uses `suppressRoomBroadcast` to avoid duplicate generic leave/arrive lines
+3. door commands (`open`/`close`/`lock`/`unlock`):
+   - `open`, `lock`, `unlock` declare direct + directIndirect (`with`) rules with `allowUnresolvedIndirect: true`
+   - direct scope: `room.exits`, `room.items`
+   - indirect scope (when present): `player.inventory`
+   - command-to-mutation mapping:
+     - `open` -> `doorMutation/open`
+     - `close` -> `doorMutation/close`
+     - `lock` -> `doorMutation/closeAndLock`
+     - `unlock` -> `doorMutation/unlock`
+4. `put`:
    - direct and directIndirect
    - direct scope: `player.inventory`
    - indirect scope: `player.inventory`, `room.items`
    - success path contributes `render.messages` `semanticEvent` narration.
-4. `take`:
+5. `take`:
    - direct only
    - scope includes nested room items and nested carried containers.
    - success path contributes `render.messages` `semanticEvent` narration.
-5. `pull`:
+6. `pull`/`push`:
    - direct only
    - direct scope: `room.items`
-   - success path contributes `render.messages` `semanticEvent` narration (optionally overridden by target `pullSuccessMessage(...)`).
+   - success path contributes `render.messages` `semanticEvent` narration (optionally overridden by target hook messages).
 
 ## Room details and inspectables
 
@@ -429,7 +495,7 @@ Predicate execution:
 1. `evaluateRenderPredicate(...)` delegates to `PredicateRuntime.evaluate(...)` (world runtime if provided, helper default otherwise).
 2. Runtime resolution is area-local through `areas/<area>/predicates.js`.
 3. Predicates receive restricted input `({ actor, q, context })`, where `actor` is a normalized read-only view.
-4. `q` is a read-only facade (`roomFlag`, `areaFlag`, `roomHasItem`, `currentContainerHasItem`, `roomContainerHasItem`, `actorHasItem`, `actorHasEffect`, `actorQuestActive`, `actorQuestCompleted`).
+4. `q` is a read-only facade (`roomFlag`, `areaFlag`, `roomHasItem`, `currentContainerHasItem`, `roomContainerHasItem`, `actorHasItem`, `actorHasEffect`, `actorQuestActive`, `actorQuestCompleted`, `isDoorClosed`, `isDoorLocked`, `isDoorClosedBetween`, `isDoorLockedBetween`).
 5. Predicate exceptions are swallowed and treated as `false` (fail-closed).
 6. `room.renderPredicates` fallback is intentionally not used.
 
@@ -458,6 +524,18 @@ Predicate execution:
 9. `q.actorQuestCompleted(questRef) -> boolean`
    Returns `true` when `questRef` is present in actor completed quests.
    Returns `false` when actor context is missing.
+10. `q.isDoorClosed(direction) -> boolean`
+   Returns `true` when the current room's directional edge resolves to a closed door state.
+   For virtualized pairs, reads effective virtual-door state.
+11. `q.isDoorLocked(direction) -> boolean`
+   Returns `true` when the current room's directional edge resolves to a locked door state.
+   For virtualized pairs, reads effective virtual-door state.
+12. `q.isDoorClosedBetween(roomARef, roomBRef) -> boolean`
+   Returns `true` when the resolved pair/edge is effectively closed.
+   Does not require actor presence.
+13. `q.isDoorLockedBetween(roomARef, roomBRef) -> boolean`
+   Returns `true` when the resolved pair/edge is effectively locked.
+   Does not require actor presence.
 
 Reference behavior notes:
 
@@ -534,6 +612,8 @@ Bundle tests:
    - per-command contract and failure surfaces.
 6. scenario integration:
    - `tests/scenarios/scenario.basic.test.js`
+   - `tests/scenarios/door-lock.scenario`
+   - `tests/scenarios/virtual-door.scenario`
    - scenario script fixture: `tests/scenarios/bell-tower.scenario`
 7. messaging and session flow:
    - `tests/semantic.message.test.js`

@@ -811,6 +811,228 @@ Current room rendering convention (`look`, arrival render):
 3. room item lines (`roomDesc` if present, else fallback)
 4. exits line (`Exits: north, west`) when exits exist
 
+## Authoring Virtual Doors
+
+When two rooms satisfy virtual-door eligibility, the runtime treats that edge as one shared logical door (a virtual door).
+
+Why use this:
+
+- both sides stay in sync for open/closed/locked state
+- key requirements stay consistent
+- predicates can ask for one effective door state
+
+Minimal paired setup:
+
+```yml
+# rooms.yml
+- id: gallery_south
+  title: "South Gallery"
+  exits:
+    - direction: north
+      roomId: myarea:gallery_north
+      virtualDoor: myarea:southDoorFacade   # optional facade item binding on this side
+  doors:
+    myarea:gallery_north:
+      closed: true
+      locked: true
+      lockedBy: myarea:bronzeDoorKey
+
+- id: gallery_north
+  title: "North Gallery"
+  exits:
+    - direction: south
+      roomId: myarea:gallery_south
+  doors:
+    myarea:gallery_south:
+      closed: false      # mismatches reconcile to one effective state at load
+      locked: false
+      lockedBy: myarea:bronzeDoorKey
+```
+
+Authoring notes:
+
+- `virtualDoor` is set on an exit side.
+- allowed values:
+  - omitted: still eligible for virtual pairing
+  - `false`: opt out entirely for that exit pair (no virtual door is bound on either side)
+  - `<itemRef>`: bind that side to a facade item for naming/presentation
+- `lockedBy` is set in door records and should match on both sides when present.
+
+A pair is virtualized only if all of these are true:
+
+1. Room A has an exit to Room B.
+2. Room B has an exit to Room A.
+3. Room B has a door record keyed by Room A.
+4. Room A has a door record keyed by Room B.
+5. Room A has exactly one exit to Room B.
+6. Room B has exactly one exit to Room A.
+7. Neither side sets `virtualDoor: false`.
+8. `lockedBy` values are not conflicting (both match, or only one side defines it).
+
+Validation/warning cases to avoid:
+
+- missing reciprocal exit or reciprocal door record: pair is not virtualized
+- multiple exits from one room to the same counterpart room: pair is not virtualized
+- conflicting `lockedBy` values across sides: virtualization is disabled for that pair and warns
+- one side sets `virtualDoor: false`: pair is treated as non-virtual
+
+Friendly recommendation:
+
+- use one key ref on both sides (`lockedBy: myarea:bronzeDoorKey`) unless you intentionally want non-virtual directional behavior.
+
+### If the two sides disagree at startup
+
+When a virtual door pair loads, the game resolves both sides into one shared starting state, then writes that same result back to both sides.
+
+How it decides:
+
+- if either side starts locked, the shared door starts locked
+- if either side starts closed (or locked), the shared door starts closed
+- the shared door starts open only when both sides were open and unlocked
+
+Quick examples:
+
+- one side says open and the other says closed -> it starts closed
+- one side says locked and the other says unlocked -> it starts locked and closed
+
+### Facade Items (Designer View)
+
+Facade items let each side of the same virtual door feel like its own object.
+Players still interact with one shared door state, but each side can present different names, descriptions, and flavor.
+
+What a facade item is:
+
+- a side-local item you bind with `virtualDoor: <itemRef>` on an exit
+- the thing players "see" and target from that side
+- presentation and interaction flavor, not a separate door state
+
+Why designers use facade items:
+
+- to give each side its own tone (grand entrance outside, rusty hatch inside)
+- to make parser targeting feel natural from each room
+- to hide or reveal story context depending on viewpoint
+- to support puzzle flavor without splitting one logical doorway into two behaviors
+
+How they work in practice:
+
+1. Bind a facade item on one or both sides of a virtual-eligible room pair.
+2. You can bind different facade items on each side.
+3. Open/close/lock/unlock from either side still changes one shared door.
+4. If no facade display name is available, players still get a fallback like `north door`.
+5. A facade binding must point to a real item id; invalid item refs fail bundle validation.
+6. `virtualDoor: false` is not a facade choice; it disables virtual pairing for that pair.
+
+Creative design examples:
+
+- Cathedral and crypt:
+  - Upstairs players see a "sunburst bronze gate."
+  - Below, players see a "bone lattice hatch."
+  - Same lock, different mood.
+- Theater secret route:
+  - Audience side calls it a "velvet curtain wall."
+  - Backstage calls it a "painted service panel."
+  - Opening either one exposes the same passage.
+- Living tree interior:
+  - Forest side presents "a bark seam covered in moss."
+  - Heartwood chamber side presents "a pulsing amber membrane."
+  - One doorway, two very different worldviews.
+- Embassy and prison:
+  - Diplomatic hall names it "the delegation door."
+  - Holding corridor names it "the reinforced transfer gate."
+  - Shared mechanics, politically charged framing.
+- Clockwork observatory:
+  - Library side sees "a brass iris doorway."
+  - Dome side sees "a star-chart shutter."
+  - Great for "same mechanism, different metaphor" storytelling.
+
+Default reusable facade pattern (recommended):
+
+1. Keep one reusable item script for facade behavior (for example `scripts/items/facadeDoor.js`).
+2. Attach that script to many facade items through `script: ...` in `items.yml`.
+3. Put per-door text and policy in metadata (`denied`, `flavor`, `remote`, key requirements).
+4. In `spawn`, set `this.roomId` and `this.direction` from metadata so base door commands can target the real exit.
+5. Use `canDirect` for veto/denial text and `planDirect` for success flavor; let base door commands keep state authority.
+
+Full featured default-pattern example:
+
+```yml
+# rooms.yml
+- id: observatory_foyer
+  title: "Observatory Foyer"
+  description: "A circular foyer wrapped in old brass mechanisms."
+  exits:
+    - direction: north
+      roomId: myarea:observatory_inner
+      virtualDoor: myarea:brassIrisFacade
+  doors:
+    myarea:observatory_inner:
+      closed: true
+      locked: true
+      lockedBy: myarea:astralSignet
+  items:
+    - id: myarea:brassIrisFacade
+
+- id: observatory_inner
+  title: "Inner Observatory"
+  description: "A dark chamber beneath the star dome."
+  exits:
+    - direction: south
+      roomId: myarea:observatory_foyer
+  doors:
+    myarea:observatory_foyer:
+      closed: false
+      locked: false
+      lockedBy: myarea:astralSignet
+
+# items.yml
+- id: brassIrisFacade
+  name: "brass iris gate"
+  roomDesc: "A brass iris gate is set into the north arch."
+  description: "Nested brass petals overlap like an eyelid over the passage."
+  keywords: [ "brass", "iris", "gate", "door" ]
+  type: "OBJECT"
+  script: facadeDoor
+  metadata:
+    permissions:
+      verbs:
+        take: "The gate is bolted into the stone ring."
+    facadeDoor:
+      roomId: myarea:observatory_inner
+      direction: north
+      requiredKeyRef: myarea:astralSignet
+      denied:
+        open: "The iris does not respond. A star-signet is required."
+        lock: "You cannot find the sigil notch to set the lock."
+        unlock: "The lock refuses your hand without a star-signet."
+      remote:
+        open: "From the far side, the south iris petals glide open."
+        close: "From the far side, the south iris petals seal shut."
+        lock: "From the far side, tiny lock pins click into place."
+        unlock: "From the far side, the lock pins withdraw with a soft tick."
+      flavor:
+        openActor: "You guide the brass iris open with a silver hum."
+        openOthers: "{actor.name} guides the brass iris open with a silver hum."
+        closeActor: "You draw the brass petals shut until they interlock."
+        closeOthers: "{actor.name} draws the brass petals shut until they interlock."
+        lockActor: "You set the star lock; the gate answers with a sharp click."
+        lockOthers: "{actor.name} sets the star lock with a sharp click."
+        unlockActor: "You ease the lock free; the brass petals loosen."
+        unlockOthers: "{actor.name} eases the lock free; the brass petals loosen."
+```
+
+Script location for that `script: facadeDoor` entry:
+
+- `bundles/bundle-rantamuta/areas/<area>/scripts/items/facadeDoor.js`
+- reference implementation: `bundles/bundle-rantamuta/areas/rantamuta/scripts/items/facadeDoor.js`
+
+This example overrides what it can from content:
+
+- denial text via `metadata.permissions` and `canDirect`
+- actor/room success flavor via `planDirect`
+- opposite-room flavor via `broadcast` in `planDirect`
+
+The base door command still controls actual door state changes; your facade script layers story tone on top.
+
 ## Room Details (Scenery You Can Look At)
 
 Sometimes you want players to inspect room nouns without creating full items.
@@ -1083,6 +1305,22 @@ Each method asks one specific true/false question.
    Example idea: "Has the player already completed the crypt rite?"
    Example: `q.actorQuestCompleted('myarea:cryptRite')`
 
+10. `q.isDoorClosed(direction)`
+   Example idea: "Is the north door currently closed from this room?"
+   Example: `q.isDoorClosed('north')`
+
+11. `q.isDoorLocked(direction)`
+   Example idea: "Is the north door currently locked from this room?"
+   Example: `q.isDoorLocked('north')`
+
+12. `q.isDoorClosedBetween(roomARef, roomBRef)`
+   Example idea: "Is the archive passage closed even if the viewer is elsewhere?"
+   Example: `q.isDoorClosedBetween('myarea:archive_south', 'myarea:archive_north')`
+
+13. `q.isDoorLockedBetween(roomARef, roomBRef)`
+   Example idea: "Is the vault passage still locked regardless of viewer room?"
+   Example: `q.isDoorLockedBetween('myarea:vault_foyer', 'myarea:vault_inner')`
+
 One combined example:
 
 ```js
@@ -1113,6 +1351,12 @@ module.exports = {
 
   is_crypt_rite_complete: ({ q }) =>
     q.actorQuestCompleted('myarea:cryptRite'),
+
+  is_north_passage_closed: ({ q }) =>
+    q.isDoorClosed('north'),
+
+  is_archive_passage_locked: ({ q }) =>
+    q.isDoorLockedBetween('myarea:archive_south', 'myarea:archive_north'),
 };
 ```
 

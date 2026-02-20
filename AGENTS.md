@@ -174,26 +174,31 @@ If behavior is unclear:
 
 ## Typecheck triage and remediation policy
 
-When a task involves `npm run typecheck` failures, agents must treat it as triage first, not coding first.
+Typecheck errors are compatibility signals. Agents must resolve root contract drift, not bypass the checker.
 
-- For each error, classify it as exactly one of:
-- local type definition error (JSDoc/typedef is wrong)
-- local implementation error (runtime code is wrong)
-- core typedef error (`ranvier/types/*` contract is wrong)
-- Provide an evidence table (file + line + reason) before making changes.
+When `npm run typecheck` fails, agents must triage before editing code.
 
-For type-only requests, default rule: **no runtime behavior changes**.
+- For each error, provide an evidence table with:
+- `file:line`
+- error text
+- classification (`local type definition error`, `local implementation error`, or `core typedef error`)
+- reason and proposed fix type (`type-only` or `behavior-changing`)
 
-- Allowed in type-only fixes:
-- JSDoc typedef corrections
-- explicit type annotations/narrowing
+Default rule for typecheck tasks: **type-only fixes unless behavior change is explicitly approved**.
+
+Allowed in type-only fixes:
+
+- JSDoc/typedef corrections
+- explicit type annotations and narrowing
 - literal-type preservation (`ok: true` style)
-- safe casts with documented rationale
+- safe, minimal casts with documented rationale
 
-- Not allowed in type-only fixes:
-- adding fallback branches/defaults to silence errors
-- changing control flow, side effects, or emitted output
+Not allowed in type-only fixes:
+
+- adding fallback branches/defaults only to silence errors
+- changing control flow, side effects, emitted output, or command semantics
 - changing payload shapes unless behavior change is explicitly approved
+- introducing broad `any`, `as unknown as`, or suppression directives (`@ts-ignore`, `@ts-expect-error`) without explicit approval and written rationale
 
 If a type error appears to require behavior change:
 
@@ -208,11 +213,11 @@ Core typedef handling:
 - Do not contort local runtime code to satisfy a suspected wrong core typedef.
 - If a core typedef is wrong, propose a core typedef patch (or local override shim) and request approval, because engine/core changes are out of scope unless explicitly authorized.
 
-PR/change note requirements for typecheck work:
+Validation requirements for typecheck work:
 
-- Include the error classification list.
-- Include why each fix is type-only vs behavior-changing.
-- Include `npm run typecheck` result before and after.
+- include `npm run typecheck` result before and after
+- include `npm test` result after changes
+- state explicitly whether behavior changed (`no` for type-only fixes)
 
 ## Normative documents
 

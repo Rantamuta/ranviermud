@@ -2,8 +2,8 @@
 
 ## Status
 
-- Status: `draft-v1`
-- Binding: No (draft; in review)
+- Status: `normative-v1`
+- Binding: Yes
 - Scope: Virtual-door pairing, lifecycle ownership, mutation/query semantics, and door-command/movement policy
 - Related:
   - [CommandArchitecture.md](CommandArchitecture.md)
@@ -350,7 +350,15 @@ Validation should surface:
 - virtual candidates bound to missing facade item id
 - impossible authored load state (`locked: true` with `closed: false`) before normalization/reconciliation
 
-Default mode should warn; strict validation mode may fail.
+Validation mode ownership/switch source (v1):
+
+- ownership: bundle validation runner (`util/validate-bundles.js`)
+- switch source: validator CLI `--strict` flag
+
+Escalation policy (v1):
+
+- missing explicit facade item bindings (`virtualDoor: <itemId>`) must fail validation in all modes
+- non-facade VirtualDoor findings remain warnings in both default and strict modes
 
 ## Migration and Reversibility
 
@@ -369,7 +377,7 @@ Reversibility requirements:
 
 ## Implementation Tracking (Temporary, Non-Normative)
 
-This section mirrors current rollout planning from draft material and is temporary.
+This section records rollout sequencing and is temporary.
 
 Phase summary:
 
@@ -396,10 +404,10 @@ Cross-doc updates required on landing:
 - `docs/DesignerManual.md`:
   - designer-facing guidance for door behavior, key expectations, and override points
 
-## Unresolved Trails (Draft)
+## Open Questions (Non-Blocking)
 
-The following conversation threads remain intentionally unresolved in v1 draft:
+The following threads remain intentionally unresolved in v1:
 
 1. Whether VirtualDoor should emit dedicated lifecycle events beyond existing command/render surfaces.
 
-2. Strict-validation ownership boundary for VirtualDoor validation failures (which strict mode/switch is authoritative).
+2. Whether to expand strict escalation for non-facade VirtualDoor findings beyond current v1 warn-level policy.

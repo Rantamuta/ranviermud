@@ -13,6 +13,7 @@ const nodeCmd = process.execPath;
 const argv = process.argv.slice(2);
 const runInPlace = argv.includes('--in-place');
 const keepWorktree = argv.includes('--keep-worktree');
+const forceMode = argv.includes('--force');
 
 let workRoot = repoRoot;
 let worktreePath = null;
@@ -78,6 +79,10 @@ function ensureCleanWorkingTree() {
   }
 
   if (result.stdout.trim()) {
+    if (forceMode) {
+      console.warn('Warning: working tree is not clean. Continuing because --force was provided.');
+      return 0;
+    }
     console.error('Working tree is not clean.');
     return 1;
   }
@@ -102,6 +107,10 @@ function ensureRepoCleanBeforeWorktree() {
   }
 
   if (result.stdout.trim()) {
+    if (forceMode) {
+      console.warn('Warning: repository has uncommitted changes. Continuing because --force was provided.');
+      return 0;
+    }
     console.error('Working tree has uncommitted changes.');
     console.error('Commit your changes before running ci:local.');
     return 1;
