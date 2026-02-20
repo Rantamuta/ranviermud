@@ -163,10 +163,8 @@ Facade interaction contract:
 1. Facade item plan hooks use `planDirect`/`planIndirect` naming.
 2. Facade item `planDirect` may emit door mutation instructions.
 3. If a virtualized pair exists for a targeted edge, door-state instructions must route to VirtualDoor authority.
-4. Capture veto policy is conjunctive for door actions:
-
-- `allow = facadeCanDirect && virtualDoorCanDirect`.
-- Either layer may veto.
+4. Capture veto policy is conjunctive for door actions (`allow = facadeCanDirect && virtualDoorCanDirect`; either layer may veto).
+5. Facade plan hooks may request base door-command success replacement via `renderPolicy.replaceSuccess === true` as defined by `docs/normative/CommandArchitecture.md` Render/Dispatch rules.
 
 ## Invariants and Mutation Semantics
 
@@ -278,6 +276,11 @@ Command-to-mutation mapping:
 ## Messaging Contract (Default Behavior)
 
 Defaults may be overridden by facade/surface-specific policy.
+
+Base-success replacement policy:
+
+- Door facade Plan contributions may request replacement of generic command success narration via `renderPolicy.replaceSuccess === true`.
+- Replacement semantics, fallback behavior, and warning contract are owned by `docs/normative/CommandArchitecture.md` Render/Dispatch rules.
 
 Cross-room rule:
 

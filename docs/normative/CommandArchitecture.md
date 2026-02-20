@@ -224,6 +224,7 @@ Accepted merge fields:
 
 - `plan.operations` (array) => appended to the commit plan
 - `render.messages` (array) => appended to the render message queue
+- `renderPolicy.replaceSuccess === true` => requests suppression of base command success `render.messages` during Render/Dispatch, subject to Render/Dispatch safety fallback rules
 
 Invalid contribution shapes are logged and ignored (best-effort), except
 explicit contribution failures (`ok:false`) which terminate command success.
@@ -253,6 +254,7 @@ Rules:
 - Each reaction function is synchronous and receives phase `context`.
 - Bubble contributions are data-only and may include `render.messages`.
 - Bubble contributions must not include mutation operations.
+- Bubble contributions must not include render-assembly policy keys (for example `renderPolicy.replaceSuccess`).
 - If forbidden bubble keys are returned (for example `operations`), dispatcher logs a contract error, ignores forbidden content, and continues.
 - Hooks must not directly mutate world state or emit output.
 - Bubble contributions may be evaluated repeatedly without changing world state.
@@ -288,10 +290,14 @@ Rules:
 - Delivery order is deterministic.
 - No success narration before successful commit.
 - Render/Dispatch executes only after successful commit.
-- Render queue merge order is deterministic:
-  1. command success `render.messages`
-  2. plan contribution `render.messages`
-  3. bubble contribution `render.messages`
+- Render assembly is deterministic and evaluated in two steps:
+  1. Determine base success inclusion:
+     - If any Plan contribution declares `renderPolicy.replaceSuccess === true` and Plan contributions produce one or more valid `render.messages`, command success `render.messages` must be suppressed.
+     - If replacement is requested but Plan contributions produce no valid `render.messages`, runtime must log warning code `RENDER_POLICY_REPLACE_EMPTY` and must fall back to including command success `render.messages`.
+  2. Merge render queues in fixed order:
+     - command success `render.messages` (only when not suppressed by step 1)
+     - Plan contribution `render.messages`
+     - Bubble contribution `render.messages`
 - `render.messages` supports:
   - line strings (sent to actor)
   - `{ type: 'line', text|message }`
@@ -303,6 +309,7 @@ Rules:
   - instruction failure is logged and counted
   - remaining instructions continue
   - command outcome remains success when commit already succeeded
+- Base-success suppression authority is Plan-only (`planDirect` / `planIndirect`); Bubble cannot suppress command success render.
 
 Non-command render path:
 
@@ -315,7 +322,7 @@ Non-command render path:
 Three hook kinds are used across phases:
 
 - Policy hook (capture): allow/deny only.
-- Plan contribution hook (Plan): data-only contribution, no veto, no direct mutation/output (`planDirect`, `planIndirect`).
+- Plan contribution hook (Plan): data-only contribution, no veto, no direct mutation/output (`planDirect`, `planIndirect`); may contribute render-assembly policy (`renderPolicy.replaceSuccess`).
 - Reaction hook (bubble): data-only render contribution, no veto, no direct mutation/output (command metadata `reactions` functions).
 
 Accepted-next naming (not wired in current runtime):
