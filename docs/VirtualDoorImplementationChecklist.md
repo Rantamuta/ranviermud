@@ -81,7 +81,7 @@ Purpose:
   - `close` -> `close`
   - `lock` -> `closeAndLock`
   - `unlock` -> `unlock`
-- [ ] [Required] `go <direction>` auto-door behavior:
+- [x] [Required] `go <direction>` auto-door behavior:
   - no door -> move
   - door open -> move
   - closed+unlocked -> auto `open`, move
