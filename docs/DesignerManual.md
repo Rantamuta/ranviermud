@@ -813,7 +813,7 @@ Current room rendering convention (`look`, arrival render):
 
 ## Authoring Virtual Doors
 
-When two rooms connect each other with matching door records, the runtime can treat them as one shared logical door (a virtual door).
+When two rooms satisfy virtual-door eligibility, the runtime treats that edge as one shared logical door (a virtual door).
 
 Why use this:
 
@@ -854,9 +854,20 @@ Authoring notes:
 - `virtualDoor` is set on an exit side.
 - allowed values:
   - omitted: still eligible for virtual pairing
-  - `false`: opt out on that side
+  - `false`: opt out entirely for that exit pair (no virtual door is bound on either side)
   - `<itemRef>`: bind that side to a facade item for naming/presentation
 - `lockedBy` is set in door records and should match on both sides when present.
+
+A pair is virtualized only if all of these are true:
+
+1. Room A has an exit to Room B.
+2. Room B has an exit to Room A.
+3. Room B has a door record keyed by Room A.
+4. Room A has a door record keyed by Room B.
+5. Room A has exactly one exit to Room B.
+6. Room B has exactly one exit to Room A.
+7. Neither side sets `virtualDoor: false`.
+8. `lockedBy` values are not conflicting (both match, or only one side defines it).
 
 Validation/warning cases to avoid:
 
@@ -868,6 +879,259 @@ Validation/warning cases to avoid:
 Friendly recommendation:
 
 - use one key ref on both sides (`lockedBy: myarea:bronzeDoorKey`) unless you intentionally want non-virtual directional behavior.
+
+### If the two sides disagree at startup
+
+When a virtual door pair loads, the game resolves both sides into one shared starting state, then writes that same result back to both sides.
+
+How it decides:
+
+- if either side starts locked, the shared door starts locked
+- if either side starts closed (or locked), the shared door starts closed
+- the shared door starts open only when both sides were open and unlocked
+
+Quick examples:
+
+- one side says open and the other says closed -> it starts closed
+- one side says locked and the other says unlocked -> it starts locked and closed
+
+### Facade Items (Designer View)
+
+Facade items let each side of the same virtual door feel like its own object.
+Players still interact with one shared door state, but each side can present different names, descriptions, and flavor.
+
+What a facade item is:
+
+- a side-local item you bind with `virtualDoor: <itemRef>` on an exit
+- the thing players "see" and target from that side
+- presentation and interaction flavor, not a separate door state
+
+Why designers use facade items:
+
+- to give each side its own tone (grand entrance outside, rusty hatch inside)
+- to make parser targeting feel natural from each room
+- to hide or reveal story context depending on viewpoint
+- to support puzzle flavor without splitting one logical doorway into two behaviors
+
+How they work in practice:
+
+1. Bind a facade item on one or both sides of a virtual-eligible room pair.
+2. You can bind different facade items on each side.
+3. Open/close/lock/unlock from either side still changes one shared door.
+4. If no facade display name is available, players still get a fallback like `north door`.
+5. A facade binding must point to a real item id; invalid item refs fail bundle validation.
+6. `virtualDoor: false` is not a facade choice; it disables virtual pairing for that pair.
+
+Creative design examples:
+
+- Cathedral and crypt:
+  - Upstairs players see a "sunburst bronze gate."
+  - Below, players see a "bone lattice hatch."
+  - Same lock, different mood.
+- Theater secret route:
+  - Audience side calls it a "velvet curtain wall."
+  - Backstage calls it a "painted service panel."
+  - Opening either one exposes the same passage.
+- Living tree interior:
+  - Forest side presents "a bark seam covered in moss."
+  - Heartwood chamber side presents "a pulsing amber membrane."
+  - One doorway, two very different worldviews.
+- Embassy and prison:
+  - Diplomatic hall names it "the delegation door."
+  - Holding corridor names it "the reinforced transfer gate."
+  - Shared mechanics, politically charged framing.
+- Clockwork observatory:
+  - Library side sees "a brass iris doorway."
+  - Dome side sees "a star-chart shutter."
+  - Great for "same mechanism, different metaphor" storytelling.
+
+Full featured example (one facade item with strong custom messaging):
+
+```yml
+# rooms.yml
+- id: observatory_foyer
+  title: "Observatory Foyer"
+  description: "A circular foyer wrapped in old brass mechanisms."
+  exits:
+    - direction: north
+      roomId: myarea:observatory_inner
+      virtualDoor: myarea:brassIrisFacade
+  doors:
+    myarea:observatory_inner:
+      closed: true
+      locked: true
+      lockedBy: myarea:astralSignet
+  items:
+    - id: myarea:brassIrisFacade
+
+- id: observatory_inner
+  title: "Inner Observatory"
+  description: "A dark chamber beneath the star dome."
+  exits:
+    - direction: south
+      roomId: myarea:observatory_foyer
+  doors:
+    myarea:observatory_foyer:
+      closed: false
+      locked: false
+      lockedBy: myarea:astralSignet
+
+# items.yml
+- id: brassIrisFacade
+  name: "brass iris gate"
+  roomDesc: "A brass iris gate is set into the north arch."
+  description: "Nested brass petals overlap like an eyelid over the passage."
+  keywords: [ "brass", "iris", "gate", "door" ]
+  type: "OBJECT"
+  script: brassIrisFacade
+  metadata:
+    permissions:
+      verbs:
+        take: "The gate is bolted into the stone ring."
+    facadeDoor:
+      roomId: myarea:observatory_inner
+      direction: north
+      requiredKeyRef: myarea:astralSignet
+      denied:
+        open: "The iris does not respond. A star-signet is required."
+        lock: "You cannot find the sigil notch to set the lock."
+        unlock: "The lock refuses your hand without a star-signet."
+      remote:
+        open: "From the far side, the south iris petals glide open."
+        close: "From the far side, the south iris petals seal shut."
+        lock: "From the far side, tiny lock pins click into place."
+        unlock: "From the far side, the lock pins withdraw with a soft tick."
+      flavor:
+        openActor: "You guide the brass iris open with a silver hum."
+        openOthers: "{actor.name} guides the brass iris open with a silver hum."
+        closeActor: "You draw the brass petals shut until they interlock."
+        closeOthers: "{actor.name} draws the brass petals shut until they interlock."
+        lockActor: "You set the star lock; the gate answers with a sharp click."
+        lockOthers: "{actor.name} sets the star lock with a sharp click."
+        unlockActor: "You ease the lock free; the brass petals loosen."
+        unlockOthers: "{actor.name} eases the lock free; the brass petals loosen."
+
+# scripts/items/brassIrisFacade.js
+'use strict';
+
+const DOOR_VERBS = new Set(['open', 'close', 'lock', 'unlock']);
+
+function asObject(value) {
+  return value && typeof value === 'object' ? value : {};
+}
+
+function valuesAsArray(collection) {
+  if (!collection) return [];
+  if (Array.isArray(collection)) return collection;
+  if (typeof collection.values === 'function') return Array.from(collection.values());
+  if (typeof collection[Symbol.iterator] === 'function') return Array.from(collection);
+  return [];
+}
+
+function normalizeRef(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function actorHasKey(actor, keyRef) {
+  const needle = normalizeRef(keyRef);
+  if (!needle) return true;
+  for (const item of valuesAsArray(actor && actor.inventory)) {
+    const itemRef = normalizeRef(item && (item.entityReference || item.id || item.name));
+    if (itemRef === needle) return true;
+  }
+  return false;
+}
+
+function verbFlavor(flavor, verbId) {
+  const base = String(verbId || '').trim().toLowerCase();
+  return {
+    actor: typeof flavor[`${base}Actor`] === 'string' ? flavor[`${base}Actor`] : `You ${base} the brass iris gate.`,
+    others: typeof flavor[`${base}Others`] === 'string' ? flavor[`${base}Others`] : `{actor.name} ${base}s the brass iris gate.`,
+  };
+}
+
+module.exports = {
+  listeners: {
+    spawn: state => function onSpawn() {
+      void state;
+      const metadata = asObject(this.metadata);
+      const cfg = asObject(metadata.facadeDoor);
+      const denied = asObject(cfg.denied);
+      const remote = asObject(cfg.remote);
+      const flavor = asObject(cfg.flavor);
+
+      // Make this item usable as a door target for open/close/lock/unlock.
+      this.roomId = String(cfg.roomId || '').trim();
+      this.direction = String(cfg.direction || '').trim().toLowerCase();
+
+      this.canDirect = (actor, verbId, context) => {
+        void context;
+        const verb = String(verbId || '').trim().toLowerCase();
+        if (!DOOR_VERBS.has(verb)) return null;
+
+        if (!actorHasKey(actor, cfg.requiredKeyRef)) {
+          const deniedMessage = typeof denied[verb] === 'string' ? denied[verb] : null;
+          if (deniedMessage) return deniedMessage;
+        }
+
+        return null;
+      };
+
+      this.planDirect = (actor, verbId, context) => {
+        const verb = String(verbId || '').trim().toLowerCase();
+        if (!DOOR_VERBS.has(verb)) return null;
+
+        const resolution = context && context.entityResolution && typeof context.entityResolution === 'object'
+          ? context.entityResolution
+          : null;
+        if (!resolution || resolution.directTarget !== this) return null;
+
+        const applied = verbFlavor(flavor, verb);
+        const remoteMessage = typeof remote[verb] === 'string' ? remote[verb] : '';
+
+        return {
+          render: {
+            messages: [
+              {
+                type: 'semanticEvent',
+                template: '{actor.You} {verb:open} the {object.direct}.',
+                templates: {
+                  actor: applied.actor,
+                  others: applied.others,
+                },
+                audiencePolicy: 'self_and_others',
+                participants: {
+                  actor: { selector: 'currentPlayer' },
+                },
+                objectText: {
+                  direct: 'brass iris gate',
+                },
+              },
+              remoteMessage
+                ? {
+                  type: 'broadcast',
+                  audience: 'room',
+                  targetSelector: 'roomByRef',
+                  targetRoomRef: this.roomId,
+                  message: remoteMessage,
+                }
+                : null,
+            ].filter(Boolean),
+          },
+        };
+      };
+    },
+  },
+};
+```
+
+This example overrides what it can from content:
+
+- denial text via `metadata.permissions` and `canDirect`
+- actor/room success flavor via `planDirect`
+- opposite-room flavor via `broadcast` in `planDirect`
+
+The base door command still controls actual door state changes; your facade script layers story tone on top.
 
 ## Room Details (Scenery You Can Look At)
 
