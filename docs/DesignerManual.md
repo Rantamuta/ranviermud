@@ -945,7 +945,15 @@ Creative design examples:
   - Dome side sees "a star-chart shutter."
   - Great for "same mechanism, different metaphor" storytelling.
 
-Full featured example (one facade item with strong custom messaging):
+Default reusable facade pattern (recommended):
+
+1. Keep one reusable item script for facade behavior (for example `scripts/items/facadeDoor.js`).
+2. Attach that script to many facade items through `script: ...` in `items.yml`.
+3. Put per-door text and policy in metadata (`denied`, `flavor`, `remote`, key requirements).
+4. In `spawn`, set `this.roomId` and `this.direction` from metadata so base door commands can target the real exit.
+5. Use `canDirect` for veto/denial text and `planDirect` for success flavor; let base door commands keep state authority.
+
+Full featured default-pattern example:
 
 ```yml
 # rooms.yml
@@ -983,7 +991,7 @@ Full featured example (one facade item with strong custom messaging):
   description: "Nested brass petals overlap like an eyelid over the passage."
   keywords: [ "brass", "iris", "gate", "door" ]
   type: "OBJECT"
-  script: brassIrisFacade
+  script: facadeDoor
   metadata:
     permissions:
       verbs:
@@ -1010,120 +1018,12 @@ Full featured example (one facade item with strong custom messaging):
         lockOthers: "{actor.name} sets the star lock with a sharp click."
         unlockActor: "You ease the lock free; the brass petals loosen."
         unlockOthers: "{actor.name} eases the lock free; the brass petals loosen."
-
-# scripts/items/brassIrisFacade.js
-'use strict';
-
-const DOOR_VERBS = new Set(['open', 'close', 'lock', 'unlock']);
-
-function asObject(value) {
-  return value && typeof value === 'object' ? value : {};
-}
-
-function valuesAsArray(collection) {
-  if (!collection) return [];
-  if (Array.isArray(collection)) return collection;
-  if (typeof collection.values === 'function') return Array.from(collection.values());
-  if (typeof collection[Symbol.iterator] === 'function') return Array.from(collection);
-  return [];
-}
-
-function normalizeRef(value) {
-  return String(value || '').trim().toLowerCase();
-}
-
-function actorHasKey(actor, keyRef) {
-  const needle = normalizeRef(keyRef);
-  if (!needle) return true;
-  for (const item of valuesAsArray(actor && actor.inventory)) {
-    const itemRef = normalizeRef(item && (item.entityReference || item.id || item.name));
-    if (itemRef === needle) return true;
-  }
-  return false;
-}
-
-function verbFlavor(flavor, verbId) {
-  const base = String(verbId || '').trim().toLowerCase();
-  return {
-    actor: typeof flavor[`${base}Actor`] === 'string' ? flavor[`${base}Actor`] : `You ${base} the brass iris gate.`,
-    others: typeof flavor[`${base}Others`] === 'string' ? flavor[`${base}Others`] : `{actor.name} ${base}s the brass iris gate.`,
-  };
-}
-
-module.exports = {
-  listeners: {
-    spawn: state => function onSpawn() {
-      void state;
-      const metadata = asObject(this.metadata);
-      const cfg = asObject(metadata.facadeDoor);
-      const denied = asObject(cfg.denied);
-      const remote = asObject(cfg.remote);
-      const flavor = asObject(cfg.flavor);
-
-      // Make this item usable as a door target for open/close/lock/unlock.
-      this.roomId = String(cfg.roomId || '').trim();
-      this.direction = String(cfg.direction || '').trim().toLowerCase();
-
-      this.canDirect = (actor, verbId, context) => {
-        void context;
-        const verb = String(verbId || '').trim().toLowerCase();
-        if (!DOOR_VERBS.has(verb)) return null;
-
-        if (!actorHasKey(actor, cfg.requiredKeyRef)) {
-          const deniedMessage = typeof denied[verb] === 'string' ? denied[verb] : null;
-          if (deniedMessage) return deniedMessage;
-        }
-
-        return null;
-      };
-
-      this.planDirect = (actor, verbId, context) => {
-        const verb = String(verbId || '').trim().toLowerCase();
-        if (!DOOR_VERBS.has(verb)) return null;
-
-        const resolution = context && context.entityResolution && typeof context.entityResolution === 'object'
-          ? context.entityResolution
-          : null;
-        if (!resolution || resolution.directTarget !== this) return null;
-
-        const applied = verbFlavor(flavor, verb);
-        const remoteMessage = typeof remote[verb] === 'string' ? remote[verb] : '';
-
-        return {
-          render: {
-            messages: [
-              {
-                type: 'semanticEvent',
-                template: '{actor.You} {verb:open} the {object.direct}.',
-                templates: {
-                  actor: applied.actor,
-                  others: applied.others,
-                },
-                audiencePolicy: 'self_and_others',
-                participants: {
-                  actor: { selector: 'currentPlayer' },
-                },
-                objectText: {
-                  direct: 'brass iris gate',
-                },
-              },
-              remoteMessage
-                ? {
-                  type: 'broadcast',
-                  audience: 'room',
-                  targetSelector: 'roomByRef',
-                  targetRoomRef: this.roomId,
-                  message: remoteMessage,
-                }
-                : null,
-            ].filter(Boolean),
-          },
-        };
-      };
-    },
-  },
-};
 ```
+
+Script location for that `script: facadeDoor` entry:
+
+- `bundles/bundle-rantamuta/areas/<area>/scripts/items/facadeDoor.js`
+- reference implementation: `bundles/bundle-rantamuta/areas/rantamuta/scripts/items/facadeDoor.js`
 
 This example overrides what it can from content:
 

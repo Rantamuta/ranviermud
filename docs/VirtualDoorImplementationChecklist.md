@@ -139,8 +139,9 @@ Purpose:
   - ownership: `util/validate-bundles.js`
   - switch source: validator CLI `--strict`
 - [x] [Optional] Concrete service internals (index map names, helper function names, folder layout) documented in `docs/BundleRantamutaTechnicalManual.md`.
-- [ ] [Optional] Whether to add parser-specific capabilities (for example unresolved indirect binding flags) if command behavior can be achieved without them.
-- [ ] [Optional] Dedicated door-command helper module (`door-command-helper.js`) for shared logic; useful but not required by contract.
+- [x] [Optional] Parser-specific capability decision (v1): no additional parser flags/capabilities needed.
+  - Rationale: door command behavior is achieved with existing entity-resolution rules, including `allowUnresolvedIndirect` for explicit `with <key>` messaging paths.
+- [x] [Optional] Dedicated door-command helper module (`door-command-helper.js`) is used for shared door command logic and declaration ergonomics.
 
 ## 10) Done Criteria
 
