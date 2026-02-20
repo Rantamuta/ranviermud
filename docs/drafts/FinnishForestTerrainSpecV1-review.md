@@ -281,6 +281,7 @@ The currently integrated hardening items in `-latest` are:
 11. **MoveCost sequencing precision**: Section `13.1` now defines a fully ordered origin-tile computation and Section `13.2` clarifies passability is independent of MoveCost.
 12. **Graph traversal ordering precision**: Section `1.7` now consolidates canonical tile iteration, Dir8 neighbor order, multi-source BFS queue initialization/expansion, and Dijkstra queue ordering requirements.
 13. **Consolidated parameter/binding precision**: Section `4.3` now binds per-map noise parameters from `params`; Section `6.6.3` binds moisture weights from `hydrology.weights`; Sections `9`/`10.2`/`10.3` now align distance wording and obstruction weighting with parameterized formulas; Section `13.2` uses qualified movement thresholds; and `mix64` is defined once and reused by `subSeed` and `tieBreakHash64`.
+14. **Remaining consistency polish**: Section `12` now binds orientation parameters explicitly; Section `6.2` restores full topological flow-accumulation algorithm semantics; Section `6.3` clarifies `FAmin/FAmax` grid scope; and Section `10.1` defines deterministic `GameTrailId` assignment order.
 
 ### Next optional tightening (post-v1 draft)
 

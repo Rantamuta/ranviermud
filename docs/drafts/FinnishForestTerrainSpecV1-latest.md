@@ -446,14 +446,35 @@ tieBreakHash64(seed, x, y) (normative):
 
 This tie-break rule MUST be applied whenever multiple downhill candidates are tied within `hydrology.tieEps`.
 
-## 6.2 Flow Accumulation
+## 6.2 Flow Accumulation (Normative)
 
-- Initialize `FA=1`.
-- Compute in-degree from `FD`.
-- Topological queue accumulation.
+Flow accumulation `FA[x,y]` counts the number of upstream tiles draining through each tile.
+
+Initialization:
+
+- Set `FA[x,y] = 1` for all tiles.
+
+Let `FD[x,y]` be the flow direction mask from Section 6.1.
+
+Algorithm:
+
+1. Compute `InDeg[x,y]` = number of neighboring tiles whose `FD` points to `(x,y)`.
+2. Initialize a FIFO queue.
+3. Enqueue all tiles where `InDeg[x,y] == 0`, in canonical row-major order.
+4. While queue is not empty:
+   - Pop tile `t`.
+   - Let `d = FD[t]`.
+   - If `d != NONE`:
+      - Let `u = downstream(t)`.
+      - `FA[u] += FA[t]`.
+      - `InDeg[u] -= 1`.
+      - If `InDeg[u] == 0`, enqueue `u`.
+
+All queue operations MUST follow Section 1.7 Graph Traversal Determinism.
 
 ## 6.3 Normalized Flow Accumulation
 
+- `FAmin` and `FAmax` MUST be computed over all tiles in the full grid.
 - `FA_N = (ln(FA)-ln(FAmin))/(ln(FAmax)-ln(FAmin))`.
 - If `FAmax==FAmin`, set all `FA_N=0`.
 
@@ -736,6 +757,8 @@ The generator MUST produce:
 - `GameTrail[x,y]`: boolean
 - `GameTrailId[x,y]`: optional integer id (recommended for debugging)
 
+If `GameTrailId[x,y]` is emitted, IDs MUST be assigned incrementally in the order routes are generated (Section 10.4). Route generation order is deterministic.
+
 Trail effects:
 
 - Add `game_trail` to `FollowableFlags` when `GameTrail[x,y] == true`.
@@ -929,13 +952,24 @@ A single simplification pass MAY be applied to reduce zig-zag artifacts. If enab
 
 # 12. Orientation Reliability (Informational)
 
+Bind orientation parameters (normative):
+
+- `densityWeight = orientation.densityWeight`
+- `obstructionWeight = orientation.obstructionWeight`
+- `wetnessWeight = orientation.wetnessWeight`
+- `wetnessStart = orientation.wetnessStart`
+- `wetnessRange = orientation.wetnessRange`
+- `ridgeBonus = orientation.ridgeBonus`
+- `min = orientation.min`
+- `max = orientation.max`
+
 Normative computation:
 
 - `OR = 1.0`
 - `OR -= densityWeight * TreeDensity`
 - `OR -= obstructionWeight * Obstruction`
 - `OR -= wetnessWeight * clamp01((Moisture - wetnessStart) / wetnessRange)`
-- `OR += ridgeBonus` if `Landform==ridge`
+- `OR += ridgeBonus` if `Landform == ridge`
 - `OrientationReliability = clamp(OR, min, max)`
 
 This field MUST NOT affect movement, passability, trail routing, or hydrology in v1.
