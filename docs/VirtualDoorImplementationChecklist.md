@@ -60,7 +60,7 @@ Purpose:
 
 ## 4) Query Integration (`q`)
 
-- [ ] [Required] Replace provisional door query API with canonical names:
+- [x] [Required] Replace provisional door query API with canonical names:
   - `q.isDoorClosed(direction)`
   - `q.isDoorLocked(direction)`
   - `q.isDoorClosedBetween(roomARef, roomBRef)`
