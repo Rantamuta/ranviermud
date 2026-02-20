@@ -139,6 +139,101 @@ function summarizeFindings(findings) {
   return counts;
 }
 
+function loadBundleVirtualDoorValidator(root, bundleName) {
+  const modulePath = path.join(root, 'bundles', bundleName, 'lib', 'doors', 'virtual-door-service.js');
+  if (!fs.existsSync(modulePath)) {
+    return null;
+  }
+
+  try {
+    // eslint-disable-next-line global-require, import/no-dynamic-require
+    const mod = require(modulePath);
+    if (!mod || typeof mod._validateVirtualDoorConfig !== 'function') {
+      return null;
+    }
+
+    return mod._validateVirtualDoorConfig;
+  } catch (error) {
+    return {
+      __loadError: error,
+    };
+  }
+}
+
+function mapVirtualDoorFinding(finding, bundleName) {
+  const output = {
+    level: finding && finding.level === 'error' ? 'error' : 'warn',
+    code: finding && typeof finding.code === 'string'
+      ? finding.code
+      : 'VIRTUAL_DOOR_VALIDATION',
+    message: finding && typeof finding.message === 'string'
+      ? finding.message
+      : 'VirtualDoor validation finding',
+    bundle: bundleName,
+  };
+
+  if (finding && finding.detail && typeof finding.detail === 'object') {
+    const detail = finding.detail;
+    if (typeof detail.roomRef === 'string') {
+      const area = detail.roomRef.split(':')[0];
+      if (area) {
+        output.area = area;
+      }
+      output.path = detail.roomRef;
+    }
+    output.detail = detail;
+  }
+
+  return output;
+}
+
+function validateVirtualDoors(root, config, gameState, findings) {
+  const bundles = Array.isArray(config.bundles) ? config.bundles : [];
+
+  for (const bundleName of bundles) {
+    const validator = loadBundleVirtualDoorValidator(root, bundleName);
+    if (!validator) {
+      continue;
+    }
+
+    if (validator.__loadError) {
+      findings.push({
+        level: 'warn',
+        code: 'VIRTUAL_DOOR_VALIDATOR_LOAD_FAILED',
+        message: `Failed to load VirtualDoor validator for bundle "${bundleName}"`,
+        bundle: bundleName,
+        detail: {
+          message: validator.__loadError.message,
+          stack: validator.__loadError.stack,
+        },
+      });
+      continue;
+    }
+
+    try {
+      const virtualDoorFindings = validator(gameState);
+      if (!Array.isArray(virtualDoorFindings)) {
+        continue;
+      }
+
+      for (const finding of virtualDoorFindings) {
+        findings.push(mapVirtualDoorFinding(finding, bundleName));
+      }
+    } catch (error) {
+      findings.push({
+        level: 'warn',
+        code: 'VIRTUAL_DOOR_VALIDATION_FAILED',
+        message: `VirtualDoor validation failed for bundle "${bundleName}"`,
+        bundle: bundleName,
+        detail: {
+          message: error.message,
+          stack: error.stack,
+        },
+      });
+    }
+  }
+}
+
 async function validateEngineLoadInProcess(root, config, findings) {
   try {
     const Ranvier = require('ranvier');
@@ -215,8 +310,11 @@ async function runEngineWorker(args) {
 
   if (config && !findings.some((finding) => finding.level === 'error')) {
     const gameState = await validateEngineLoadInProcess(root, config, findings);
-    if (gameState && playersMode) {
-      await validatePlayers(gameState, findings, strictMode);
+    if (gameState) {
+      validateVirtualDoors(root, config, gameState, findings);
+      if (playersMode) {
+        await validatePlayers(gameState, findings, strictMode);
+      }
     }
   }
 
@@ -304,8 +402,11 @@ async function main() {
     if (engineMode && !findings.some((finding) => finding.level === 'error')) {
       const runEngineChecks = async () => {
         const gameState = await validateEngineLoadInProcess(root, config, findings);
-        if (gameState && playersMode) {
-          await validatePlayers(gameState, findings, strictMode);
+        if (gameState) {
+          validateVirtualDoors(root, config, gameState, findings);
+          if (playersMode) {
+            await validatePlayers(gameState, findings, strictMode);
+          }
         }
       };
 

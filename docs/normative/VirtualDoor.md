@@ -350,7 +350,7 @@ Validation should surface:
 - virtual candidates bound to missing facade item id
 - impossible authored load state (`locked: true` with `closed: false`) before normalization/reconciliation
 
-Default mode should warn; strict validation mode may fail.
+Default mode should warn; strict validation mode may fail, except missing explicit facade item bindings (`virtualDoor: <itemId>`) which must fail validation in all modes.
 
 ## Migration and Reversibility
 
@@ -402,4 +402,4 @@ The following threads remain intentionally unresolved in v1:
 
 1. Whether VirtualDoor should emit dedicated lifecycle events beyond existing command/render surfaces.
 
-2. Strict-validation ownership boundary for VirtualDoor validation failures (which strict mode/switch is authoritative).
+2. Validation escalation policy for non-facade VirtualDoor findings beyond current warn-default behavior.
