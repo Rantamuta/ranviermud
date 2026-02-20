@@ -218,7 +218,7 @@ The revision fixed several earlier blockers (downhill aspect sign, lake-entry ch
    - “within a given implementation” is acceptable for v1, but you still need to normatively pin at least:
      - seed serialization format (signed/unsigned handling),
      - coordinate numeric type and rounding policy,
-     - tile iteration order for all map-wide passes,
+     - deterministic ordering for all map-wide passes,
      - stable sort policy where ties occur.
 
 ### Hardening recommendations before calling this normative v1
@@ -242,7 +242,7 @@ The revision fixed several earlier blockers (downhill aspect sign, lake-entry ch
 
 5. **Pin algorithm-order determinism**
    - For every whole-map derivation, define iteration order (`y-major then x-major` or vice versa).
-   - For BFS/Dijkstra, define neighbor expansion order to eliminate runtime-dependent queue ordering differences.
+   - For BFS/Dijkstra, define stable expansion behavior to eliminate runtime-dependent queue ordering differences.
 
 6. **Add executable conformance vectors**
    - At least one required fixture: `(seed, width, height, params)` with checksums for `FD`, `FA`, `WaterClass`, and one full tile payload snapshot.
@@ -262,39 +262,36 @@ This section tracks whether the previously identified blockers are now addressed
 - **Duplicate trail move-cost application**: **Addressed** (latest explicitly states trail multiplier is applied once in Section 13.1).
 - **Malformed/duplicated payload example block**: **Addressed** (single valid JSON envelope example in Section 14).
 - **Duplicate Appendix A keys**: **Addressed** (split into `roughnessNoise` and `roughnessFeatures`).
-- **Determinism order gaps**: **Addressed for v1 baseline** (tile iteration order, neighbor expansion order, tie-break sort order, and seed parsing mode are now explicit).
+- **Determinism order gaps**: **Revised intentionally** (the latest draft now uses a minimal v1 determinism policy scoped to within-implementation reproducibility while retaining deterministic tie-break requirements).
 
 ### Collaborative hardening status update
 
-The three previously tracked hardening items are now integrated into `-latest`:
+The currently integrated hardening items in `-latest` are:
 
-1. **Canonical conformance vector**: added as Section `16.1` with required fixture fields and checksum normalization guidance.
-2. **Explicit CLI contract**: added as Section `2.1` with named inputs, precedence, suggested modes, and recommended exit codes.
-3. **Numeric precision policy**: added as Section `14.1` with fixed export precision and rounding requirements.
-4. **Landform decision table precision**: Section `5.2` now includes explicit neighbor-count rules, branch order, and threshold semantics.
-5. **Moisture component precision**: Section `6.6` now defines water-tile set, BFS distance rules, capping behavior, and fully explicit moisture equations.
-6. **WaterClass precedence precision**: Section `6.7` now defines required inputs, marsh condition, first-match classification order, and explicit precedence clarifications.
-7. **Biome and vegetation decision precision**: Sections `7.2`–`7.4` now define explicit biome selection thresholds, vegetation equations, and deterministic dominant-species assignment.
-8. **Trail cost/seed/path precision**: Sections `10.2`, `10.3`, and `10.5` now define explicit deterministic cost-field math, seed scoring/count/order, and Dijkstra queue/path/marking rules.
-9. **Flow-direction tie-break precision**: Section `6.1` now uses a deterministic seed-and-coordinate hash-based tie-break (`tieBreakHash64`) instead of directional/center bias.
+1. **Explicit CLI contract**: Section `2.1` defines named inputs, precedence, suggested modes, and recommended exit codes.
+2. **Landform decision table precision**: Section `5.2` includes explicit neighbor-count rules, branch order, and threshold semantics.
+3. **Moisture component precision**: Section `6.6` defines water-tile set, BFS distance rules, capping behavior, and fully explicit moisture equations.
+4. **WaterClass precedence precision**: Section `6.7` defines required inputs, marsh condition, first-match classification order, and explicit precedence clarifications.
+5. **Biome and vegetation decision precision**: Sections `7.2`–`7.4` define explicit biome selection thresholds, vegetation equations, and deterministic dominant-species assignment.
+6. **Trail cost/seed/path precision**: Sections `10.2`, `10.3`, and `10.5` define explicit deterministic cost-field math, seed scoring/count/order, and Dijkstra queue/path/marking rules.
+7. **Flow-direction tie-break precision**: Section `6.1` uses a deterministic seed-and-coordinate hash-based tie-break (`tieBreakHash64`) instead of directional/center bias.
 
 ### Next optional tightening (post-v1 draft)
 
-- Add a larger-map fixture set (e.g., 32x32 and 64x64) in addition to the minimal fixture to better detect algorithmic drift.
-- Add CI/docs automation that recomputes and verifies fixture hashes on every spec-touching PR.
+- Add a larger-map regression fixture set (e.g., 32x32 and 64x64) for local implementation drift detection.
+- Add CI/docs automation that validates spec examples and appendix parameter blocks remain internally consistent.
 
 
 ---
 
 ## Post-change cruft check: cross-implementation parity language
 
-After adding explicit v1 scope boundaries, the spec appears mostly clean. The main potential cruft from earlier parity hardening is now controlled as follows:
+After the determinism simplification, the spec now cleanly reflects v1 scope:
 
-- The conformance-vector sections remain useful for deterministic regression and serialization guardrails, but are now explicitly scoped to per-implementation validation in v1.
-- No additional cross-language parity requirements should be added unless a future profile explicitly opts into that goal.
+- Determinism is required within a single implementation profile.
+- Cross-language/cross-runtime byte-identical parity remains explicitly out of scope for v1.
 
 Recommended keep/remove decisions:
 
-- **Keep** Sections `16.1` and `16.2` (they still provide high-value reproducibility checks and stable artifact contracts).
-- **Keep** SHA-256 + canonicalization rules (they reduce ambiguity even without cross-language parity mandates).
-- **Avoid adding** stricter algorithm-level lockstep requirements (noise implementation identity, identical floating-point behavior across languages) in v1 unless parity becomes an explicit objective.
+- **Keep** deterministic algorithm rules and tie-break definitions in core derivation sections.
+- **Avoid adding** serialization-hash conformance scaffolding unless interoperability parity becomes an explicit future objective.

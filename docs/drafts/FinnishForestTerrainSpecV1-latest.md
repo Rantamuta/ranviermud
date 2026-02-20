@@ -13,16 +13,16 @@ Cross-implementation byte-identical output parity (e.g., Node and Rust producing
 
 For v1, conformance is evaluated per implementation profile. This spec requires deterministic behavior within one implementation/runtime build, not equality across different language/runtime implementations.
 
-## Determinism
+## Determinism (Revised, Minimal v1)
 
-Given identical inputs (seed, parameters, and optional authored base maps), the system MUST produce identical outputs across runs **within a given implementation**.
+Given identical inputs (`seed`, `width`, `height`, `params`, and optional authored maps), the generator MUST produce identical outputs across runs within the same implementation.
 
-For v1 reproducibility, implementations MUST also pin:
+The spec requires:
 
-- Tile iteration order for all whole-map passes: `for y in [0..height-1], for x in [0..width-1]`.
-- Neighbor expansion order for BFS/Dijkstra: `E, SE, S, SW, W, NW, N, NE`.
-- Stable sort tie-break order: `(score desc)`, then `(y asc, x asc)`.
-- Seed parsing mode: unsigned 64-bit integer.
+- Deterministic tie-breaking wherever multiple valid choices exist.
+- No runtime randomness outside functions derived solely from the provided `seed`.
+
+Cross-language or cross-runtime byte-identical output parity is explicitly out of scope for v1.
 
 ---
 
@@ -810,15 +810,6 @@ The generator MUST emit a versioned envelope:
 `tiles` is the authoritative payload for downstream consumers.
 
 
-## 14.1 Numeric Precision and Serialization Policy (Normative)
-
-To reduce downstream diff churn while preserving deterministic comparisons:
-
-- Internal computation precision is implementation-defined, but exported numeric values MUST be serialized with fixed decimal precision.
-- Export precision for normalized floats (`[0,1]`) and derived continuous fields MUST be 6 fractional digits.
-- Integer fields (`flowDir`, `flowAccum`, coordinates, ids) MUST be emitted as integers (no decimal suffix).
-- Implementations MAY retain higher internal precision, but serialization MUST round half away from zero to the configured decimal places.
-
 
 ---
 
@@ -836,59 +827,6 @@ Implementations MUST include fixed-seed regression checks for:
 
 Recommended float epsilon: `1e-6`.
 
-
-## 16.1 Canonical Conformance Vector (Normative)
-
-Implementations MUST provide at least one canonical fixture that is versioned with this spec.
-
-In v1, fixture validation is scoped to a given implementation profile; fixtures are not, by themselves, a requirement for cross-language output equality.
-
-Required fixture fields:
-
-- `seed`
-- `width`, `height`
-- `paramsHash` (SHA-256 hash of canonicalized JSON parameter object)
-- checksums for `FD`, `FA`, and `WaterClass` maps (SHA-256)
-- one full tile payload snapshot at a fixed coordinate
-
-Hash algorithm and encoding are normative:
-
-- Hash algorithm MUST be SHA-256.
-- Hash digest MUST be lower-case hexadecimal and prefixed with `sha256:`.
-- Hash input MUST be UTF-8 encoded canonical JSON with no insignificant whitespace.
-- Tile-map checksum inputs MUST be row-major ordered (`y`, then `x`).
-
-Recommended fixture shape:
-
-```json
-{
-  "specVersion": "forest-terrain-v1",
-  "seed": "4242424242",
-  "width": 64,
-  "height": 64,
-  "paramsHash": "sha256:<hex>",
-  "checksums": {
-    "FD": "sha256:<hex>",
-    "FA": "sha256:<hex>",
-    "WaterClass": "sha256:<hex>"
-  },
-  "tileSnapshot": {
-    "x": 25,
-    "y": 19,
-    "payload": { "...": "full tile object" }
-  }
-}
-```
-
-Checksum input normalization MUST use row-major tile ordering (`y`, then `x`) and UTF-8 JSON encoding without insignificant whitespace.
-
-## 16.2 First Published Fixture (Normative)
-
-For v1, implementations MUST include and expose the published minimal conformance fixture at:
-
-- `docs/drafts/fixtures/forest-terrain-v1-conformance-fixture.json`
-
-That fixture is the canonical starter artifact for validating hashing/serialization behavior before larger-map fixtures are added.
 
 
 ---
