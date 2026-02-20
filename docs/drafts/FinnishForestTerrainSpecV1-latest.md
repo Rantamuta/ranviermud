@@ -1,0 +1,994 @@
+# Procedural Finnish Forest Terrain Generation Spec (v1)
+
+## Status
+
+- Status: draft-v1
+- Scope: forest region terrain generation, hydrology derivation, biome classification, movement/navigation derivation, and per-tile payload export
+- Binding: normative for implementers
+- Audience: engine maintainers and content pipeline developers
+
+## Non-goal Clarification: Cross-Implementation Output Parity (Normative)
+
+Cross-implementation byte-identical output parity (e.g., Node and Rust producing identical JSON bytes from identical input) is explicitly **out of scope for v1**.
+
+For v1, conformance is evaluated per implementation profile. This spec requires deterministic behavior within one implementation/runtime build, not equality across different language/runtime implementations.
+
+## Determinism
+
+Given identical inputs (seed, parameters, and optional authored base maps), the system MUST produce identical outputs across runs **within a given implementation**.
+
+For v1 reproducibility, implementations MUST also pin:
+
+- Tile iteration order for all whole-map passes: `for y in [0..height-1], for x in [0..width-1]`.
+- Neighbor expansion order for BFS/Dijkstra: `E, SE, S, SW, W, NW, N, NE`.
+- Stable sort tie-break order: `(score desc)`, then `(y asc, x asc)`.
+- Seed parsing mode: unsigned 64-bit integer.
+
+---
+
+# 1. Coordinate System
+
+## 1.1 Tile Resolution Rule (Normative)
+
+- One base map cell corresponds exactly to one gameplay tile.
+- All required base maps (`H`, `R`, `V` if provided) MUST have identical dimensions.
+- If any provided base map dimensions differ, terminate with a hard error.
+- No interpolation/resampling/scaling is performed during derivation.
+
+## 1.2 Playable Mask and World Boundary (Normative)
+
+Parameter:
+
+- `playableInset` (integer >= 0, default `1`)
+
+Rules:
+
+- Tiles with `x < playableInset`, `y < playableInset`, `x >= width - playableInset`, or `y >= height - playableInset` are `NonPlayable`.
+- Terrain derivations run on full grid (including non-playable tiles).
+- Movement into `NonPlayable` tiles is `blocked`.
+
+## 1.3 Tile Coordinates
+
+- Coordinates are integer `(x, y)`.
+- `x` grows East, `y` grows South.
+- Origin `(0,0)` is North-West.
+
+## 1.4 Neighborhoods
+
+- 8-way (Moore): N, NE, E, SE, S, SW, W, NW.
+- 4-way (Von Neumann): N, E, S, W.
+
+Unless specified otherwise, derivations assume 8-way neighbors.
+
+## 1.5 Direction Encoding (`Dir8`)
+
+- `0:E, 1:SE, 2:S, 3:SW, 4:W, 5:NW, 6:N, 7:NE, 255:NONE`
+
+## 1.6 Angles
+
+- Degrees in `[0, 360)`.
+- 0° East, 90° South, 180° West, 270° North.
+- Aspect is downhill direction.
+
+---
+
+# 2. Inputs
+
+## 2.1 Generator Contract (Normative)
+
+This specification is designed to support standalone terrain-generation tooling (including CLI front-ends).
+
+Implementations MUST expose the following named inputs regardless of UI/flag syntax:
+
+- `seed` (`uint64`)
+- `width`, `height` (positive integers)
+- `params` (object; see Appendix A)
+- optional authored `H`, `R`, and `V` base maps
+
+If multiple configuration sources are supported (e.g., defaults, parameter file, command-line flags), precedence MUST be:
+
+1. explicit CLI/entrypoint arguments
+2. parameter file values
+3. built-in defaults
+
+Implementations SHOULD support three operational modes:
+
+- `generate`: generate base maps from noise
+- `derive`: consume authored base maps and run derivations
+- `debug`: run generation/derivation and emit debug rasters
+
+Recommended exit codes for CLI tooling:
+
+- `0`: success
+- `2`: invalid input (schema/type/range)
+- `3`: dimension mismatch or incompatible input map shapes
+- `4`: file I/O error
+- `5`: internal generation/derivation failure
+
+## 2.2 Required Inputs
+
+Required inputs:
+
+- `seed` (`uint64`)
+- `width`, `height` (positive integers)
+- `params` (object; see Appendix A)
+
+## 2.3 Base Maps
+
+Base maps (`width × height`, float `[0,1]`):
+
+- `H[x,y]` elevation
+- `R[x,y]` roughness
+- `V[x,y]` vegetation variance
+
+## 2.4 Authored Map Precedence
+
+Authored map precedence:
+
+- If authored map is supplied for `H/R/V`, it overrides noise generation for that map.
+
+---
+
+# 3. Derived Maps Overview
+
+- Topography: `SlopeMag`, `AspectDeg`, `Landform`
+- Hydrology: `FD`, `FA`, `FA_N`, `LakeMask`, `Moisture`, `WaterClass`
+- Vegetation: `Biome`, `TreeDensity`, `CanopyCover`, `VisibilityBaseMeters`
+- Ground: `SoilType`, `Firmness`, `SurfaceFlags`
+- Roughness/features: `Obstruction`, `FeatureFlags`
+- Navigation: `MoveCost`, `Passability[x,y,dir]`, `FollowableFlags`, `OrientationReliability`
+
+`OrientationReliability` is informational only in v1 and MUST NOT affect simulation decisions.
+
+---
+
+# 4. Base Map Generation
+
+- Noise function: `noise(seed, x, y) -> [-1,1]`, deterministic.
+- Multi-octave for each map:
+  - Start `freq = baseFrequency`, `amp = 1.0`.
+  - Loop octaves: `sum += amp * noise(seed_octave, x*freq, y*freq)`; `norm += amp`; `freq *= lacunarity`; `amp *= persistence`.
+  - `value = sum/norm`, normalize to `[0,1]` by `(value + 1)/2`.
+
+---
+
+# 5. Topography Derivation
+
+## 5.1 Slope and Aspect
+
+- `Hx = H[x+1,y] - H[x-1,y]` (clamped at bounds)
+- `Hy = H[x,y+1] - H[x,y-1]` (clamped at bounds)
+- `SlopeMag = sqrt(Hx*Hx + Hy*Hy) / 2`
+- `AspectDeg = degrees(atan2(-Hy, -Hx))` normalized to `[0,360)`
+
+## 5.2 Landform Classification (Normative, Explicit Decision Table)
+
+`Landform[x,y]` MUST be classified deterministically using the following procedure.
+
+### Step 1 — Neighbor Counts
+
+Let:
+
+- `center = H[x,y]`
+- `N8` = the 8 Moore neighbors of `(x,y)`
+- `eps = landform.eps` (Appendix A)
+
+Compute:
+
+- `higherCount = count(n in N8 where H[n] > center + eps)`
+- `lowerCount = count(n in N8 where H[n] < center - eps)`
+
+Neighbors whose elevation lies within `[center - eps, center + eps]` are ignored for both counts.
+
+All comparisons MUST use the same `eps` value.
+
+### Step 2 — Branch Order (Normative)
+
+Branch order is fixed. The first matching clause MUST be taken.
+
+```text
+if SlopeMag[x,y] < flatSlopeThreshold:
+
+    # Flat local minima (gentle basin)
+    if lowerCount == 0 and higherCount > 0:
+        Landform = basin
+
+    # Flat local maxima (gentle ridge)
+    else if higherCount == 0 and lowerCount > 0:
+        Landform = ridge
+
+    else:
+        Landform = flat
+
+else:
+
+    # Strong local depression
+    if higherCount >= 6:
+        Landform = basin
+
+    # Strong local high
+    else if lowerCount >= 6:
+        Landform = ridge
+
+    # Directional trough
+    else if higherCount >= 5 and lowerCount <= 2:
+        Landform = valley
+
+    # Directional crest
+    else if lowerCount >= 5 and higherCount <= 2:
+        Landform = ridge
+
+    else:
+        Landform = slope
+```
+
+### Step 3 — Parameters (Appendix A)
+
+The following parameters MUST be defined in Appendix A:
+
+```json
+"landform": {
+  "eps": 0.005,
+  "flatSlopeThreshold": 0.03
+}
+```
+
+### Design Rationale (Informative)
+
+- The flat case explicitly detects gentle local minima and maxima using strict `lowerCount == 0` / `higherCount == 0` tests to preserve basin detection in low-gradient terrain.
+- The non-flat case distinguishes strong basins/ridges (`>= 6`) from directional valleys/crests (`>= 5` with asymmetry constraint).
+- Branch order is normative to avoid implementation divergence.
+
+---
+
+# 6. Hydrology Derivation
+
+## 6.1 Flow Direction (D8) — Tie-Breaking (Normative, Hash-Based)
+
+For each tile, choose downhill neighbor with maximal positive `drop = H[c] - H[n]` above `minDropThreshold`, else `NONE`.
+
+When selecting the downhill neighbor with maximal drop, multiple candidates may have equal drop within `tieEps`.
+
+If two or more neighbors have identical drop within `tieEps`, tie-breaking MUST be deterministic and MUST use the following hash-based rule.
+
+### Tie-Break Rule (Normative)
+
+Let:
+
+- `T = ordered list of tied downhill candidate neighbors` (candidates with maximal drop within `tieEps`), in `Dir8` numeric order.
+- `|T| = number of tied candidates`.
+
+If `|T| == 1`, select that candidate.
+
+If `|T| > 1`, compute:
+
+- `h = tieBreakHash64(seed, x, y)`
+- `i = h mod |T|`
+- select `T[i]`
+
+Where:
+
+- `seed` is the global terrain seed.
+- `(x, y)` is the current tile coordinate.
+- `tieBreakHash64` is defined below.
+
+This rule eliminates directional and center bias while preserving determinism.
+
+### tieBreakHash64 Definition (Normative)
+
+The hash function MUST be defined exactly as follows:
+
+- `z = seed`
+- `z ^= (uint64(x) * 0x9E3779B97F4A7C15)`
+- `z ^= (uint64(y) * 0xC2B2AE3D27D4EB4F)`
+- `z ^= z >> 30`
+- `z *= 0xBF58476D1CE4E5B9`
+- `z ^= z >> 27`
+- `z *= 0x94D049BB133111EB`
+- `z ^= z >> 31`
+- `return z`
+
+All operations are 64-bit unsigned integer operations with wraparound.
+
+This tie-break rule MUST be applied whenever multiple downhill candidates are tied within `tieEps`.
+
+## 6.2 Flow Accumulation
+
+- Initialize `FA=1`.
+- Compute in-degree from `FD`.
+- Topological queue accumulation.
+
+## 6.3 Normalized Flow Accumulation
+
+- `FA_N = (ln(FA)-ln(FAmin))/(ln(FAmax)-ln(FAmin))`.
+- If `FAmax==FAmin`, set all `FA_N=0`.
+
+## 6.4 Lakes and Basins
+
+- Lake candidate: `Landform==basin && SlopeMag<lakeFlatSlopeThreshold && FA_N>=lakeAccumThreshold`.
+- Flood-fill connected lake candidates (`LakeMask=true`).
+
+## 6.5 Streams
+
+- Stream if not lake and thresholds for accumulation/slope satisfied.
+
+## 6.6 Moisture Map (Normative, Fully Explicit)
+
+Moisture is derived deterministically from normalized flow accumulation, local flatness, and proximity to water features.
+
+### 6.6.1 Water Tiles for Proximity (Normative)
+
+For the purpose of moisture proximity only, a tile is considered a water tile iff:
+
+- `isWaterTile[x,y] = (LakeMask[x,y] == true) OR (isStream[x,y] == true)`
+
+Marsh tiles MUST NOT be included as water tiles for this proximity calculation.
+
+### 6.6.2 Distance to Water (Normative)
+
+Compute `distWater[x,y]` as the minimum tile-distance to any water tile using an 8-way multi-source BFS.
+
+Rules:
+
+- Neighborhood: Moore (8-way)
+- Step cost: `1` for both cardinal and diagonal steps
+- Initialization: all water tiles have distance `0` and are enqueued initially
+- BFS proceeds outward in FIFO order, assigning the first-seen distance to each tile
+- Distances MUST be computed over the full grid (including `NonPlayable` tiles)
+- `distWater` for any tile is capped at `waterProxMaxDist`
+
+Capping rule (normative):
+
+- `distWater[x,y] = min(distWater[x,y], waterProxMaxDist)`
+
+If no water tile exists in the map, then `distWater[x,y] = waterProxMaxDist` for all tiles.
+
+### 6.6.3 Moisture Components (Normative)
+
+Let parameters be:
+
+- `moistureAccumStart`
+- `flatnessThreshold`
+- `waterProxMaxDist`
+- weights `wA`, `wF`, `wP`
+
+Compute:
+
+- `wet_accum = clamp01((FA_N[x,y] - moistureAccumStart) / (1 - moistureAccumStart))`
+- `wet_flat = clamp01((flatnessThreshold - SlopeMag[x,y]) / flatnessThreshold)`
+- `wet_prox = clamp01(1 - distWater[x,y] / waterProxMaxDist)`
+
+- `Moisture[x,y] = clamp01(wA*wet_accum + wF*wet_flat + wP*wet_prox)`
+
+Weights are applied as-is. No implicit weight normalization is performed.
+
+## 6.7 WaterClass (Normative, Explicit Precedence)
+
+`WaterClass[x,y]` MUST be assigned deterministically using the following decision order.
+
+The first matching clause MUST be taken.
+
+### 6.7.1 Required Inputs
+
+The following derived values MUST already be computed:
+
+- `LakeMask[x,y]` (Section 6.4)
+- `isStream[x,y]` (Section 6.5)
+- `Moisture[x,y]` (Section 6.6)
+- `SlopeMag[x,y]`
+
+Parameters (Appendix A):
+
+- `marshMoistureThreshold`
+- `marshSlopeThreshold`
+
+### 6.7.2 Marsh Condition
+
+Define:
+
+- `marshCondition[x,y] = (Moisture[x,y] >= marshMoistureThreshold) AND (SlopeMag[x,y] < marshSlopeThreshold)`
+
+### 6.7.3 Classification Order (Normative)
+
+- If `LakeMask[x,y] == true`: `WaterClass[x,y] = lake`
+- Else if `isStream[x,y] == true`: `WaterClass[x,y] = stream`
+- Else if `marshCondition[x,y] == true`: `WaterClass[x,y] = marsh`
+- Else: `WaterClass[x,y] = none`
+
+### 6.7.4 Precedence Rules (Normative Clarifications)
+
+- `lake` classification overrides `stream` and `marsh`.
+- `stream` classification overrides `marsh`.
+- `marsh` applies only to non-lake, non-stream tiles.
+- Marsh tiles MUST NOT be considered water tiles for moisture proximity (Section 6.6.1).
+
+This order prevents circular dependency and ensures stable biome and movement behavior.
+
+---
+
+# 7. Vegetation and Biome
+
+## 7.1 Biome Enum
+
+`Biome[x,y]` MUST be one of:
+
+- `open_bog`
+- `spruce_swamp`
+- `mixed_forest`
+- `pine_heath`
+- `esker_pine`
+- `lake`
+- `stream_bank`
+
+## 7.2 Base Biome Selection (Normative, Explicit Decision Table)
+
+`Biome[x,y]` MUST be assigned deterministically using the following procedure.
+
+### 7.2.1 Inputs
+
+The following derived values MUST already be computed:
+
+- `WaterClass[x,y]`
+- `H[x,y]`
+- `Moisture[x,y]`
+- `SlopeMag[x,y]`
+- `V[x,y]`
+
+Parameter (Appendix A):
+
+- `vegVarianceStrength`
+
+### 7.2.2 Moisture Perturbation (Normative)
+
+For non-water tiles, define perturbed moisture:
+
+- `m2 = clamp01(Moisture[x,y] + (V[x,y] - 0.5) * vegVarianceStrength)`
+
+`m2` MUST be used for all threshold comparisons below except where `WaterClass` overrides.
+
+### 7.2.3 Classification Order (Normative)
+
+The first matching clause MUST be taken.
+
+- If `WaterClass[x,y] == lake`: `Biome[x,y] = lake`
+- Else if `WaterClass[x,y] == stream`: `Biome[x,y] = stream_bank`
+- Else if `m2 >= 0.85` and `SlopeMag[x,y] < 0.03`: `Biome[x,y] = open_bog`
+- Else if `m2 >= 0.85`: `Biome[x,y] = spruce_swamp`
+- Else if `m2 >= 0.65`: `Biome[x,y] = spruce_swamp`
+- Else if `m2 >= 0.40`: `Biome[x,y] = mixed_forest`
+- Else if `H[x,y] >= 0.70` and `SlopeMag[x,y] < 0.05`: `Biome[x,y] = esker_pine`
+- Else: `Biome[x,y] = pine_heath`
+
+## 7.3 Vegetation Attributes (Normative)
+
+Vegetation attributes MUST be computed deterministically from `Biome`, `Moisture`, and `V`.
+
+### 7.3.1 Base Density and Canopy Table
+
+The following base values apply per biome:
+
+- `pine_heath`: `baseDensity = 0.35`, `baseCanopy = 0.40`
+- `esker_pine`: `baseDensity = 0.30`, `baseCanopy = 0.35`
+- `mixed_forest`: `baseDensity = 0.55`, `baseCanopy = 0.60`
+- `spruce_swamp`: `baseDensity = 0.80`, `baseCanopy = 0.78`
+- `open_bog`: `baseDensity = 0.10`, `baseCanopy = 0.15`
+- `stream_bank`: `baseDensity = 0.60`, `baseCanopy = 0.55`
+- `lake`: `baseDensity = 0.00`, `baseCanopy = 0.00`
+
+### 7.3.2 Density and Canopy Computation
+
+- `TreeDensity[x,y] = clamp01(baseDensity + (V[x,y] - 0.5) * 0.10 + (Moisture[x,y] - 0.5) * 0.08)`
+- `CanopyCover[x,y] = clamp01(baseCanopy + (TreeDensity[x,y] - baseDensity) * 0.6)`
+
+All constants used above are fixed for v1 unless overridden in Appendix A.
+
+## 7.4 Dominant Species (Normative, Required Output)
+
+`dominant` MUST be exported as an ordered list of zero, one, or two species identifiers per tile.
+
+Species identifiers (v1):
+
+- `"scots_pine"`
+- `"norway_spruce"`
+- `"birch"`
+
+### 7.4.1 Deterministic Assignment
+
+- If `Biome == pine_heath`: `dominant = ["scots_pine"]`
+- Else if `Biome == esker_pine`: `dominant = ["scots_pine"]`
+- Else if `Biome == spruce_swamp`: `dominant = ["norway_spruce"]`
+- Else if `Biome == mixed_forest` and `Moisture[x,y] >= 0.52`: `dominant = ["norway_spruce", "birch"]`
+- Else if `Biome == mixed_forest`: `dominant = ["birch", "norway_spruce"]`
+- Else if `Biome == stream_bank`: `dominant = ["birch"]`
+- Else if `Biome == open_bog` and `Moisture[x,y] >= 0.75`: `dominant = []`
+- Else if `Biome == open_bog`: `dominant = ["birch"]`
+- Else if `Biome == lake`: `dominant = []`
+
+### 7.4.2 Ordering Rule
+
+If two species are listed, the first element represents the primary dominant species and the second represents secondary presence.
+
+No probabilistic selection is permitted. Assignment MUST be deterministic based solely on the rules above.
+
+---
+
+# 8. Ground
+
+- `SoilType`: `peat|sandy_till|rocky_till` from moisture/elevation/landform.
+- `Firmness = clamp01(1.0 - 0.85*Moisture + 0.15*clamp01(SlopeMag/0.2))`
+- `SurfaceFlags`: `standing_water|sphagnum|lichen|exposed_sand|bedrock` by thresholds.
+
+---
+
+# 9. Roughness and Features
+
+- `Obstruction = clamp01(R*0.85 + Moisture*0.15)`.
+- `FeatureFlags`: `fallen_log|root_tangle|boulder|windthrow` by deterministic threshold rules.
+
+---
+
+# 10. Game Trail Generation
+
+## 10.1 Outputs and Navigation Effects
+
+The generator MUST produce:
+
+- `GameTrail[x,y]`: boolean
+- `GameTrailId[x,y]`: optional integer id (recommended for debugging)
+
+Trail effects:
+
+- Add `game_trail` to `FollowableFlags` when `GameTrail[x,y] == true`.
+- Movement effect is applied **once** in Section 13.1 only.
+
+## 10.2 Trail Preference (Cost) Field (Normative, Fully Explicit)
+
+Game trails are produced by least-cost routing over a deterministic per-tile cost field `C[x,y]`.
+
+### 10.2.1 Parameters (Appendix A)
+
+- `gameTrails.inf`
+- `gameTrails.wSlope`
+- `gameTrails.slopeScale`
+- `gameTrails.wMoist`
+- `gameTrails.moistStart`
+- `gameTrails.wObs`
+- `gameTrails.wRidge`
+- `gameTrails.wStreamProx`
+- `gameTrails.streamProxMaxDist`
+- `gameTrails.wCross`
+- `gameTrails.wMarsh`
+
+### 10.2.2 Distances (Normative)
+
+Compute `distStream[x,y]` as Chebyshev tile-distance to the nearest stream tile using an 8-way multi-source BFS (cardinal and diagonal step cost = `1`), capped at `streamProxMaxDist`.
+
+Stream tiles are those where `WaterClass[x,y] == stream`.
+
+If no stream tiles exist, set `distStream[x,y] = streamProxMaxDist` for all tiles.
+
+### 10.2.3 Cost Function (Normative)
+
+Let:
+
+- `INF = gameTrails.inf`
+- `base = 1.0`
+- `wSlope = gameTrails.wSlope`, `slopeScale = gameTrails.slopeScale`
+- `wMoist = gameTrails.wMoist`, `moistStart = gameTrails.moistStart`
+- `wObs = gameTrails.wObs`
+- `wRidge = gameTrails.wRidge`
+- `wStreamProx = gameTrails.wStreamProx`, `streamProxMaxDist = gameTrails.streamProxMaxDist`
+- `wCross = gameTrails.wCross`
+- `wMarsh = gameTrails.wMarsh`
+- `slopeTerm = wSlope * clamp01(SlopeMag[x,y] / slopeScale)`
+- `moistureTerm = wMoist * clamp01((Moisture[x,y] - moistStart) / (1 - moistStart))`
+- `obstructionTerm = wObs * Obstruction[x,y]`
+- `ridgeBonus = (-wRidge)` if `Landform[x,y] == ridge` else `0`
+- `streamProxBonus = -wStreamProx * clamp01(1 - distStream[x,y] / streamProxMaxDist)`
+- `waterCrossingTerm = wCross` if `WaterClass[x,y] == stream` else `0`
+- `marshTerm = wMarsh` if `WaterClass[x,y] == marsh` else `0`
+- `lakeTerm = INF` if `WaterClass[x,y] == lake` else `0`
+- `nonPlayableTerm = INF` if tile is `NonPlayable` else `0`
+
+Then:
+
+- `C[x,y] = base + slopeTerm + moistureTerm + obstructionTerm + waterCrossingTerm + marshTerm + lakeTerm + nonPlayableTerm + ridgeBonus + streamProxBonus`
+
+Constraints:
+
+- If `C[x,y] >= INF`, the tile MUST be treated as non-traversable by the trail pathfinder.
+- The cost field `C` MUST be computed once and MUST NOT be modified during trail routing.
+
+## 10.3 Trail Seed Selection (Normative, Fully Explicit)
+
+### 10.3.1 Candidate Filtering (Normative)
+
+A tile `(x,y)` is a seed candidate iff all are true:
+
+- tile is `Playable` (not `NonPlayable`)
+- `WaterClass[x,y] != lake`
+- `Moisture[x,y] < 0.92`
+- `SlopeMag[x,y] < 0.30`
+
+### 10.3.2 Candidate Score (Normative)
+
+Parameters used in this subsection:
+
+- `waterSeedMaxDist = gameTrails.waterSeedMaxDist`
+
+Compute `distWater[x,y]` as Chebyshev tile-distance to nearest water tile (`WaterClass == stream` OR `WaterClass == lake`) using 8-way multi-source BFS (step cost `1`), capped at `gameTrails.waterSeedMaxDist`.
+
+If no water tiles exist, set `distWater[x,y] = waterSeedMaxDist` for all tiles.
+
+Define score:
+
+- `S[x,y] = 0`
+- `S[x,y] += 0.35 * clamp01((Firmness[x,y] - 0.35) / 0.65)`
+- `S[x,y] += 0.25 * clamp01(1 - abs(Moisture[x,y] - 0.55) / 0.55)`
+- `S[x,y] += 0.20 * clamp01(1 - SlopeMag[x,y] / 0.25)`
+- `S[x,y] += 0.20 * clamp01(1 - distWater[x,y] / waterSeedMaxDist)`
+
+### 10.3.3 Seed Count (Normative)
+
+Parameter used in this subsection:
+
+- `seedTilesPerTrail = gameTrails.seedTilesPerTrail`
+
+Let:
+
+- `inset = playableInset`
+- `playableWidth = width - 2*inset`
+- `playableHeight = height - 2*inset`
+- `playableArea = max(0, playableWidth * playableHeight)`
+
+Compute:
+
+- `seedCount = floor(playableArea / seedTilesPerTrail)`
+- If `seedCount < 1`, set `seedCount = 1`.
+
+### 10.3.4 Seed Selection Order (Normative)
+
+- Sort candidates by `S[x,y]` descending.
+- Break ties by `(y, x)` ascending.
+- Select the first `seedCount` candidates as trail seeds.
+
+## 10.4 Endpoints and Route Request Order (Normative)
+
+For each seed:
+
+1. Find nearest `WaterNode` where `WaterClass == stream` and `FA_N >= streamEndpointAccumThreshold`.
+2. Find nearest `RidgeNode` where `Landform == ridge` and `SlopeMag < ridgeEndpointMaxSlope`.
+
+Nearest-node ties MUST break by `(y, x)` ascending.
+
+Routes are requested in this order:
+
+1. Seed → nearest `WaterNode` (if any)
+2. Seed → nearest `RidgeNode` (if any)
+
+## 10.5 Least-Cost Path (Normative, Fully Explicit)
+
+For each requested route, compute a least-cost path over the 8-neighbor grid using Dijkstra’s algorithm.
+
+### 10.5.1 Parameters
+
+- `diagWeight = gameTrails.diagWeight`
+- `tieEps = hydrology.tieEps`
+
+### 10.5.2 Graph and Edge Cost (Normative)
+
+- Nodes are tiles `(x,y)` where `C[x,y] < INF`.
+- Edges connect to the 8 neighbors with `C[n] < INF`.
+
+Edge traversal cost from tile `a` to neighbor tile `b`:
+
+- `dirWeight = 1.0` for cardinal steps, `diagWeight` for diagonal steps
+- `edgeCost(a -> b) = C[b] * dirWeight`
+
+### 10.5.3 Dijkstra Queue Ordering (Normative)
+
+The priority queue MUST order candidate frontier entries by:
+
+1. lowest cumulative path cost
+2. tie-break by `(y, x)` ascending on the destination tile
+3. if still tied, tie-break by `Dir8` numeric order of the step taken
+
+Equality for cost comparisons MUST use `tieEps`:
+
+- Treat two costs as equal iff `abs(costA - costB) <= tieEps`.
+
+### 10.5.4 Path Reconstruction (Normative)
+
+- Store a predecessor pointer for each visited tile.
+- When the endpoint is dequeued (popped) from the priority queue, the algorithm MAY terminate early and reconstruct the path by following predecessors back to the start.
+- If the endpoint is unreachable, the route yields no path and MUST be skipped.
+
+### 10.5.5 Trail Marking Order (Normative)
+
+Paths are marked as `GameTrail = true` immediately after each route is computed.
+
+Routes MUST be generated and applied in this order for each seed:
+
+1. Seed → nearest `WaterNode` (if any)
+2. Seed → nearest `RidgeNode` (if any)
+
+Marking trails MUST NOT modify `C`, `S`, or any routing behavior for subsequent routes.
+
+## 10.6 Optional Post-processing (Deterministic if enabled)
+
+A single simplification pass MAY be applied to reduce zig-zag artifacts. If enabled, it MUST be deterministic and MUST NOT alter `C` or seed selection.
+
+---
+
+# 11. Visibility
+
+- `vis = base - densityPenalty*TreeDensity - obstructionPenalty*Obstruction + elevationBonus*(H-0.5)`
+- `VisibilityBaseMeters = clamp(vis, minMeters, maxMeters)`
+
+---
+
+# 12. Orientation Reliability (Informational)
+
+Normative computation:
+
+- `OR = 1.0`
+- `OR -= densityWeight * TreeDensity`
+- `OR -= obstructionWeight * Obstruction`
+- `OR -= wetnessWeight * clamp01((Moisture - wetnessStart) / wetnessRange)`
+- `OR += ridgeBonus` if `Landform==ridge`
+- `OrientationReliability = clamp(OR, min, max)`
+
+This field MUST NOT affect movement, passability, trail routing, or hydrology in v1.
+
+---
+
+# 13. Movement and Navigation
+
+## 13.1 Move Cost
+
+Normative order:
+
+1. Base multipliers from obstruction and moisture.
+2. Water/biome modifiers (`marsh`, `open_bog`).
+3. If `GameTrail[x,y]==true`, apply `MoveCost *= gameTrailMoveCostMultiplier` **once**.
+
+## 13.2 Passability by Direction
+
+For each directed edge `(x,y)->(nx,ny)`:
+
+1. If out-of-bounds or destination `NonPlayable`: `blocked`.
+2. If `WaterClass[x,y]==lake` or `WaterClass[nx,ny]==lake`: `blocked`.
+3. `dh = H[nx,ny] - H[x,y]`.
+4. If `Moisture[x,y] >= 0.90 && SlopeMag[x,y] < 0.03`: `difficult`.
+5. Else if `dh >= steepBlockDelta`: `blocked`.
+6. Else if `dh >= steepDifficultDelta`: `difficult`.
+7. Else `passable`.
+
+Cliff flag:
+
+- `CliffEdge[x,y,dir] = (dh >= steepBlockDelta && SlopeMag[x,y] >= cliffSlopeMin)`.
+
+## 13.3 Followable Flags
+
+- Add `stream` if stream tile.
+- Add `ridge` if ridge landform.
+- Add `game_trail` if trail tile.
+- Add `shore` if adjacent to lake and not lake.
+
+---
+
+# 14. Tile Payload
+
+The generator MUST emit a versioned envelope:
+
+```json
+{
+  "meta": {
+    "specVersion": "forest-terrain-v1"
+  },
+  "tiles": [
+    {
+      "id": "forest:25,19",
+      "position": {"x": 25, "y": 19},
+      "topography": {"elevation": 0.18, "slopeMag": 0.04, "aspectDeg": 182, "landform": "flat"},
+      "hydrology": {"flowDir": 2, "flowAccum": 219, "flowAccumN": 0.74, "moisture": 0.86, "waterClass": "stream"},
+      "vegetation": {"biome": "spruce_swamp", "treeDensity": 0.82, "canopyCover": 0.78, "dominant": ["norway_spruce"]},
+      "ground": {"soil": "peat", "firmness": 0.34, "surfaceFlags": ["standing_water", "sphagnum"]},
+      "roughness": {"obstruction": 0.48, "featureFlags": ["fallen_log", "root_tangle"]},
+      "visibility": {"baseMeters": 12},
+      "navigation": {
+        "moveCost": 1.35,
+        "orientationReliability": 0.58,
+        "followable": ["stream", "game_trail"],
+        "passability": {"N": "difficult", "NE": "passable", "E": "passable", "SE": "blocked", "S": "blocked", "SW": "blocked", "W": "passable", "NW": "passable"}
+      }
+    }
+  ]
+}
+```
+
+`tiles` is the authoritative payload for downstream consumers.
+
+
+## 14.1 Numeric Precision and Serialization Policy (Normative)
+
+To reduce downstream diff churn while preserving deterministic comparisons:
+
+- Internal computation precision is implementation-defined, but exported numeric values MUST be serialized with fixed decimal precision.
+- Export precision for normalized floats (`[0,1]`) and derived continuous fields MUST be 6 fractional digits.
+- Integer fields (`flowDir`, `flowAccum`, coordinates, ids) MUST be emitted as integers (no decimal suffix).
+- Implementations MAY retain higher internal precision, but serialization MUST round half away from zero to the configured decimal places.
+
+
+---
+
+# 15. Debug Outputs (Recommended)
+
+- height, slope, moisture, flow accumulation, water overlay, biome categorical, roughness
+
+# 16. Testing Requirements
+
+Implementations MUST include fixed-seed regression checks for:
+
+- Base maps (with epsilon for floats)
+- Categorical maps (`Biome`, `WaterClass`)
+- Hydrology (`FD`, `FA`)
+
+Recommended float epsilon: `1e-6`.
+
+
+## 16.1 Canonical Conformance Vector (Normative)
+
+Implementations MUST provide at least one canonical fixture that is versioned with this spec.
+
+In v1, fixture validation is scoped to a given implementation profile; fixtures are not, by themselves, a requirement for cross-language output equality.
+
+Required fixture fields:
+
+- `seed`
+- `width`, `height`
+- `paramsHash` (SHA-256 hash of canonicalized JSON parameter object)
+- checksums for `FD`, `FA`, and `WaterClass` maps (SHA-256)
+- one full tile payload snapshot at a fixed coordinate
+
+Hash algorithm and encoding are normative:
+
+- Hash algorithm MUST be SHA-256.
+- Hash digest MUST be lower-case hexadecimal and prefixed with `sha256:`.
+- Hash input MUST be UTF-8 encoded canonical JSON with no insignificant whitespace.
+- Tile-map checksum inputs MUST be row-major ordered (`y`, then `x`).
+
+Recommended fixture shape:
+
+```json
+{
+  "specVersion": "forest-terrain-v1",
+  "seed": "4242424242",
+  "width": 64,
+  "height": 64,
+  "paramsHash": "sha256:<hex>",
+  "checksums": {
+    "FD": "sha256:<hex>",
+    "FA": "sha256:<hex>",
+    "WaterClass": "sha256:<hex>"
+  },
+  "tileSnapshot": {
+    "x": 25,
+    "y": 19,
+    "payload": { "...": "full tile object" }
+  }
+}
+```
+
+Checksum input normalization MUST use row-major tile ordering (`y`, then `x`) and UTF-8 JSON encoding without insignificant whitespace.
+
+## 16.2 First Published Fixture (Normative)
+
+For v1, implementations MUST include and expose the published minimal conformance fixture at:
+
+- `docs/drafts/fixtures/forest-terrain-v1-conformance-fixture.json`
+
+That fixture is the canonical starter artifact for validating hashing/serialization behavior before larger-map fixtures are added.
+
+
+---
+
+# Appendix A: Recommended Parameter Defaults (v1)
+
+```json
+{
+  "grid": {"playableInset": 1},
+  "heightNoise": {"octaves": 5, "baseFrequency": 0.035, "lacunarity": 2.0, "persistence": 0.5},
+  "roughnessNoise": {"octaves": 3, "baseFrequency": 0.06, "lacunarity": 2.0, "persistence": 0.55},
+  "vegVarianceNoise": {"octaves": 4, "baseFrequency": 0.045, "lacunarity": 2.0, "persistence": 0.5, "strength": 0.12},
+  "landform": {"eps": 0.005, "flatSlopeThreshold": 0.03},
+  "hydrology": {
+    "minDropThreshold": 0.0005,
+    "tieEps": 0.000001,
+    "streamAccumThreshold": 0.55,
+    "streamMinSlopeThreshold": 0.01,
+    "lakeFlatSlopeThreshold": 0.03,
+    "lakeAccumThreshold": 0.65,
+    "moistureAccumStart": 0.35,
+    "flatnessThreshold": 0.06,
+    "waterProxMaxDist": 6,
+    "weights": {"accum": 0.55, "flat": 0.25, "prox": 0.20},
+    "marshMoistureThreshold": 0.78,
+    "marshSlopeThreshold": 0.04
+  },
+  "ground": {
+    "peatMoistureThreshold": 0.70,
+    "standingWaterMoistureThreshold": 0.78,
+    "standingWaterSlopeMax": 0.04,
+    "lichenMoistureMax": 0.35,
+    "exposedSandMoistureMax": 0.40,
+    "bedrockHeightMin": 0.75,
+    "bedrockRoughnessMin": 0.55
+  },
+  "roughnessFeatures": {
+    "obstructionMoistureMix": 0.15,
+    "windthrowThreshold": 0.70,
+    "fallenLogThreshold": 0.45,
+    "rootTangleMoistureThreshold": 0.60,
+    "boulderHeightMin": 0.70,
+    "boulderRoughnessMin": 0.60
+  },
+  "movement": {
+    "steepBlockDelta": 0.22,
+    "steepDifficultDelta": 0.12,
+    "cliffSlopeMin": 0.18,
+    "moveCostObstructionMax": 1.35,
+    "moveCostMoistureMax": 1.25,
+    "marshMoveCostMultiplier": 1.15,
+    "openBogMoveCostMultiplier": 1.20
+  },
+  "visibility": {
+    "base": 40,
+    "densityPenalty": 28,
+    "obstructionPenalty": 10,
+    "elevationBonus": 6,
+    "minMeters": 8,
+    "maxMeters": 60
+  },
+  "orientation": {
+    "min": 0.25,
+    "max": 0.95,
+    "densityWeight": 0.45,
+    "obstructionWeight": 0.20,
+    "wetnessWeight": 0.15,
+    "wetnessStart": 0.60,
+    "wetnessRange": 0.40,
+    "ridgeBonus": 0.10
+  },
+  "gameTrails": {
+    "diagWeight": 1.41421356237,
+    "inf": 1000000000,
+    "wSlope": 4.0,
+    "slopeScale": 0.18,
+    "wMoist": 3.0,
+    "moistStart": 0.55,
+    "wObs": 2.0,
+    "wRidge": 0.35,
+    "wStreamProx": 0.25,
+    "streamProxMaxDist": 5,
+    "wCross": 0.65,
+    "wMarsh": 1.25,
+    "waterSeedMaxDist": 6,
+    "seedTilesPerTrail": 450,
+    "streamEndpointAccumThreshold": 0.70,
+    "ridgeEndpointMaxSlope": 0.12,
+    "gameTrailMoveCostMultiplier": 0.85
+  }
+}
+```
+
+# Appendix B: Helper Functions
+
+- `clamp01(x) = max(0, min(1, x))`
+- `clamp(x, lo, hi) = max(lo, min(hi, x))`
+- `lerp(a, b, t) = a + (b - a) * clamp01(t)`
+
+# Appendix C: Implementation Notes
+
+- Multi-source BFS is recommended for distance-to-water and distance-to-stream terms.
+- All random decisions MUST be deterministic functions of seed and tile coordinates.
