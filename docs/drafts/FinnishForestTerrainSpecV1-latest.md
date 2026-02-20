@@ -269,17 +269,38 @@ Compute:
 - `z = mix64(z)`
 - return `z`
 
-Where `mix64` is the same 64-bit mixing function used for `tieBreakHash64`:
+Define `mix64(z)` (normative):
 
 - `z ^= z >> 30; z *= 0xBF58476D1CE4E5B9`
 - `z ^= z >> 27; z *= 0x94D049BB133111EB`
 - `z ^= z >> 31`
+- return `z`
 
-All operations are 64-bit unsigned with wraparound.
+All operations are 64-bit unsigned integer operations with wraparound.
 
 ## 4.3 Multi-octave Base Map Generation
 
-For each base map (`H`, `R`, `V`), set `mapId` accordingly.
+For each base map (`H`, `R`, `V`), set `mapId` and bind noise parameters from `params` as follows:
+
+- If `mapId == "H"`:
+  - `octaves = params.heightNoise.octaves`
+  - `baseFrequency = params.heightNoise.baseFrequency`
+  - `lacunarity = params.heightNoise.lacunarity`
+  - `persistence = params.heightNoise.persistence`
+
+- If `mapId == "R"`:
+  - `octaves = params.roughnessNoise.octaves`
+  - `baseFrequency = params.roughnessNoise.baseFrequency`
+  - `lacunarity = params.roughnessNoise.lacunarity`
+  - `persistence = params.roughnessNoise.persistence`
+
+- If `mapId == "V"`:
+  - `octaves = params.vegVarianceNoise.octaves`
+  - `baseFrequency = params.vegVarianceNoise.baseFrequency`
+  - `lacunarity = params.vegVarianceNoise.lacunarity`
+  - `persistence = params.vegVarianceNoise.persistence`
+
+The multi-octave loop MUST use these bound values.
 
 - Start `freq = baseFrequency`, `amp = 1.0`.
 - Loop octaves:
@@ -416,19 +437,12 @@ This rule eliminates directional and center bias while preserving determinism.
 
 ### tieBreakHash64 Definition (Normative)
 
-The hash function MUST be defined exactly as follows:
+tieBreakHash64(seed, x, y) (normative):
 
 - `z = seed`
 - `z ^= (uint64(x) * 0x9E3779B97F4A7C15)`
 - `z ^= (uint64(y) * 0xC2B2AE3D27D4EB4F)`
-- `z ^= z >> 30`
-- `z *= 0xBF58476D1CE4E5B9`
-- `z ^= z >> 27`
-- `z *= 0x94D049BB133111EB`
-- `z ^= z >> 31`
-- `return z`
-
-All operations are 64-bit unsigned integer operations with wraparound.
+- `return mix64(z)`
 
 This tie-break rule MUST be applied whenever multiple downhill candidates are tied within `hydrology.tieEps`.
 
@@ -499,6 +513,8 @@ Marsh tiles MUST NOT be included as water tiles for this proximity calculation.
 
 Compute `distWater[x,y]` as the minimum tile-distance to any water tile using an 8-way multi-source BFS.
 
+Informative note: this BFS distance corresponds to Chebyshev distance on a grid.
+
 Rules:
 
 - Neighborhood: Moore (8-way)
@@ -521,7 +537,12 @@ Let parameters be:
 - `hydrology.moistureAccumStart`
 - `hydrology.flatnessThreshold`
 - `hydrology.waterProxMaxDist`
-- weights `wA`, `wF`, `wP`
+
+Bind moisture weights (normative):
+
+- `wA = hydrology.weights.accum`
+- `wF = hydrology.weights.flat`
+- `wP = hydrology.weights.prox`
 
 Compute:
 
@@ -632,6 +653,8 @@ The first matching clause MUST be taken.
 - Else if `H[x,y] >= 0.70` and `SlopeMag[x,y] < 0.05`: `Biome[x,y] = esker_pine`
 - Else: `Biome[x,y] = pine_heath`
 
+Biome slope cutoff constants used in v1 (e.g., `0.03` and `0.05` in Section 7.2.3) are fixed and are not parameterized in Appendix A.
+
 ## 7.3 Vegetation Attributes (Normative)
 
 Vegetation attributes MUST be computed deterministically from `Biome`, `Moisture`, and `V`.
@@ -695,7 +718,11 @@ No probabilistic selection is permitted. Assignment MUST be deterministic based 
 
 # 9. Roughness and Features
 
-- `Obstruction = clamp01(R*0.85 + Moisture*0.15)`.
+Let `mix = roughnessFeatures.obstructionMoistureMix`.
+
+Compute:
+
+- `Obstruction[x,y] = clamp01(R[x,y] * (1 - mix) + Moisture[x,y] * mix)`
 - `FeatureFlags`: `fallen_log|root_tangle|boulder|windthrow` by deterministic threshold rules.
 
 ---
@@ -734,7 +761,7 @@ Game trails are produced by least-cost routing over a deterministic per-tile cos
 
 ### 10.2.2 Distances (Normative)
 
-Compute `distStream[x,y]` as Chebyshev tile-distance to the nearest stream tile using an 8-way multi-source BFS (cardinal and diagonal step cost = `1`), capped at `streamProxMaxDist`.
+Compute `distStream[x,y]` as 8-way multi-source BFS distance (cardinal and diagonal step cost = `1`) to the nearest stream tile, capped at `streamProxMaxDist`.
 
 Stream tiles are those where `WaterClass[x,y] == stream`.
 
@@ -789,7 +816,7 @@ Parameters used in this subsection:
 
 - `waterSeedMaxDist = gameTrails.waterSeedMaxDist`
 
-Compute `distWater[x,y]` as Chebyshev tile-distance to nearest water tile (`WaterClass == stream` OR `WaterClass == lake`) using 8-way multi-source BFS (step cost `1`), capped at `gameTrails.waterSeedMaxDist`.
+Compute `distWater[x,y]` as 8-way multi-source BFS distance (cardinal and diagonal step cost = `1`) to nearest water tile (`WaterClass == stream` OR `WaterClass == lake`), capped at `gameTrails.waterSeedMaxDist`.
 
 If no water tiles exist, set `distWater[x,y] = waterSeedMaxDist` for all tiles.
 
@@ -963,13 +990,13 @@ For each directed edge `(x,y)->(nx,ny)`:
 2. If `WaterClass[x,y]==lake` or `WaterClass[nx,ny]==lake`: `blocked`.
 3. `dh = H[nx,ny] - H[x,y]`.
 4. If `Moisture[x,y] >= 0.90 && SlopeMag[x,y] < 0.03`: `difficult`.
-5. Else if `dh >= steepBlockDelta`: `blocked`.
-6. Else if `dh >= steepDifficultDelta`: `difficult`.
+5. Else if `dh >= movement.steepBlockDelta`: `blocked`.
+6. Else if `dh >= movement.steepDifficultDelta`: `difficult`.
 7. Else `passable`.
 
 Cliff flag:
 
-- `CliffEdge[x,y,dir] = (dh >= steepBlockDelta && SlopeMag[x,y] >= cliffSlopeMin)`.
+- `CliffEdge[x,y,dir] = (dh >= movement.steepBlockDelta && SlopeMag[x,y] >= movement.cliffSlopeMin)`.
 
 ## 13.3 Followable Flags
 
