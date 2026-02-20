@@ -36,22 +36,24 @@ Purpose:
   - `vDoor.closed = aClosed || bClosed`
   - `vDoor.locked = A.locked || B.locked`
   - reflect effective state to both directional records
-- [ ] [Required] Enforce invariant `locked => closed` through VirtualDoor mutation API.
-- [ ] [Required] For virtualized pairs, all door-state writes must route through VirtualDoor service APIs.
-- [ ] [Required] Direct legacy writes (`room.openDoor/closeDoor/lockDoor/unlockDoor`) are out of contract for virtualized pairs.
-- [ ] [Required] Commit atomicity:
+- [x] [Required] Implement service-level `mutateDoor({ actor, fromRoomRef, direction, roomRef, mutation })` API with supported mutations:
+  - `open` | `close` | `unlock` | `unlockAndOpen` | `closeAndLock`
+- [x] [Required] Enforce invariant `locked => closed` through VirtualDoor mutation API.
+- [x] [Required] For virtualized pairs, all door-state writes must route through VirtualDoor service APIs.
+- [x] [Required] Direct legacy writes (`room.openDoor/closeDoor/lockDoor/unlockDoor`) are out of contract for virtualized pairs.
+- [x] [Required] Commit atomicity:
   - reflection to both directional records is one logical mutator operation
   - partial failure must rollback both to pre-operation state
 
 ## 3) Mutation Integration
 
-- [ ] [Required] Add canonical mutator instruction:
+- [x] [Required] Add canonical mutator instruction:
   - `type: 'doorMutation'`
   - `mutation: 'open' | 'close' | 'unlock' | 'unlockAndOpen' | 'closeAndLock'`
   - target via direction or roomRef (and actor/fromRoomRef as needed)
-- [ ] [Required] Route `doorMutation` through VirtualDoor service mutation API.
-- [ ] [Required] Preserve idempotent success and unresolved-target `warn + noop`.
-- [ ] [Required] Keep legacy instruction aliases for compatibility:
+- [x] [Required] Route `doorMutation` through VirtualDoor service mutation API.
+- [x] [Required] Preserve idempotent success and unresolved-target `warn + noop`.
+- [x] [Required] Keep legacy instruction aliases for compatibility:
   - `openDoor` -> `doorMutation/open`
   - `closeAndLockDoor` -> `doorMutation/closeAndLock`
 - [ ] [Required] Add movement de-dup support in mutator (e.g. `suppressRoomBroadcast` or equivalent) for composed `go` messages.
