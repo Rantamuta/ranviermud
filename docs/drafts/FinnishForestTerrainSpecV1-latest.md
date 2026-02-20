@@ -308,9 +308,40 @@ This tie-break rule MUST be applied whenever multiple downhill candidates are ti
 - Lake candidate: `Landform==basin && SlopeMag<lakeFlatSlopeThreshold && FA_N>=lakeAccumThreshold`.
 - Flood-fill connected lake candidates (`LakeMask=true`).
 
-## 6.5 Streams
+## 6.5 Streams (Normative)
 
-- Stream if not lake and thresholds for accumulation/slope satisfied.
+Stream detection MUST be computed before `WaterClass` assignment (Section 6.7).
+
+Define the boolean stream mask:
+
+- `isStream[x,y]` (boolean)
+
+Inputs required:
+
+- `LakeMask[x,y]` (Section 6.4)
+- `FA_N[x,y]` (Section 6.3)
+- `SlopeMag[x,y]` (Section 5.1)
+
+Parameters (Appendix A):
+
+- `hydrology.streamAccumThreshold`
+- `hydrology.streamMinSlopeThreshold`
+
+Definition (normative):
+
+A tile is a stream tile iff:
+
+```text
+isStream[x,y] =
+    (LakeMask[x,y] == false) AND
+    (FA_N[x,y] >= streamAccumThreshold) AND
+    (SlopeMag[x,y] >= streamMinSlopeThreshold)
+```
+
+Notes (normative clarifications):
+
+- Lake tiles MUST NOT be classified as stream tiles (`LakeMask` overrides).
+- `isStream` is an intermediate derived mask used by moisture proximity (Section 6.6) and `WaterClass` assignment (Section 6.7).
 
 ## 6.6 Moisture Map (Normative, Fully Explicit)
 
@@ -363,6 +394,8 @@ Compute:
 Weights are applied as-is. No implicit weight normalization is performed.
 
 ## 6.7 WaterClass (Normative, Explicit Precedence)
+
+`WaterClass[x,y]` assignment MUST occur after `LakeMask[x,y]` and `isStream[x,y]` are computed, and after `Moisture[x,y]` is computed.
 
 `WaterClass[x,y]` MUST be assigned deterministically using the following decision order.
 
