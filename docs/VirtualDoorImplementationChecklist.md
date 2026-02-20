@@ -9,7 +9,7 @@ Purpose:
 
 ## 1) Service Lifecycle
 
-- [ ] [Required] Add bundle-owned VirtualDoor service module (path is implementation choice, e.g. `bundles/bundle-rantamuta/lib/doors/virtual-door-service.js`).
+- [x] [Required] Add bundle-owned VirtualDoor service module (path is implementation choice, e.g. `bundles/bundle-rantamuta/lib/doors/virtual-door-service.js`).
 - [ ] [Required] Export service lifecycle accessors:
   - `ensureVirtualDoorService(state)` (idempotent)
   - `getVirtualDoorService(state)` (auto-ensure)
