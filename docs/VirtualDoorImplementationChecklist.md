@@ -106,13 +106,13 @@ Purpose:
 
 ## 7) Content and Test Migration
 
-- [ ] [Required] Update test content to use canonical `doorMutation` instruction payload.
-- [ ] [Required] Update test predicates to use canonical `q.isDoor*` query API.
-- [ ] [Required] Add/adjust test rooms to cover:
+- [x] [Required] Update test content to use canonical `doorMutation` instruction payload.
+- [x] [Required] Update test predicates to use canonical `q.isDoor*` query API.
+- [x] [Required] Add/adjust test rooms to cover:
   - virtualized reciprocal pair (matching `lockedBy`)
   - non-virtual/asymmetry regression case
   - facade bindings and fallback naming
-- [ ] [Required] Add or update automated tests:
+- [x] [Required] Add or update automated tests:
   - service pairing and conflict behavior
   - reconciliation and invariants
   - atomic rollback behavior
