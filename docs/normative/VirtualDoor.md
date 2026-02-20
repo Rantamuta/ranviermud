@@ -108,9 +108,9 @@ Rules:
 2. Bundle server-events must register startup/shutdown hooks for VirtualDoor service lifecycle.
 3. Startup must call `ensureVirtualDoorService(state)` to prewarm service initialization; shutdown disposes service caches/indices.
 4. Service access contract:
-- `getVirtualDoorService(state)` must return an initialized service.
-- if not yet initialized, `getVirtualDoorService(state)` must call idempotent `ensureVirtualDoorService(state)` internally.
-- command/query/mutator call sites should call `getVirtualDoorService(state)`, not `ensure...` directly.
+   - `getVirtualDoorService(state)` must return an initialized service.
+   - if not yet initialized, `getVirtualDoorService(state)` must call idempotent `ensureVirtualDoorService(state)` internally.
+   - command/query/mutator call sites should call `getVirtualDoorService(state)`, not `ensure...` directly.
 5. No special scenario-runner bootstrap is required if door code paths consistently use `getVirtualDoorService(state)`.
 
 6. Service instances must not be attached as ad hoc fields on `GameState`:
@@ -210,6 +210,10 @@ Boundary:
 
 - normal movement.
 
+1. Door already open:
+
+- normal movement.
+
 1. Door closed + unlocked:
 
 - auto-apply `open`
@@ -230,7 +234,7 @@ Boundary:
 
 v1 command surface:
 
-- `open <door>`
+- `open <door>` (with optional key target)
 - `close <door>`
 - `lock <door>`
 - `unlock <door>` (with optional key target)
@@ -246,6 +250,16 @@ Command-to-mutation mapping:
 
 - Key matching/permission checks occur in capture/plan.
 - Mutation layer performs state transition only.
+- Key matching is by key definition reference (`lockedBy` / item `entityReference`), not per-instance UUID.
+- Multiple carried copies of the same matching key reference are valid and are not ambiguous.
+- For `open`/`unlock`/`lock` commands with an explicit `with <key phrase>` target:
+  - resolve candidate key items from actor inventory that match the phrase
+  - filter candidates by `candidate.entityReference === lockedBy`
+  - if one or more compatible candidates remain, proceed using a deterministic selected candidate for messaging
+  - if none remain, fail with wrong-key capture messaging
+  - do not fall back to other inventory keys outside the explicit phrase candidate set
+- For `open`/`unlock`/`lock` commands with no explicit `with <key>` target, capture/plan may auto-select any carried item whose definition reference matches `lockedBy`.
+- If no matching key reference exists, command should fail with capture-failure messaging.
 
 ## Messaging Contract (Default Behavior)
 
@@ -258,7 +272,7 @@ Cross-room rule:
 ### Capture-Failure Defaults (Actor-Only)
 
 - unlock without usable key: `{actor.You} cannot unlock the {object.direct}.`
-- unlock with wrong key: `{actor.You} {verb:try} the {object.indirect}, but it does not fit the lock.`
+- unlock/open with wrong key: `{actor.You} {verb:try} the {object.indirect}, but it does not fit the lock.`
 - open while locked: `{actor.You} cannot open the {object.direct}; it is locked.`
 - no opposite-room line for these capture failures
 - same-door facade policy may override these defaults
@@ -275,15 +289,16 @@ Cross-room rule:
 - `go` auto `unlockAndOpen` emits:
   - source-room semantic: `{actor.You} {verb:unlock} the {object.direct} with the {object.indirect}, {verb:open} it, and {verb:leave}.`
   - fallback source semantic when key label is unavailable: `{actor.You} {verb:unlock} the {object.direct}, {verb:open} it, and {verb:leave}.`
-  - destination-room semantic (others only): `The {object.direct} {verb:open} and {actor.name} {verb:enter}.`
+  - destination-room line (opposite-room audience): `The {object.direct} {verb:open} and {actor.name} {verb:enter}.`
 - `go` auto `open` emits:
   - source-room semantic: `{actor.You} {verb:open} the {object.direct} and {verb:leave}.`
-  - destination-room semantic (others only): `The {object.direct} {verb:open} and {actor.name} {verb:enter}.`
+  - destination-room line (opposite-room audience): `The {object.direct} {verb:open} and {actor.name} {verb:enter}.`
 - `unlock <door>` command success:
   - actor semantic: `{actor.You} {verb:unlock} the {object.direct}.`
   - opposite-room broadcast: `The {object.direct} unlocks with a click.`
 - `open <door>` command success:
   - actor semantic: `{actor.You} {verb:open} the {object.direct}.`
+  - actor semantic when a key target is used to clear lock: `{actor.You} {verb:open} the {object.direct} with the {object.indirect}.`
   - opposite-room broadcast: `The {object.direct} opens.`
 
 ### Door Name Fallback
@@ -309,7 +324,7 @@ Validation should surface:
 - candidate pairs with multiple exits to same counterpart room (non-virtual, warn)
 - virtual candidates with conflicting `lockedBy` (non-virtual, warn)
 - virtual candidates bound to missing facade item id
-- impossible load state (`locked: true` with `closed: false`)
+- impossible authored load state (`locked: true` with `closed: false`) before normalization/reconciliation
 
 Default mode should warn; strict validation mode may fail.
 

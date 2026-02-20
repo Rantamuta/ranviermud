@@ -360,7 +360,7 @@ Capture-failure defaults (actor-only, no opposite-room line):
 
 - `unlock <door>` with no usable key:
   - `{actor.You} cannot unlock the {object.direct}.`
-- `unlock <door> with <wrong key>`:
+- `unlock/open <door> with <wrong key>`:
   - `{actor.You} {verb:try} the {object.indirect}, but it does not fit the lock.`
 - `open <door>` when door is locked:
   - `{actor.You} cannot open the {object.direct}; it is locked.`
@@ -378,15 +378,16 @@ Success defaults:
 - `go` auto `unlockAndOpen`:
   - source room semantic: `{actor.You} {verb:unlock} the {object.direct} with the {object.indirect}, {verb:open} it, and {verb:leave}.`
   - fallback source semantic when key label is unavailable: `{actor.You} {verb:unlock} the {object.direct}, {verb:open} it, and {verb:leave}.`
-  - destination room semantic (others only): `The {object.direct} {verb:open} and {actor.name} {verb:enter}.`
+  - destination room line (opposite-room audience): `The {object.direct} {verb:open} and {actor.name} {verb:enter}.`
 - `go` auto `open`:
   - source room semantic: `{actor.You} {verb:open} the {object.direct} and {verb:leave}.`
-  - destination room semantic (others only): `The {object.direct} {verb:open} and {actor.name} {verb:enter}.`
+  - destination room line (opposite-room audience): `The {object.direct} {verb:open} and {actor.name} {verb:enter}.`
 - `unlock <door>` command success:
   - actor semantic: `{actor.You} {verb:unlock} the {object.direct}.`
   - opposite room broadcast: `The {object.direct} unlocks with a click.`
 - `open <door>` command success:
   - actor semantic: `{actor.You} {verb:open} the {object.direct}.`
+  - actor semantic when a key target is used to clear lock: `{actor.You} {verb:open} the {object.direct} with the {object.indirect}.`
   - opposite room broadcast: `The {object.direct} opens.`
 
 Door naming fallback:
@@ -487,12 +488,16 @@ For player ergonomics, automatic door handling is the default movement policy.
 
 - normal movement.
 
+1. Door already open:
+
+- normal movement.
+
 1. Door closed + unlocked:
 
 - auto-open door.
 - proceed with movement.
 - actor source-room semantic (default): `{actor.You} {verb:open} the {object.direct} and {verb:leave}.`
-- destination-room semantic (others only, default): `The {object.direct} {verb:open} and {actor.name} {verb:enter}.`
+- destination-room line (opposite-room audience, default): `The {object.direct} {verb:open} and {actor.name} {verb:enter}.`
 
 1. Door closed + locked + matching key in actor inventory:
 
@@ -501,7 +506,7 @@ For player ergonomics, automatic door handling is the default movement policy.
 - proceed with movement.
 - actor source-room semantic (default): `{actor.You} {verb:unlock} the {object.direct} with the {object.indirect}, {verb:open} it, and {verb:leave}.`
 - fallback default when key label is unavailable: `{actor.You} {verb:unlock} the {object.direct}, {verb:open} it, and {verb:leave}.`
-- destination-room semantic (others only, default): `The {object.direct} {verb:open} and {actor.name} {verb:enter}.`
+- destination-room line (opposite-room audience, default): `The {object.direct} {verb:open} and {actor.name} {verb:enter}.`
 
 1. Door closed + locked + no matching key:
 
@@ -579,6 +584,16 @@ Policy split:
 
 - Key/permission checks occur in capture/plan policy.
 - Mutation instructions perform state transition only.
+- Key matching is by key definition reference (`lockedBy` / item `entityReference`), not per-instance UUID.
+- Multiple carried copies of the same matching key reference are valid and are not ambiguous.
+- For `open`/`unlock`/`lock` commands with an explicit `with <key phrase>` target:
+  - resolve candidate key items from actor inventory that match the phrase
+  - filter candidates by `candidate.entityReference === lockedBy`
+  - if one or more compatible candidates remain, proceed using a deterministic selected candidate for messaging
+  - if none remain, fail with wrong-key capture messaging
+  - do not fall back to other inventory keys outside the explicit phrase candidate set
+- For `open`/`unlock`/`lock` commands with no explicit `with <key>` target, capture/plan may auto-select any carried item whose definition reference matches `lockedBy`.
+- If no matching key reference exists, command should fail with capture-failure messaging.
 
 Keyed unlock/open example:
 
@@ -663,7 +678,7 @@ Validation should surface:
 - candidate pairs with multiple exits to the same counterpart room (non-virtual, warn)
 - virtual candidates with conflicting `lockedBy`
 - virtual candidate bound to missing item id
-- impossible state at load time (locked false/closed true is allowed; locked true/closed false is not)
+- impossible authored state at load time (locked false/closed true is allowed; locked true/closed false is not) before normalization/reconciliation
 
 Validation should warn by default, strict-fail in strict validation mode.
 
@@ -721,7 +736,7 @@ Benefits:
 
 To match the mutation model and avoid ambiguity, v1 assumes explicit player door commands:
 
-- `open <door>`
+- `open <door>` (optionally `with <key>` when key targeting is required)
 - `close <door>`
 - `lock <door>`
 - `unlock <door>` (optionally `with <key>` when key targeting is required)
