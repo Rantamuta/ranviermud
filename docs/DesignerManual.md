@@ -1010,14 +1010,10 @@ Full featured default-pattern example:
         lock: "From the far side, tiny lock pins click into place."
         unlock: "From the far side, the lock pins withdraw with a soft tick."
       flavor:
-        openActor: "You guide the brass iris open with a silver hum."
-        openOthers: "{actor.name} guides the brass iris open with a silver hum."
-        closeActor: "You draw the brass petals shut until they interlock."
-        closeOthers: "{actor.name} draws the brass petals shut until they interlock."
-        lockActor: "You set the star lock; the gate answers with a sharp click."
-        lockOthers: "{actor.name} sets the star lock with a sharp click."
-        unlockActor: "You ease the lock free; the brass petals loosen."
-        unlockOthers: "{actor.name} eases the lock free; the brass petals loosen."
+        open: "{actor.You} {verb:guide} the brass iris open with a silver hum."
+        close: "{actor.You} {verb:draw} the brass petals shut until they interlock."
+        lock: "{actor.You} {verb:set} the star lock; the gate answers with a sharp click."
+        unlock: "{actor.You} {verb:ease} the lock free; the brass petals loosen."
 ```
 
 Script location for that `script: facadeDoor` entry:
@@ -1028,8 +1024,9 @@ Script location for that `script: facadeDoor` entry:
 This example overrides what it can from content:
 
 - denial text via `metadata.permissions` and `canDirect`
-- actor/room success flavor via `planDirect`
+- all-audience success flavor via one semantic template per verb (`open`, `close`, `lock`, `unlock`)
 - opposite-room flavor via `broadcast` in `planDirect`
+- automatic suppression of generic door success lines in the reusable `facadeDoor` script
 
 The base door command still controls actual door state changes; your facade script layers story tone on top.
 
