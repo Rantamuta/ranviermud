@@ -56,7 +56,7 @@ Purpose:
 - [x] [Required] Keep legacy instruction aliases for compatibility:
   - `openDoor` -> `doorMutation/open`
   - `closeAndLockDoor` -> `doorMutation/closeAndLock`
-- [ ] [Required] Add movement de-dup support in mutator (e.g. `suppressRoomBroadcast` or equivalent) for composed `go` messages.
+- [x] [Required] Add movement de-dup support in mutator (e.g. `suppressRoomBroadcast` or equivalent) for composed `go` messages.
 
 ## 4) Query Integration (`q`)
 
