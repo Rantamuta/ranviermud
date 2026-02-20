@@ -10,27 +10,27 @@ Purpose:
 ## 1) Service Lifecycle
 
 - [x] [Required] Add bundle-owned VirtualDoor service module (path is implementation choice, e.g. `bundles/bundle-rantamuta/lib/doors/virtual-door-service.js`).
-- [ ] [Required] Export service lifecycle accessors:
+- [x] [Required] Export service lifecycle accessors:
   - `ensureVirtualDoorService(state)` (idempotent)
   - `getVirtualDoorService(state)` (auto-ensure)
   - `disposeVirtualDoorService(state)`
-- [ ] [Required] Store service instances in module-local registry keyed by `state` (do not attach ad hoc fields to `GameState`).
+- [x] [Required] Store service instances in module-local registry keyed by `state` (do not attach ad hoc fields to `GameState`).
 - [ ] [Required] Add bundle server event listener for startup/shutdown:
   - startup prewarms `ensureVirtualDoorService(state)`
   - shutdown disposes service
 
 ## 2) Pairing and Authority
 
-- [ ] [Required] Build virtual pair detection with eligibility rules:
+- [x] [Required] Build virtual pair detection with eligibility rules:
   - reciprocal exits
   - reciprocal directional door records
   - exactly one exit each direction for the pair
   - either side `virtualDoor: false` disables virtualization
-- [ ] [Required] Implement `lockedBy` resolution:
+- [x] [Required] Implement `lockedBy` resolution:
   - both set and same -> use that key
   - one set / one omitted -> use set key
   - conflict -> non-virtual + warn
-- [ ] [Required] Implement load/reload reconciliation:
+- [x] [Required] Implement load/reload reconciliation:
   - `aClosed = A.closed || A.locked`
   - `bClosed = B.closed || B.locked`
   - `vDoor.closed = aClosed || bClosed`
