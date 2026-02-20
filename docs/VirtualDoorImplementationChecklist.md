@@ -146,5 +146,5 @@ Purpose:
 ## 10) Done Criteria
 
 - [x] [Required] `npm test` passes.
-- [ ] [Required] `npm run ci:local` passes.
+- [x] [Required] `npm run ci:local` passes.
 - [x] [Required] No unresolved correctness regressions in final pass.
