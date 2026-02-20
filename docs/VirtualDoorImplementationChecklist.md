@@ -91,18 +91,18 @@ Purpose:
 
 ## 6) Key Validation and Messaging
 
-- [ ] [Required] Key matching uses key definition ref (`entityReference` / `lockedBy`), not instance UUID.
-- [ ] [Required] Multiple copies of the same matching key are valid (not ambiguous).
-- [ ] [Required] Explicit `with <key phrase>` behavior:
+- [x] [Required] Key matching uses key definition ref (`entityReference` / `lockedBy`), not instance UUID.
+- [x] [Required] Multiple copies of the same matching key are valid (not ambiguous).
+- [x] [Required] Explicit `with <key phrase>` behavior:
   - resolve phrase candidates from inventory
   - filter by `entityReference === lockedBy`
   - if candidates remain, choose deterministically via `EntityResolution.md` ordering
   - chosen candidate only affects displayed key label
   - if none remain, fail wrong-key
   - do not fall back to other inventory keys
-- [ ] [Required] No explicit key behavior: auto-select any carried matching key for `open`/`unlock`/`lock`.
-- [ ] [Required] Implement default message matrix from `docs/normative/VirtualDoor.md` for capture-failure/idempotent/success.
-- [ ] [Required] Keep opposite-room lines as explicit cross-room delivery (not actor-room semantic `others`).
+- [x] [Required] No explicit key behavior: auto-select any carried matching key for `open`/`unlock`/`lock`.
+- [x] [Required] Implement default message matrix from `docs/normative/VirtualDoor.md` for capture-failure/idempotent/success.
+- [x] [Required] Keep opposite-room lines as explicit cross-room delivery (not actor-room semantic `others`).
 
 ## 7) Content and Test Migration
 
