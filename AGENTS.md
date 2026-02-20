@@ -172,6 +172,48 @@ If behavior is unclear:
 - Document the uncertainty explicitly in the PR description.
 - Do **not** guess and move on.
 
+## Typecheck triage and remediation policy
+
+When a task involves `npm run typecheck` failures, agents must treat it as triage first, not coding first.
+
+- For each error, classify it as exactly one of:
+- local type definition error (JSDoc/typedef is wrong)
+- local implementation error (runtime code is wrong)
+- core typedef error (`ranvier/types/*` contract is wrong)
+- Provide an evidence table (file + line + reason) before making changes.
+
+For type-only requests, default rule: **no runtime behavior changes**.
+
+- Allowed in type-only fixes:
+- JSDoc typedef corrections
+- explicit type annotations/narrowing
+- literal-type preservation (`ok: true` style)
+- safe casts with documented rationale
+
+- Not allowed in type-only fixes:
+- adding fallback branches/defaults to silence errors
+- changing control flow, side effects, or emitted output
+- changing payload shapes unless behavior change is explicitly approved
+
+If a type error appears to require behavior change:
+
+- Stop and request explicit approval.
+- Present two options:
+- type-only containment
+- behavior-changing implementation fix
+
+Core typedef handling:
+
+- Do not edit `node_modules` directly.
+- Do not contort local runtime code to satisfy a suspected wrong core typedef.
+- If a core typedef is wrong, propose a core typedef patch (or local override shim) and request approval, because engine/core changes are out of scope unless explicitly authorized.
+
+PR/change note requirements for typecheck work:
+
+- Include the error classification list.
+- Include why each fix is type-only vs behavior-changing.
+- Include `npm run typecheck` result before and after.
+
 ## Normative documents
 
 Behavior contracts that are intended to be binding are stored under `docs/normative/`.
