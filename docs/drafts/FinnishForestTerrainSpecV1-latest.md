@@ -161,11 +161,83 @@ Authored map precedence:
 - `SlopeMag = sqrt(Hx*Hx + Hy*Hy) / 2`
 - `AspectDeg = degrees(atan2(-Hy, -Hx))` normalized to `[0,360)`
 
-## 5.2 Landform
+## 5.2 Landform Classification (Normative, Explicit Decision Table)
 
-Enum: `flat|slope|ridge|valley|basin`
+`Landform[x,y]` MUST be classified deterministically using the following procedure.
 
-Use 8-neighbor counts with `eps` and `flatSlopeThreshold` from Appendix A.
+### Step 1 — Neighbor Counts
+
+Let:
+
+- `center = H[x,y]`
+- `N8` = the 8 Moore neighbors of `(x,y)`
+- `eps = landform.eps` (Appendix A)
+
+Compute:
+
+- `higherCount = count(n in N8 where H[n] > center + eps)`
+- `lowerCount = count(n in N8 where H[n] < center - eps)`
+
+Neighbors whose elevation lies within `[center - eps, center + eps]` are ignored for both counts.
+
+All comparisons MUST use the same `eps` value.
+
+### Step 2 — Branch Order (Normative)
+
+Branch order is fixed. The first matching clause MUST be taken.
+
+```text
+if SlopeMag[x,y] < flatSlopeThreshold:
+
+    # Flat local minima (gentle basin)
+    if lowerCount == 0 and higherCount > 0:
+        Landform = basin
+
+    # Flat local maxima (gentle ridge)
+    else if higherCount == 0 and lowerCount > 0:
+        Landform = ridge
+
+    else:
+        Landform = flat
+
+else:
+
+    # Strong local depression
+    if higherCount >= 6:
+        Landform = basin
+
+    # Strong local high
+    else if lowerCount >= 6:
+        Landform = ridge
+
+    # Directional trough
+    else if higherCount >= 5 and lowerCount <= 2:
+        Landform = valley
+
+    # Directional crest
+    else if lowerCount >= 5 and higherCount <= 2:
+        Landform = ridge
+
+    else:
+        Landform = slope
+```
+
+### Step 3 — Parameters (Appendix A)
+
+The following parameters MUST be defined in Appendix A:
+
+```json
+"landform": {
+  "eps": 0.005,
+  "flatSlopeThreshold": 0.03
+}
+```
+
+### Design Rationale (Informative)
+
+- The flat case explicitly detects gentle local minima and maxima using strict `lowerCount == 0` / `higherCount == 0` tests to preserve basin detection in low-gradient terrain.
+- The non-flat case distinguishes strong basins/ridges (`>= 6`) from directional valleys/crests (`>= 5` with asymmetry constraint).
+- Branch order is normative to avoid implementation divergence.
 
 ---
 

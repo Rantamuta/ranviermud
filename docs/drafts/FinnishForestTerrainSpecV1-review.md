@@ -271,6 +271,7 @@ The three previously tracked hardening items are now integrated into `-latest`:
 1. **Canonical conformance vector**: added as Section `16.1` with required fixture fields and checksum normalization guidance.
 2. **Explicit CLI contract**: added as Section `2.1` with named inputs, precedence, suggested modes, and recommended exit codes.
 3. **Numeric precision policy**: added as Section `14.1` with fixed export precision and rounding requirements.
+4. **Landform decision table precision**: Section `5.2` now includes explicit neighbor-count rules, branch order, and threshold semantics.
 
 ### Next optional tightening (post-v1 draft)
 
