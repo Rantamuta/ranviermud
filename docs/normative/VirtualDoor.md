@@ -236,7 +236,7 @@ v1 command surface:
 
 - `open <door>` (with optional key target)
 - `close <door>`
-- `lock <door>`
+- `lock <door>` (with optional key target)
 - `unlock <door>` (with optional key target)
 
 Command-to-mutation mapping:
@@ -256,6 +256,8 @@ Command-to-mutation mapping:
   - resolve candidate key items from actor inventory that match the phrase
   - filter candidates by `candidate.entityReference === lockedBy`
   - if one or more compatible candidates remain, proceed using a deterministic selected candidate for messaging
+  - selection must follow resolver ordering/tie-break rules from `EntityResolution.md` (do not invent a door-local ordering rule)
+  - when multiple compatible candidates remain, selected candidate affects display text only; lock compatibility result is the same
   - if none remain, fail with wrong-key capture messaging
   - do not fall back to other inventory keys outside the explicit phrase candidate set
 - For `open`/`unlock`/`lock` commands with no explicit `with <key>` target, capture/plan may auto-select any carried item whose definition reference matches `lockedBy`.
@@ -272,8 +274,11 @@ Cross-room rule:
 ### Capture-Failure Defaults (Actor-Only)
 
 - unlock without usable key: `{actor.You} cannot unlock the {object.direct}.`
+- lock without usable key: `{actor.You} cannot lock the {object.direct}.`
 - unlock/open with wrong key: `{actor.You} {verb:try} the {object.indirect}, but it does not fit the lock.`
+- lock with wrong key: `{actor.You} {verb:try} to {verb:lock} the {object.direct} with the {object.indirect}, but it does not fit the lock.`
 - open while locked: `{actor.You} cannot open the {object.direct}; it is locked.`
+- when an explicit `with <key>` target is provided and incompatible, use wrong-key messaging instead of generic locked/no-key messaging
 - no opposite-room line for these capture failures
 - same-door facade policy may override these defaults
 
@@ -300,6 +305,13 @@ Cross-room rule:
   - actor semantic: `{actor.You} {verb:open} the {object.direct}.`
   - actor semantic when a key target is used to clear lock: `{actor.You} {verb:open} the {object.direct} with the {object.indirect}.`
   - opposite-room broadcast: `The {object.direct} opens.`
+- `close <door>` command success:
+  - actor semantic: `{actor.You} {verb:close} the {object.direct}.`
+  - opposite-room broadcast: `The {object.direct} closes.`
+- `lock <door>` command success:
+  - actor semantic: `{actor.You} {verb:lock} the {object.direct}.`
+  - actor semantic when key target is used: `{actor.You} {verb:lock} the {object.direct} with the {object.indirect}.`
+  - opposite-room broadcast: `The {object.direct} locks with a click.`
 
 ### Door Name Fallback
 

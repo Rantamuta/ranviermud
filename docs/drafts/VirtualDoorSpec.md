@@ -360,10 +360,15 @@ Capture-failure defaults (actor-only, no opposite-room line):
 
 - `unlock <door>` with no usable key:
   - `{actor.You} cannot unlock the {object.direct}.`
+- `lock <door>` with no usable key:
+  - `{actor.You} cannot lock the {object.direct}.`
 - `unlock/open <door> with <wrong key>`:
   - `{actor.You} {verb:try} the {object.indirect}, but it does not fit the lock.`
+- `lock <door> with <wrong key>`:
+  - `{actor.You} {verb:try} to {verb:lock} the {object.direct} with the {object.indirect}, but it does not fit the lock.`
 - `open <door>` when door is locked:
   - `{actor.You} cannot open the {object.direct}; it is locked.`
+- When an explicit `with <key>` target is provided and incompatible, use wrong-key messaging instead of generic locked/no-key messaging.
 - These capture-failure defaults may be overridden by the same-door facade policy surface.
 
 Idempotent defaults (actor-only):
@@ -389,6 +394,13 @@ Success defaults:
   - actor semantic: `{actor.You} {verb:open} the {object.direct}.`
   - actor semantic when a key target is used to clear lock: `{actor.You} {verb:open} the {object.direct} with the {object.indirect}.`
   - opposite room broadcast: `The {object.direct} opens.`
+- `close <door>` command success:
+  - actor semantic: `{actor.You} {verb:close} the {object.direct}.`
+  - opposite room broadcast: `The {object.direct} closes.`
+- `lock <door>` command success:
+  - actor semantic: `{actor.You} {verb:lock} the {object.direct}.`
+  - actor semantic when key target is used: `{actor.You} {verb:lock} the {object.direct} with the {object.indirect}.`
+  - opposite room broadcast: `The {object.direct} locks with a click.`
 
 Door naming fallback:
 
@@ -590,6 +602,8 @@ Policy split:
   - resolve candidate key items from actor inventory that match the phrase
   - filter candidates by `candidate.entityReference === lockedBy`
   - if one or more compatible candidates remain, proceed using a deterministic selected candidate for messaging
+  - selection must follow resolver ordering/tie-break rules from `EntityResolution.md` (do not invent a door-local ordering rule)
+  - when multiple compatible candidates remain, selected candidate affects display text only; lock compatibility result is the same
   - if none remain, fail with wrong-key capture messaging
   - do not fall back to other inventory keys outside the explicit phrase candidate set
 - For `open`/`unlock`/`lock` commands with no explicit `with <key>` target, capture/plan may auto-select any carried item whose definition reference matches `lockedBy`.
@@ -738,7 +752,7 @@ To match the mutation model and avoid ambiguity, v1 assumes explicit player door
 
 - `open <door>` (optionally `with <key>` when key targeting is required)
 - `close <door>`
-- `lock <door>`
+- `lock <door>` (optionally `with <key>` when key targeting is required)
 - `unlock <door>` (optionally `with <key>` when key targeting is required)
 
 Command-to-mutation mapping:
@@ -827,9 +841,9 @@ Checklist:
 1. Emit composed semantic success lines for auto-open paths and suppress duplicate generic movement leave/arrive narration in those paths.
 2. Add explicit command handlers:
 
-- `open <door>`
 - `close <door>`
-- `lock <door>`
+- `open <door>` (with optional key targeting)
+- `lock <door>` (with optional key targeting)
 - `unlock <door>` (with optional key targeting)
 
 1. Route command mutations to the instruction set defined in this spec.
