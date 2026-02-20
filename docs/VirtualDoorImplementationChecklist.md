@@ -65,7 +65,7 @@ Purpose:
   - `q.isDoorLocked(direction)`
   - `q.isDoorClosedBetween(roomARef, roomBRef)`
   - `q.isDoorLockedBetween(roomARef, roomBRef)`
-- [ ] [Required] Virtualized pairs read from VirtualDoor effective state.
+- [x] [Required] Virtualized pairs read from VirtualDoor effective state.
 - [ ] [Required] Non-virtual pairs read from directional records.
 - [ ] [Required] Unresolvable query input returns `false` and may warn.
 
