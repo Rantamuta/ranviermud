@@ -71,7 +71,7 @@ Purpose:
 
 ## 5) Commands and Movement
 
-- [ ] [Required] Implement command surface:
+- [x] [Required] Implement command surface:
   - `open <door>` (optional `with <key>`)
   - `close <door>`
   - `lock <door>` (optional `with <key>`)
