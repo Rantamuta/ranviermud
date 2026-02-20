@@ -124,7 +124,7 @@ Purpose:
 
 ## 8) Documentation Updates on Landing
 
-- [ ] [Required] Update:
+- [x] [Required] Update:
   - `docs/normative/CommandArchitecture.md`
   - `docs/normative/EntityResolution.md`
   - `docs/normative/PredicateStateRendering.md`

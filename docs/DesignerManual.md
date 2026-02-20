@@ -811,6 +811,64 @@ Current room rendering convention (`look`, arrival render):
 3. room item lines (`roomDesc` if present, else fallback)
 4. exits line (`Exits: north, west`) when exits exist
 
+## Authoring Virtual Doors
+
+When two rooms connect each other with matching door records, the runtime can treat them as one shared logical door (a virtual door).
+
+Why use this:
+
+- both sides stay in sync for open/closed/locked state
+- key requirements stay consistent
+- predicates can ask for one effective door state
+
+Minimal paired setup:
+
+```yml
+# rooms.yml
+- id: gallery_south
+  title: "South Gallery"
+  exits:
+    - direction: north
+      roomId: myarea:gallery_north
+      virtualDoor: myarea:southDoorFacade   # optional facade item binding on this side
+  doors:
+    myarea:gallery_north:
+      closed: true
+      locked: true
+      lockedBy: myarea:bronzeDoorKey
+
+- id: gallery_north
+  title: "North Gallery"
+  exits:
+    - direction: south
+      roomId: myarea:gallery_south
+  doors:
+    myarea:gallery_south:
+      closed: false      # mismatches reconcile to one effective state at load
+      locked: false
+      lockedBy: myarea:bronzeDoorKey
+```
+
+Authoring notes:
+
+- `virtualDoor` is set on an exit side.
+- allowed values:
+  - omitted: still eligible for virtual pairing
+  - `false`: opt out on that side
+  - `<itemRef>`: bind that side to a facade item for naming/presentation
+- `lockedBy` is set in door records and should match on both sides when present.
+
+Validation/warning cases to avoid:
+
+- missing reciprocal exit or reciprocal door record: pair is not virtualized
+- multiple exits from one room to the same counterpart room: pair is not virtualized
+- conflicting `lockedBy` values across sides: virtualization is disabled for that pair and warns
+- one side sets `virtualDoor: false`: pair is treated as non-virtual
+
+Friendly recommendation:
+
+- use one key ref on both sides (`lockedBy: myarea:bronzeDoorKey`) unless you intentionally want non-virtual directional behavior.
+
 ## Room Details (Scenery You Can Look At)
 
 Sometimes you want players to inspect room nouns without creating full items.
@@ -1083,6 +1141,22 @@ Each method asks one specific true/false question.
    Example idea: "Has the player already completed the crypt rite?"
    Example: `q.actorQuestCompleted('myarea:cryptRite')`
 
+10. `q.isDoorClosed(direction)`
+   Example idea: "Is the north door currently closed from this room?"
+   Example: `q.isDoorClosed('north')`
+
+11. `q.isDoorLocked(direction)`
+   Example idea: "Is the north door currently locked from this room?"
+   Example: `q.isDoorLocked('north')`
+
+12. `q.isDoorClosedBetween(roomARef, roomBRef)`
+   Example idea: "Is the archive passage closed even if the viewer is elsewhere?"
+   Example: `q.isDoorClosedBetween('myarea:archive_south', 'myarea:archive_north')`
+
+13. `q.isDoorLockedBetween(roomARef, roomBRef)`
+   Example idea: "Is the vault passage still locked regardless of viewer room?"
+   Example: `q.isDoorLockedBetween('myarea:vault_foyer', 'myarea:vault_inner')`
+
 One combined example:
 
 ```js
@@ -1113,6 +1187,12 @@ module.exports = {
 
   is_crypt_rite_complete: ({ q }) =>
     q.actorQuestCompleted('myarea:cryptRite'),
+
+  is_north_passage_closed: ({ q }) =>
+    q.isDoorClosed('north'),
+
+  is_archive_passage_locked: ({ q }) =>
+    q.isDoorLockedBetween('myarea:archive_south', 'myarea:archive_north'),
 };
 ```
 

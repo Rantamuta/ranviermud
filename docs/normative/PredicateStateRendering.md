@@ -145,12 +145,22 @@ Allowed v1 query methods:
 - `q.actorHasEffect(effectId)`
 - `q.actorQuestActive(questRef)`
 - `q.actorQuestCompleted(questRef)`
+- `q.isDoorClosed(direction)`
+- `q.isDoorLocked(direction)`
+- `q.isDoorClosedBetween(roomARef, roomBRef)`
+- `q.isDoorLockedBetween(roomARef, roomBRef)`
 
 Rules:
 
 - `q` is read-only
 - no mutators are exposed
 - actor-scoped queries return `false` when actor context is absent
+- door query semantics:
+  - directional forms evaluate from current room context
+  - `Between(...)` forms are actor-independent and use authored room refs
+  - virtualized pairs read effective virtual-door state
+  - non-virtual pairs read directional door records
+  - unresolved door query input returns `false` (and may warn once)
 
 ### `context`
 

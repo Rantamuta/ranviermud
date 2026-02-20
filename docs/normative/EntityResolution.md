@@ -87,6 +87,10 @@ Form matching owns syntax/shape failures such as missing required spans for a se
   - `indirect`
   - `directIndirect`
   - `relationOnly`
+- Rule option `allowUnresolvedIndirect` (boolean) may be set on `indirect` / `directIndirect` rules.
+  - when `true`, unresolved indirect binding does not fail the whole resolution
+  - resolver returns success with `indirectResolutionError` attached in resolution value
+  - intended for command families that handle explicit-key failure messaging in Plan
 - Missing rule-level `acceptedRelations` for a relation-bearing rule is a command-load (`compile-time`) error.
 
 Runtime form-matching implications:
@@ -151,6 +155,10 @@ Illustrative examples:
 - `put`: direct typically prefers player-held scopes; indirect typically prefers room/container scopes.
 - `get`: direct typically prefers room/container scopes before already-held scope checks.
 - `go`: direct uses `room.exits` scope in direct-only form (`go <direction>`).
+- door commands (`open`/`lock`/`unlock`):
+  - direct scope may include `room.exits` then `room.items`
+  - directIndirect forms typically restrict indirect scope to `player.inventory`
+  - with `allowUnresolvedIndirect: true`, unresolved `with <key>` can still reach Plan for command-specific wrong-key/no-key handling.
 
 Standard scope sources currently supported by shared resolver helpers:
 
@@ -175,6 +183,12 @@ Illustrative shape:
 
 - parsed: `intentToken + directSpan + relationToken + indirectSpan`
 - bound: `{ directTarget, indirectTarget?, relationTokenRaw?, relationTokenCanonical? }`
+
+Door command binding notes:
+
+- direct door target binding is expected to resolve an exit-shaped target (`direction`, `roomId`) in v1.
+- command families may include additional direct scopes (for example `room.items`) for future door-facade ergonomics, but non-exit targets can still be rejected in Plan.
+- when an explicit `with <key>` phrase is present, candidate matching remains deterministic; command-layer key compatibility filtering must preserve deterministic selection/tie-break behavior.
 
 ### Disambiguation
 

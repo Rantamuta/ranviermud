@@ -338,6 +338,22 @@ This split prevents veto/mutation ambiguity and keeps behavior predictable.
 - `go.js` lives in Plan and declares direct-only form with direct scope `room.exits`.
 - Direction text is resolved to a concrete exit entity in Entity Resolution.
 - Exit/world policy checks run in Capture and can veto via metadata or runtime hooks.
-- Plan validates destination and door state, then returns a `movePlayer` plan.
-- Mutator commits movement atomically in Commit.
+- Plan resolves destination and applies door ergonomics:
+  - no door or already-open door: enqueue `movePlayer`
+  - closed+unlocked door: enqueue `doorMutation/open` then `movePlayer`
+  - locked door with matching key: enqueue `doorMutation/unlockAndOpen` then `movePlayer`
+  - locked door without matching key: return failure envelope (capture/plan surface)
+- When a composed door+movement message is emitted, plan marks movement with `suppressRoomBroadcast` to avoid duplicate generic leave/arrive lines.
+- Mutator commits door/movement operations atomically in Commit with rollback support.
 - Destination room view renders in Render/Dispatch only after commit.
+
+## Immediate Application To Door Commands
+
+- `open`, `close`, `lock`, and `unlock` live in Plan and resolve direct door targets before mutation.
+- Command-to-mutation mapping is:
+  - `open` -> `doorMutation/open`
+  - `close` -> `doorMutation/close`
+  - `lock` -> `doorMutation/closeAndLock`
+  - `unlock` -> `doorMutation/unlock`
+- Key validation remains Plan/Capture ownership; mutator owns only state transition.
+- Opposite-room door lines are emitted via explicit render instructions, not implicit actor-room `others` semantics.
