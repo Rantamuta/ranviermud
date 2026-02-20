@@ -144,11 +144,64 @@ Authored map precedence:
 
 # 4. Base Map Generation
 
+## 4.1 Noise Function
+
 - Noise function: `noise(seed, x, y) -> [-1,1]`, deterministic.
-- Multi-octave for each map:
-  - Start `freq = baseFrequency`, `amp = 1.0`.
-  - Loop octaves: `sum += amp * noise(seed_octave, x*freq, y*freq)`; `norm += amp`; `freq *= lacunarity`; `amp *= persistence`.
-  - `value = sum/norm`, normalize to `[0,1]` by `(value + 1)/2`.
+
+## 4.2 Sub-seed Derivation (Normative)
+
+All derived seeds used for base-map noise MUST be deterministic functions of:
+
+- the global `seed` (`uint64`),
+- the map name (`"H"`, `"R"`, or `"V"`),
+- the octave index (0-based integer).
+
+Define:
+
+- `subSeed(seed, mapId, octaveIndex) -> uint64`
+
+Map identifiers (normative):
+
+- `"H"` for elevation
+- `"R"` for roughness
+- `"V"` for vegetation variance
+
+`subSeed` definition (normative):
+
+Let `mapConst(mapId)` be:
+
+- `"H" -> 0x4848484848484848`
+- `"R" -> 0x5252525252525252`
+- `"V" -> 0x5656565656565656`
+
+Compute:
+
+- `z = seed`
+- `z ^= mapConst(mapId)`
+- `z ^= uint64(octaveIndex) * 0x9E3779B97F4A7C15`
+- `z = mix64(z)`
+- return `z`
+
+Where `mix64` is the same 64-bit mixing function used for `tieBreakHash64`:
+
+- `z ^= z >> 30; z *= 0xBF58476D1CE4E5B9`
+- `z ^= z >> 27; z *= 0x94D049BB133111EB`
+- `z ^= z >> 31`
+
+All operations are 64-bit unsigned with wraparound.
+
+## 4.3 Multi-octave Base Map Generation
+
+For each base map (`H`, `R`, `V`), set `mapId` accordingly.
+
+- Start `freq = baseFrequency`, `amp = 1.0`.
+- Loop octaves:
+  - `seed_octave = subSeed(seed, mapId, octaveIndex)`
+  - `sum += amp * noise(seed_octave, x*freq, y*freq)`
+  - `norm += amp`
+  - `freq *= lacunarity`
+  - `amp *= persistence`
+- `value = sum / norm`, normalize to `[0,1]` by `(value + 1)/2`.
 
 ---
 
@@ -777,15 +830,45 @@ This field MUST NOT affect movement, passability, trail routing, or hydrology in
 
 # 13. Movement and Navigation
 
-## 13.1 Move Cost
+## 13.1 Move Cost (Normative, Fully Ordered)
 
-Normative order:
+`MoveCost[x,y]` MUST be computed deterministically using the following ordered steps.
 
-1. Base multipliers from obstruction and moisture.
-2. Water/biome modifiers (`marsh`, `open_bog`).
-3. If `GameTrail[x,y]==true`, apply `MoveCost *= gameTrailMoveCostMultiplier` **once**.
+### Step 1 — Base Cost
+
+Initialize:
+
+- `MoveCost = 1.0`
+
+Apply obstruction and moisture multipliers:
+
+- `MoveCost *= lerp(1.0, movement.moveCostObstructionMax, Obstruction[x,y])`
+- `MoveCost *= lerp(1.0, movement.moveCostMoistureMax, Moisture[x,y])`
+
+### Step 2 — Biome / Water Modifiers
+
+Apply modifiers based on the origin tile only:
+
+- If `WaterClass[x,y] == marsh`: `MoveCost *= movement.marshMoveCostMultiplier`
+- If `Biome[x,y] == open_bog`: `MoveCost *= movement.openBogMoveCostMultiplier`
+
+No other biome modifies `MoveCost` in v1.
+
+### Step 3 — Trail Modifier
+
+If `GameTrail[x,y] == true`:
+
+- `MoveCost *= gameTrails.gameTrailMoveCostMultiplier`
+
+Trail multiplier MUST be applied last.
+
+### Step 4 — Final Value
+
+`MoveCost[x,y]` is not clamped beyond implicit positive range enforcement.
 
 ## 13.2 Passability by Direction
+
+Passability checks and slope comparisons use `H[x,y]` and `H[nx,ny]`. `MoveCost` affects traversal difficulty but does not alter passability classification.
 
 For each directed edge `(x,y)->(nx,ny)`:
 

@@ -277,6 +277,8 @@ The currently integrated hardening items in `-latest` are:
 7. **Flow-direction tie-break precision**: Section `6.1` uses a deterministic seed-and-coordinate hash-based tie-break (`tieBreakHash64`) instead of directional/center bias.
 8. **Stream-mask evaluation order precision**: Sections `6.5` and `6.7` now make `isStream` explicit and require `LakeMask`/`isStream`/`Moisture` to be computed before `WaterClass` assignment.
 9. **Qualified parameter-path precision**: Normative formulas now consistently use fully qualified parameter paths (e.g., `landform.*`, `hydrology.*`) unless explicitly locally bound.
+10. **Noise sub-seed derivation precision**: Section `4` now defines normative `subSeed(seed, mapId, octaveIndex)` and requires multi-octave generation to use it for `seed_octave`.
+11. **MoveCost sequencing precision**: Section `13.1` now defines a fully ordered origin-tile computation and Section `13.2` clarifies passability is independent of MoveCost.
 
 ### Next optional tightening (post-v1 draft)
 
