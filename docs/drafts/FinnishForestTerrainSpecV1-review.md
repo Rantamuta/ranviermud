@@ -279,6 +279,7 @@ The currently integrated hardening items in `-latest` are:
 9. **Qualified parameter-path precision**: Normative formulas now consistently use fully qualified parameter paths (e.g., `landform.*`, `hydrology.*`) unless explicitly locally bound.
 10. **Noise sub-seed derivation precision**: Section `4` now defines normative `subSeed(seed, mapId, octaveIndex)` and requires multi-octave generation to use it for `seed_octave`.
 11. **MoveCost sequencing precision**: Section `13.1` now defines a fully ordered origin-tile computation and Section `13.2` clarifies passability is independent of MoveCost.
+12. **Graph traversal ordering precision**: Section `1.7` now consolidates canonical tile iteration, Dir8 neighbor order, multi-source BFS queue initialization/expansion, and Dijkstra queue ordering requirements.
 
 ### Next optional tightening (post-v1 draft)
 

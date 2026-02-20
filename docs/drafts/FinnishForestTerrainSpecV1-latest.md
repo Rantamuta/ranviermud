@@ -70,6 +70,93 @@ Unless specified otherwise, derivations assume 8-way neighbors.
 - 0° East, 90° South, 180° West, 270° North.
 - Aspect is downhill direction.
 
+## 1.7 Graph Traversal Determinism (Normative)
+
+All whole-map traversal algorithms in this specification (including flow accumulation, water-distance BFS, stream-distance BFS, and trail Dijkstra routing) MUST follow the deterministic ordering rules defined below.
+
+These rules ensure reproducible behavior within a given implementation.
+
+### 1.7.1 Canonical Tile Iteration Order
+
+Unless otherwise specified, full-grid passes MUST iterate tiles in row-major order:
+
+```text
+for y in 0 .. height-1:
+    for x in 0 .. width-1:
+        ...
+```
+
+This applies to:
+
+- initial water-tile discovery
+- seed candidate enumeration
+- map-wide initialization passes
+
+### 1.7.2 Canonical Neighbor Order (Dir8)
+
+The canonical 8-way neighbor expansion order MUST follow `Dir8` numeric order:
+
+- `E (0)`
+- `SE (1)`
+- `S (2)`
+- `SW (3)`
+- `W (4)`
+- `NW (5)`
+- `N (6)`
+- `NE (7)`
+
+This order MUST be used for:
+
+- BFS neighbor expansion
+- Dijkstra neighbor expansion
+- any deterministic tie-break that depends on directional order
+
+### 1.7.3 Multi-Source BFS Ordering (Normative)
+
+For any multi-source BFS (e.g., `distWater`, `distStream`):
+
+1. Initialize the queue by scanning the grid in row-major order (`y`, then `x`) and enqueue all source tiles in that order.
+2. Use a FIFO queue.
+3. When expanding a tile, enqueue neighbors in canonical `Dir8` order.
+4. A tile’s distance MUST be assigned on first visit only.
+
+This ensures stable Chebyshev distance boundaries.
+
+### 1.7.4 Dijkstra Queue Ordering (Normative)
+
+For Dijkstra routing (trail generation), the priority queue ordering MUST use the following tuple comparison:
+
+- `(cumulativeCost, y, x, dir)`
+
+Where:
+
+- `cumulativeCost` is compared using `hydrology.tieEps`.
+- If `abs(costA - costB) <= hydrology.tieEps`, treat costs as equal.
+- Then compare `y` ascending.
+- Then compare `x` ascending.
+- Then compare `dir` using `Dir8` numeric order.
+
+Priority queue implementations MUST preserve this total ordering.
+
+### 1.7.5 Consistency Requirement
+
+All traversal-based derivations MUST use the canonical ordering rules above.
+
+Implementations MUST NOT rely on:
+
+- language-native object key ordering
+- hash map iteration order
+- platform-dependent floating-point comparison without `hydrology.tieEps`
+
+This section applies to:
+
+- Flow accumulation (Section 6.2)
+- Water proximity BFS (Section 6.6)
+- Stream proximity BFS (Section 10.2)
+- Trail routing (Section 10.5)
+
+No additional ordering rules elsewhere in the spec should contradict this section.
+
 ---
 
 # 2. Inputs
