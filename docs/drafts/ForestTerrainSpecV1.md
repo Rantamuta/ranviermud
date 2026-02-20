@@ -1,4 +1,4 @@
-# Procedural Finnish Forest Terrain Generation Spec (v1)
+# Procedural Forest Terrain Generation Spec (v1)
 
 ## Status
 
