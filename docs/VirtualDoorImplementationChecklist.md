@@ -135,8 +135,10 @@ Purpose:
 
 ## 9) Decisions / Optional Choices
 
-- [ ] [Decision Needed] Strict-validation ownership/switch source (currently unresolved in normative doc).
-- [ ] [Optional] Concrete service internals (index map names, helper function names, folder layout).
+- [x] [Decision Made] Strict-validation ownership/switch source resolved in normative doc:
+  - ownership: `util/validate-bundles.js`
+  - switch source: validator CLI `--strict`
+- [x] [Optional] Concrete service internals (index map names, helper function names, folder layout) documented in `docs/BundleRantamutaTechnicalManual.md`.
 - [ ] [Optional] Whether to add parser-specific capabilities (for example unresolved indirect binding flags) if command behavior can be achieved without them.
 - [ ] [Optional] Dedicated door-command helper module (`door-command-helper.js`) for shared logic; useful but not required by contract.
 

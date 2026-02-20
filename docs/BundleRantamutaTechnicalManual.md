@@ -107,6 +107,36 @@ Reference area scripts (Bell Tower):
 - `bundles/bundle-rantamuta/areas/rantamuta/scripts/helpers/putPolicy.js`
 - `bundles/bundle-rantamuta/areas/rantamuta/scripts/helpers/exitGate.js`
 
+## VirtualDoor service internals (current concrete layout)
+
+Location and ownership:
+
+1. Runtime authority implementation lives in `bundles/bundle-rantamuta/lib/doors/virtual-door-service.js`.
+2. Lifecycle wiring lives in `bundles/bundle-rantamuta/server-events/virtual-door.js`.
+3. Shared door-command helpers live in `bundles/bundle-rantamuta/lib/doors/door-command-helper.js`.
+
+Registry and service object:
+
+1. Module-local registry key: `serviceRegistry` (`WeakMap`, keyed by `state`).
+2. Per-service indices:
+   - `pairByEdgeKey` (directed edge key -> pair)
+   - `pairByRoomRefs` (stable unordered room pair key -> pair)
+3. Legacy-write routing state:
+   - `patchedRoomMethods`
+   - `warnedLegacyWrites`
+
+Current helper/index naming in `virtual-door-service.js`:
+
+1. Key helpers: `normalizeRef`, `edgeKey`, `pairKey`.
+2. Scan/build helpers: `scanVirtualDoorPairs`, `resolvePairLockedBy`.
+3. State helpers: `reconcilePairState`, `reflectPairState`, `applyDoorMutation`.
+4. Validation helper export: `_validateVirtualDoorConfig`.
+
+Naming stability note:
+
+1. The concrete names above are current implementation choices, not cross-bundle compatibility contracts.
+2. Behavior remains governed by `docs/normative/VirtualDoor.md`.
+
 ## End-to-end runtime flow
 
 ### 1) Socket input to session event
