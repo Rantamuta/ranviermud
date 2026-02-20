@@ -263,6 +263,16 @@ When virtualized:
 - one runtime state is authoritative for the passage
 - mutations write through to both underlying directional door records
 
+Load-time reconciliation (when paired directional records disagree):
+
+- Normalize each side first:
+  - `aClosed = A.closed || A.locked`
+  - `bClosed = B.closed || B.locked`
+- Compute virtual state:
+  - `vDoor.closed = aClosed || bClosed`
+  - `vDoor.locked = A.locked || B.locked`
+- This preserves lock information and enforces `locked => closed` after reconciliation.
+
 Invariants:
 
 - `locked => closed`
@@ -429,29 +439,20 @@ Constraint:
 
 ## Trapped Actor / Spawn-in-Locked-Room Handling
 
-Spawn-in-locked-room handling is primarily a movement/lifecycle policy concern, not a VirtualDoor state concern.
+Spawn-in-locked-room handling is out of scope for VirtualDoor and belongs to movement/lifecycle safety policy.
 
-VirtualDoor responsibilities in this case:
+VirtualDoor responsibilities:
 
-- expose consistent state
+- expose consistent door state
 - provide deterministic lock/open query and mutation behavior
 
-Movement/lifecycle responsibilities:
+Movement/lifecycle safety responsibilities:
 
-- define whether and how egress is permitted
-- enforce policy in command capture/plan flow or lifecycle logic
+- prevent or resolve soft-lock/trap situations (for example key on inaccessible side)
+- define and enforce egress policy
+- produce deterministic diagnostics
 
-Minimum policy requirement:
-
-- this case must produce deterministic behavior and diagnostics
-
-Implementation options (policy choice required):
-
-1. allow no special escape (strict simulation)
-2. allow emergency egress rules
-3. allow administrative/script override only
-
-This policy must be documented and test-covered.
+This policy area should be specified in movement/lifecycle documentation, not in VirtualDoor contract.
 
 ---
 
@@ -712,8 +713,7 @@ Benefits:
 
 ## Open Decisions
 
-1. Trap/egress policy for spawn-in-locked-room edge cases.
-2. Whether virtual overlay should emit dedicated lifecycle events.
+1. Whether virtual overlay should emit dedicated lifecycle events.
 
 ---
 
@@ -742,9 +742,139 @@ Notes:
 
 ---
 
-## Recommended Next Step
+## Implementation Plan (Temporary)
 
-Approve this draft direction, then produce:
+This section is intentionally temporary and non-normative.
 
-1. a concise normative contract for virtual pairing, state invariants, and query semantics
-2. an implementation checklist with explicit compatibility tests and rollback plan
+Removal rule:
+
+- Remove this section after VirtualDoor v1 implementation, tests, and documentation updates are complete and merged.
+- Keep only stable behavior contract sections in this file after removal.
+
+### Phase 0: Service and Lifecycle Wiring
+
+Checklist:
+
+1. Add `bundles/bundle-rantamuta/lib/world/virtual-door-service.js`.
+2. Implement `ensureVirtualDoorService(state)` (idempotent), `getVirtualDoorService(state)`, and `disposeVirtualDoorService(state)` using a module-local `WeakMap`.
+3. Add `bundles/bundle-rantamuta/server-events/virtual-door-startup.js` with:
+
+- `startup`: prewarm `ensureVirtualDoorService(state)`.
+- `shutdown`: call `disposeVirtualDoorService(state)`.
+
+1. Do not attach service instances directly to `GameState`.
+2. Make `getVirtualDoorService(state)` the public accessor and require it to auto-call idempotent `ensureVirtualDoorService(state)` when needed.
+3. Callers (command/query/mutator) should use `getVirtualDoorService(state)`, not `ensure...` directly.
+4. No special scenario-runner bootstrap call is required when door code paths consistently use `getVirtualDoorService(state)`.
+
+### Phase 1: Pairing, Authority, and Queries
+
+Checklist:
+
+1. Implement pairing scan over loaded rooms/exits/door records.
+2. Enforce eligibility and conflict rules from this spec (including `lockedBy` mismatch fallback to non-virtual).
+3. Implement virtual authority state for eligible pairs and mirror writes to both directional records.
+4. Add canonical query methods to `q` facade:
+
+- `q.isDoorClosed(direction)`
+- `q.isDoorLocked(direction)`
+- `q.isDoorClosedBetween(roomARef, roomBRef)`
+- `q.isDoorLockedBetween(roomARef, roomBRef)`
+
+1. Remove/replace provisional door query names.
+
+### Phase 2: Mutation Execution
+
+Checklist:
+
+1. Update mutator instruction support to:
+
+- `open`
+- `close`
+- `unlock`
+- `unlockAndOpen`
+- `closeAndLock`
+
+1. Route virtualized-edge mutations through VirtualDoor service.
+2. Preserve non-fatal behavior for missing/unresolvable target (`warn + noop`).
+3. Maintain idempotent success behavior for no-op transitions.
+
+### Phase 3: Command Surface and Movement Ergonomics
+
+Checklist:
+
+1. Update `go` behavior to:
+
+- auto `open` for closed+unlocked door
+- auto `unlockAndOpen` for locked door when matching key is available
+- fail locked path when key check fails
+
+1. Emit composed semantic success lines for auto-open paths and suppress duplicate generic movement leave/arrive narration in those paths.
+2. Add explicit command handlers:
+
+- `open <door>`
+- `close <door>`
+- `lock <door>`
+- `unlock <door>` (with optional key targeting)
+
+1. Route command mutations to the instruction set defined in this spec.
+
+### Phase 4: Content and Test Updates
+
+Checklist:
+
+1. Update test-area examples that still use legacy door mutation instruction names.
+2. Update predicate examples in test content to use canonical door query names.
+3. Add/adjust unit tests for:
+
+- service pairing logic
+- mutation semantics and invariants
+- query semantics
+- go auto-open/auto-unlock behavior
+- explicit open/close/lock/unlock commands
+
+1. Update scenario coverage for both success and failure key paths.
+
+### Phase 5: Cross-Spec and Manual Updates
+
+The following documents must be updated when implementation lands:
+
+1. `docs/normative/VirtualDoor.md`
+
+- keep as `draft-v1` while decisions are open
+- promote to binding only after behavior and tests are stable
+
+1. `docs/normative/CommandArchitecture.md`
+
+- add explicit door-command and `go` auto-door behavior phase ownership
+- document capture/plan responsibility for key validation
+- document render de-dup expectation for composed door+movement lines
+
+1. `docs/normative/EntityResolution.md`
+
+- document how door targets are resolved for `open/close/lock/unlock`
+- document expected exit/door naming fallback behavior for unresolved facade names
+
+1. `docs/normative/PredicateStateRendering.md`
+
+- update allowed `q` API list to include canonical door query methods
+- remove any outdated provisional door query references
+
+1. `docs/normative/SemanticMessaging.md` (if promoted to binding)
+
+- ensure templates used by default door messaging are valid under semantic renderer constraints
+
+1. `docs/BundleRantamutaTechnicalManual.md`
+
+- add implementation map for VirtualDoor service, startup listener, query integration, mutator routing, and command behavior
+
+1. `docs/DesignerManual.md`
+
+- add designer-facing guidance for door behavior, key expectations, and default fallback naming (`north door`, `up door`, etc.)
+- explain override points for facade messaging and policy
+
+Completion criteria for this phase:
+
+- implementation and tests are green
+- all listed docs are synchronized
+- this temporary implementation section is removed from this draft
