@@ -138,7 +138,13 @@ Where:
 
 Priority queue implementations MUST preserve this total ordering.
 
-### 1.7.5 Consistency Requirement
+### 1.7.5 Neighbor Boundary Rule (Normative)
+
+- Neighbor enumeration excludes out-of-bounds tiles.
+- No wrapping is performed.
+- Only slope finite-difference sampling (Section 5.1) uses clamped boundary values.
+
+### 1.7.6 Consistency Requirement
 
 All traversal-based derivations MUST use the canonical ordering rules above.
 
@@ -414,6 +420,13 @@ If two or more neighbors have identical drop within `hydrology.tieEps`, tie-brea
 
 ### Tie-Break Rule (Normative)
 
+Construction of `T` (normative):
+
+- Enumerate neighbors in canonical `Dir8` order.
+- Compute `drop = H[c] - H[n]` for each neighbor.
+- Determine `maxDrop` among neighbors where `drop >= hydrology.minDropThreshold`.
+- Build `T` by appending neighbors whose `drop` satisfies `abs(drop - maxDrop) <= hydrology.tieEps`, in the same `Dir8` enumeration order.
+
 Let:
 
 - `T = ordered list of tied downhill candidate neighbors` (candidates with maximal drop within `hydrology.tieEps`), in `Dir8` numeric order.
@@ -455,6 +468,8 @@ Initialization:
 - Set `FA[x,y] = 1` for all tiles.
 
 Let `FD[x,y]` be the flow direction mask from Section 6.1.
+
+`downstream(t)` returns the neighbor tile indicated by `FD[t]`. If `FD[t] == NONE`, no downstream tile exists.
 
 Algorithm:
 
@@ -945,6 +960,15 @@ A single simplification pass MAY be applied to reduce zig-zag artifacts. If enab
 
 # 11. Visibility
 
+Bind visibility parameters (normative):
+
+- `base = visibility.base`
+- `densityPenalty = visibility.densityPenalty`
+- `obstructionPenalty = visibility.obstructionPenalty`
+- `elevationBonus = visibility.elevationBonus`
+- `minMeters = visibility.minMeters`
+- `maxMeters = visibility.maxMeters`
+
 - `vis = base - densityPenalty*TreeDensity - obstructionPenalty*Obstruction + elevationBonus*(H-0.5)`
 - `VisibilityBaseMeters = clamp(vis, minMeters, maxMeters)`
 
@@ -1027,6 +1051,8 @@ For each directed edge `(x,y)->(nx,ny)`:
 5. Else if `dh >= movement.steepBlockDelta`: `blocked`.
 6. Else if `dh >= movement.steepDifficultDelta`: `difficult`.
 7. Else `passable`.
+
+The suction-bog slope threshold (`0.03`) is fixed in v1 and not parameterized.
 
 Cliff flag:
 
