@@ -1,7 +1,7 @@
 # VirtualDoor Implementation Checklist (v1)
 
 Source of truth:
-- `docs/normative/VirtualDoor.md` (`draft-v1`, non-binding but authoritative for current implementation target)
+- `docs/normative/VirtualDoor.md` (`normative-v1`, binding)
 
 Purpose:
 - Provide an execution checklist that is strict on required behavior and flexible on internal structure.
@@ -15,7 +15,7 @@ Purpose:
   - `getVirtualDoorService(state)` (auto-ensure)
   - `disposeVirtualDoorService(state)`
 - [x] [Required] Store service instances in module-local registry keyed by `state` (do not attach ad hoc fields to `GameState`).
-- [ ] [Required] Add bundle server event listener for startup/shutdown:
+- [x] [Required] Add bundle server event listener for startup/shutdown:
   - startup prewarms `ensureVirtualDoorService(state)`
   - shutdown disposes service
 
@@ -130,8 +130,8 @@ Purpose:
   - `docs/normative/PredicateStateRendering.md`
   - `docs/BundleRantamutaTechnicalManual.md`
   - `docs/DesignerManual.md`
-- [ ] [Required] Move `docs/normative/VirtualDoor.md` from draft state to binding only after behavior/tests are complete.
-- [ ] [Required] Update `docs/normative/README.md` when VirtualDoor is promoted to current normative set.
+- [x] [Required] Move `docs/normative/VirtualDoor.md` from draft state to binding only after behavior/tests are complete.
+- [x] [Required] Update `docs/normative/README.md` when VirtualDoor is promoted to current normative set.
 
 ## 9) Decisions / Optional Choices
 
@@ -142,6 +142,6 @@ Purpose:
 
 ## 10) Done Criteria
 
-- [ ] [Required] `npm test` passes.
+- [x] [Required] `npm test` passes.
 - [ ] [Required] `npm run ci:local` passes.
-- [ ] [Required] No unresolved correctness regressions in final pass.
+- [x] [Required] No unresolved correctness regressions in final pass.

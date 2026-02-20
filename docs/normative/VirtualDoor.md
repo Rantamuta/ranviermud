@@ -2,8 +2,8 @@
 
 ## Status
 
-- Status: `draft-v1`
-- Binding: No (draft; in review)
+- Status: `normative-v1`
+- Binding: Yes
 - Scope: Virtual-door pairing, lifecycle ownership, mutation/query semantics, and door-command/movement policy
 - Related:
   - [CommandArchitecture.md](CommandArchitecture.md)
@@ -369,7 +369,7 @@ Reversibility requirements:
 
 ## Implementation Tracking (Temporary, Non-Normative)
 
-This section mirrors current rollout planning from draft material and is temporary.
+This section records rollout sequencing and is temporary.
 
 Phase summary:
 
@@ -396,9 +396,9 @@ Cross-doc updates required on landing:
 - `docs/DesignerManual.md`:
   - designer-facing guidance for door behavior, key expectations, and override points
 
-## Unresolved Trails (Draft)
+## Open Questions (Non-Blocking)
 
-The following conversation threads remain intentionally unresolved in v1 draft:
+The following threads remain intentionally unresolved in v1:
 
 1. Whether VirtualDoor should emit dedicated lifecycle events beyond existing command/render surfaces.
 

@@ -16,6 +16,8 @@ This directory contains behavior contracts that are normative for this repositor
   - Defines read-only entity binding, deterministic scope/disambiguation behavior, and resolver failure ownership.
 - `PredicateStateRendering.md`
   - Defines predicates as the authoritative, render-only mechanism for state-dependent room description rendering (`descriptionVariants` / `descriptionFragments`).
+- `VirtualDoor.md`
+  - Defines virtual-door pairing, lifecycle ownership, mutation/query semantics, and door command/movement behavior.
 
 ## Related implementation docs (non-normative)
 
@@ -24,8 +26,6 @@ This directory contains behavior contracts that are normative for this repositor
 
 ## Proposed normative extensions (in review)
 
-- `VirtualDoor.md`
-  - Draft virtual-door contract for pairing, lifecycle ownership, mutation/query semantics, and door command/movement behavior.
 - `SemanticMessaging.md`
   - Draft semantic-event render/dispatch contract for perspective-aware audience messaging via render-phase delivery instructions.
 

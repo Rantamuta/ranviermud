@@ -37,6 +37,7 @@ This bundle intentionally avoids engine internal edits. Any behavior in this doc
 Primary runtime flow:
 
 - `bundles/bundle-rantamuta/server-events/telnet.js`
+- `bundles/bundle-rantamuta/server-events/virtual-door.js`
 - `bundles/bundle-rantamuta/input-events/main.js`
 - `bundles/bundle-rantamuta/lib/session/auth-flow.js`
 - `bundles/bundle-rantamuta/lib/session/player-lifecycle.js`
