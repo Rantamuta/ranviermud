@@ -24,6 +24,8 @@ This directory contains behavior contracts that are normative for this repositor
 
 ## Proposed normative extensions (in review)
 
+- `VirtualDoor.md`
+  - Draft virtual-door contract for pairing, lifecycle ownership, mutation/query semantics, and door command/movement behavior.
 - `SemanticMessaging.md`
   - Draft semantic-event render/dispatch contract for perspective-aware audience messaging via render-phase delivery instructions.
 
