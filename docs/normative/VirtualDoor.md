@@ -307,12 +307,11 @@ Cross-room rule:
 ### Success Defaults
 
 - `go` auto `unlockAndOpen` emits:
-  - source-room semantic: `{actor.You} {verb:unlock} the {object.direct} with the {object.indirect}, {verb:open} it, and {verb:leave}.`
-  - fallback source semantic when key label is unavailable: `{actor.You} {verb:unlock} the {object.direct}, {verb:open} it, and {verb:leave}.`
-  - destination-room line (opposite-room audience): `The {object.direct} {verb:open} and {actor.name} {verb:enter}.`
+  - source-room semantic: `{actor.You} {verb:unlock} the {object.direct}, {verb:open} it, and {verb:leave}.`
+  - destination-room semantic (opposite-room audience): `{actor.You} {verb:open} the {object.direct} and {verb:arrive}.`
 - `go` auto `open` emits:
   - source-room semantic: `{actor.You} {verb:open} the {object.direct} and {verb:leave}.`
-  - destination-room line (opposite-room audience): `The {object.direct} {verb:open} and {actor.name} {verb:enter}.`
+  - destination-room semantic (opposite-room audience): `{actor.You} {verb:open} the {object.direct} and {verb:arrive}.`
 - `unlock <door>` command success:
   - actor semantic: `{actor.You} {verb:unlock} the {object.direct}.`
   - opposite-room broadcast: `The {object.direct} unlocks with a click.`
