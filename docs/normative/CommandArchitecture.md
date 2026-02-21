@@ -344,14 +344,17 @@ This split prevents veto/mutation ambiguity and keeps behavior predictable.
 
 - `go.js` lives in Plan and declares direct-only form with direct scope `room.exits`.
 - Direction text is resolved to a concrete exit entity in Entity Resolution.
+- `go.js` performs command-level validation and destination binding, then returns an empty base success envelope (`plan.operations: []`, `render.messages: []`).
 - Exit/world policy checks run in Capture and can veto via metadata or runtime hooks.
-- Plan resolves destination and applies door ergonomics:
-  - no door or already-open door: enqueue `movePlayer`
-  - closed+unlocked door: enqueue `doorMutation/open` then `movePlayer`
-  - locked door with matching key: enqueue `doorMutation/unlockAndOpen` then `movePlayer`
-  - locked door without matching key: return failure envelope (capture/plan surface)
-- When a composed door+movement message is emitted, plan marks movement with `suppressRoomBroadcast` to avoid duplicate generic leave/arrive lines.
-- Mutator commits door/movement operations atomically in Commit with rollback support.
+- Exit candidate hook composition owns go-door ergonomics:
+  - fallback `canDirect` denies locked movement with `GO_EXIT_LOCKED` when no matching key is carried
+  - fallback `planDirect` contributes movement/door plan operations:
+    - no door or already-open door: enqueue `movePlayer`
+    - closed+unlocked door: enqueue `doorMutation/open` then `movePlayer`
+    - locked+matching key: enqueue `doorMutation/unlockAndOpen` then `movePlayer`
+  - when fallback composes door+movement success flavor, movement uses `suppressRoomBroadcast` to prevent duplicate generic leave/arrive lines
+- Authored exit hooks may extend or replace fallback render behavior through normal Plan contribution merge, including `renderPolicy.replaceSuccess` semantics defined above.
+- Mutator commits merged door/movement operations atomically in Commit with rollback support.
 - Destination room view renders in Render/Dispatch only after commit.
 
 ## Immediate Application To Door Commands

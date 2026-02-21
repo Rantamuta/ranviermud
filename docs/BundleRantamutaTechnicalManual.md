@@ -414,10 +414,14 @@ Examples:
 2. `go`:
    - direct only
    - direct scope: `room.exits`
-   - auto-door plan behavior:
+   - command layer returns an empty base success envelope and delegates movement/door behavior to resolved exit hooks
+   - fallback exit hook behavior:
+     - no door or already-open door: enqueue `movePlayer`
      - closed+unlocked: enqueue `doorMutation/open` then `movePlayer`
      - locked+matching key: enqueue `doorMutation/unlockAndOpen` then `movePlayer`
-     - composed door+movement messaging uses `suppressRoomBroadcast` to avoid duplicate generic leave/arrive lines
+     - locked+no matching key: deny with `GO_EXIT_LOCKED`
+   - fallback composed door+movement messaging sets `suppressRoomBroadcast` on movement to avoid duplicate generic leave/arrive lines
+   - authored exit `planDirect` can layer additional operations/render and may request `renderPolicy.replaceSuccess` to replace generic fallback success flavor
 3. door commands (`open`/`close`/`lock`/`unlock`):
    - `open`, `lock`, `unlock` declare direct + directIndirect (`with`) rules with `allowUnresolvedIndirect: true`
    - direct scope: `room.exits`, `room.items`
@@ -469,7 +473,7 @@ Key behavior:
 
 1. intransitive `look`,
 2. lifecycle arrival render on login/enter-game,
-3. movement render (`go` success payload).
+3. movement render on successful `go` flow (via exit plan contribution).
 
 This render path is the normative method for state-dependent room description rendering (see `docs/normative/PredicateStateRendering.md`).
 
