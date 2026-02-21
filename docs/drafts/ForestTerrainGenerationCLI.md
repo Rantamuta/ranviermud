@@ -1218,3 +1218,72 @@ Recommended float epsilon: `1e-6`.
 
 - Multi-source BFS is recommended for distance-to-water and distance-to-stream terms.
 - All random decisions MUST be deterministic functions of seed and tile coordinates.
+
+# Appendix D: Reference CLI Implementation Plan (Standalone Node Project)
+
+Status: planning draft (informative)
+
+This appendix captures implementation decisions for a reference CLI that targets this
+specification. It is intentionally implementation-focused and does not alter normative
+requirements in Sections 1-16.
+
+## D.1 Repository and Runtime Boundary
+
+- The reference CLI is a standalone project in its own repository.
+- It does not run MUD runtime code and does not depend on ranviermud boot/runtime internals.
+- Runtime target is Node 22 LTS.
+
+## D.2 Language and Packaging Decisions
+
+- Module system: ESM.
+- Language: TypeScript.
+- Package manager: npm.
+
+## D.3 CLI Framework and Command Surface
+
+- Argument parser library: `commander`.
+- Recommended subcommands:
+  - `generate`
+  - `derive`
+  - `debug`
+
+Input precedence remains normative per Section 2.1:
+
+1. explicit CLI arguments
+2. parameter file values
+3. built-in defaults
+
+`seed` remains a required input for conformance with Section 2.2.
+
+## D.4 Debug Output Format Decisions
+
+Debug mode supports both machine-oriented and visual outputs.
+
+- `--json`: emit JSON debug grids.
+- `--png`: emit PNG rasters.
+- If both are supplied, both outputs are emitted.
+- Implementations may choose whether omitting both flags is treated as:
+  - defaulting to both outputs, or
+  - a usage error requiring explicit format selection.
+
+Regardless of default behavior, tooling documentation should explicitly describe the
+chosen behavior.
+
+## D.5 Testing Framework and Validation Strategy
+
+Recommended testing framework for the reference Node implementation: `vitest`.
+
+Minimum test categories:
+
+- Unit tests for deterministic primitives (`Dir8` ordering, tie-break behavior, hash helpers).
+- Fixed-seed regression tests per Section 16.
+- CLI integration tests for:
+  - mode dispatch (`generate`, `derive`, `debug`)
+  - exit-code semantics from Section 2.1
+  - debug format flags (`--json`, `--png`, both)
+  - input precedence and validation behavior
+
+Recommended fixture policy:
+
+- Small maps: full JSON snapshots.
+- Medium/large maps: deterministic digest + selected tile probes to limit fixture churn.
