@@ -25,7 +25,7 @@ Move door/facade behavior to the `exit` target hook path (`canDirect`/`planDirec
 - [x] Ensure fallback remains safe: warn and keep base success if replacement requested with no plan render.
 - [x] Remove door cruft from `go` by moving door-specific policy/render work to exit hooks.
 - [x] Remove facade-specific render assembly logic from `go`.
-- [ ] Keep runtime/content layering clean (`commands/` and `lib/` stay content-agnostic).
+- [x] Keep runtime/content layering clean (`commands/` and `lib/` stay content-agnostic).
 - [ ] Add/adjust tests for:
   - [ ] `planDirect` path invoked for exit target during `go`.
   - [ ] Facade success replaces generic success.
