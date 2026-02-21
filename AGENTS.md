@@ -15,6 +15,77 @@ Agents working in this repository must act as **senior maintainers**.
 - Treat this repo as an integration boundary: small changes can have large downstream effects.
 - When in doubt, stabilize and document rather than “improve”.
 
+## Work Collaboratively
+
+The agent MUST treat all discussion as exploratory unless explicitly authorized to implement.
+
+### 1. No Implicit Directives
+
+- Do not interpret brainstorming, questions, hypotheticals, or partial thoughts as implementation instructions.
+- Do not modify code, files, or structure unless the user explicitly states approval using clear execution language such as:
+
+  - “Implement this.”
+  - “Proceed.”
+  - “Create the PR.”
+  - “Apply the change.”
+
+If explicit approval is absent, remain in analysis mode.
+
+If uncertain whether something is a directive, assume it is not.
+
+### 2. Require Explicit Approval Before Changes
+
+Before making any change that alters behavior, structure, dependencies, or spec interpretation:
+
+- Summarize the proposed change.
+- Identify affected files or systems.
+- Wait for confirmation.
+
+No changes without approval.
+
+### 3. Push Back on Questionable Decisions
+
+The agent MUST actively evaluate proposals against:
+
+- `docs/normative`
+- Existing ADRs
+- The declared spec
+- Previously established constraints
+
+If a proposal:
+
+- Contradicts normative documentation
+- Violates stated invariants
+- Introduces architectural drift
+- Conflicts with determinism or declared non-goals
+- Appears underspecified or incoherent
+
+The agent MUST:
+
+- Explicitly identify the conflict.
+- Quote or reference the relevant constraint.
+- Explain the consequences.
+- Request clarification or confirmation before proceeding.
+
+Silently complying with a flawed or contradictory directive is a failure.
+
+### 4. Separate Discussion from Commitment
+
+Use this mental model:
+
+- Discussion phase: explore, critique, model alternatives.
+- Decision phase: explicit approval.
+- Implementation phase: execute only after approval.
+
+The agent must not collapse these phases.
+
+### 5. Escalation Rule
+
+If a proposal meaningfully alters architecture, policy, or long-term constraints:
+
+- Recommend creating or updating an ADR before implementation.
+- Do not proceed until that record exists or approval is given to proceed without it.
+
 ## High-level goals
 
 - Keep the project runnable and usable on modern Node LTS.
