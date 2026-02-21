@@ -20,7 +20,7 @@ Move door/facade behavior to the `exit` target hook path (`canDirect`/`planDirec
 - [x] Keep new end-state tests failing during refactor; they must pass only when the full plan is complete.
 - [x] Implement/finish exit hook attachment in facade script (`canDirect` + `planDirect` on matching exit).
 - [x] Keep exit identity stable (`direction`, `name`, `keywords` remain direction-first).
-- [ ] In exit `planDirect`, emit facade semantic success messages when used.
+- [x] In exit `planDirect`, emit facade semantic success messages when used.
 - [ ] Set `renderPolicy.replaceSuccess: true` when facade success render is contributed.
 - [ ] Ensure fallback remains safe: warn and keep base success if replacement requested with no plan render.
 - [ ] Remove door cruft from `go` by moving door-specific policy/render work to exit hooks.
