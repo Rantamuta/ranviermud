@@ -30,6 +30,111 @@ Primary content files:
 - `bundles/bundle-rantamuta/areas/<area>/scripts/npcs/*.js`
 - `bundles/bundle-rantamuta/player-events.js` (optional, bundle-level)
 
+## NPCs (Not Player Characters)
+
+NPCs are the people and creatures in your world that players can meet, react to, fight, follow, avoid, trade with, or learn from.
+
+If rooms are your stage, NPCs are your actors.
+
+### What NPCs are for
+
+NPCs let you make the world feel alive instead of static.
+
+Use NPCs when you want:
+
+- conversation and personality
+- guidance ("go here next" without hard UI prompts)
+- friction (guards, rival explorers, suspicious witnesses)
+- atmosphere (chants, routines, workers, wandering animals)
+- gameplay hooks (shops, quest handoffs, puzzle clues, threats)
+
+### Creative examples designers can use
+
+- A nervous archivist who only shares the real clue after the player proves they visited two different rooms.
+- A bell-keeper who changes dialogue by time of day and weather, making repeat visits feel fresh.
+- A scavenger who buys odd items, but only while standing in a specific market room.
+- A ghost child who appears only after a quest flag is set, then points players toward hidden content.
+- A patrol guard who walks a route and makes some paths feel safe at times and risky at others.
+
+### How NPCs work in this engine (designer view)
+
+At a practical level, NPC content is authored in `npcs.yml` and optionally extended with scripts/behaviors.
+
+Core flow:
+
+1. Define the NPC in `areas/<area>/npcs.yml`.
+2. Place that NPC in a room's default spawn list in `rooms.yml`.
+3. Optionally attach:
+   - `script: <name>` for one-off NPC logic in `scripts/npcs/<name>.js`
+   - `behaviors:` for reusable logic shared across many NPCs
+4. Optionally connect quests by listing quest refs in the NPC's `quests:` field.
+
+Useful NPC features you can author:
+
+- `keywords` for targeting by player commands
+- `description` and metadata for narrative flavor and state checks
+- `items` / `equipment` defaults for loadout
+- `attributes` (through normal character attribute setup)
+- `script` and `behaviors` for reactive logic
+
+Useful NPC events for authored script logic:
+
+- `spawn`: NPC has been created in the room
+- `enterRoom`: NPC finished moving to a room
+- `updateTick`: periodic update for routines and timed behavior
+
+Design tip:
+
+- Use `spawn` to initialize local state and attach helper functions.
+- Use `enterRoom` for arrival narration or room-specific reactions.
+- Use `updateTick` sparingly for patrols, idling chatter, or timed checks.
+
+### Minimal authoring pattern
+
+`npcs.yml`:
+
+```yml
+- id: bell_keeper
+  name: "Bell Keeper Toma"
+  keywords: ["keeper", "toma", "bell"]
+  description: "A broad-shouldered keeper with rope-burned hands and watchful eyes."
+  script: bellKeeper
+  behaviors:
+    weather-aware-routine: true
+  quests:
+    - "rantamuta:restoreBell"
+```
+
+`rooms.yml` (spawn in a room):
+
+```yml
+- id: bell_tower
+  title: "Bell Tower"
+  npcs:
+    - "rantamuta:bell_keeper"
+```
+
+`scripts/npcs/bellKeeper.js`:
+
+```js
+module.exports = {
+  listeners: {
+    enterRoom: state => function (nextRoom, previousRoom) {
+      // Keep this focused on flavor and local NPC behavior.
+      // For shared logic across many NPCs, prefer behaviors.
+    },
+  },
+};
+```
+
+### Quick content checklist
+
+- Does this NPC have a clear job in the story or gameplay loop?
+- Will players understand why this NPC exists after one encounter?
+- Is the NPC placed in the right room(s) for discovery and pacing?
+- Are quest links, scripts, and behaviors intentional and minimal?
+- If the NPC updates every tick, is the logic lightweight and bounded?
+
 ## Area Manifest (`manifest.yml`)
 
 Each area folder must include:
