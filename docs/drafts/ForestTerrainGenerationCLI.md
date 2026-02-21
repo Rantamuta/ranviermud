@@ -1269,6 +1269,30 @@ Debug mode supports both machine-oriented and visual outputs.
 Regardless of default behavior, tooling documentation should explicitly describe the
 chosen behavior.
 
+
+Recommended debug artifact directory layout:
+
+```text
+debug/
+  json/
+    height.json
+    slope.json
+    moisture.json
+    flowAccum.json
+    waterClass.json
+    biome.json
+    roughness.json
+  png/
+    height.png
+    slope.png
+    moisture.png
+    flowAccum.png
+    waterClass.png
+    biome.png
+    roughness.png
+```
+
+
 ## D.5 Testing Framework and Validation Strategy
 
 Recommended testing framework for the reference Node implementation: `vitest`.
