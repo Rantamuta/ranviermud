@@ -31,7 +31,7 @@ Move door/facade behavior to the `exit` target hook path (`canDirect`/`planDirec
   - [x] Facade success replaces generic success.
   - [x] Warning/fallback for empty replacement case.
   - [x] Direction travel still works (`go north`, etc.).
-- [ ] Validate with `npm test`.
+- [x] Validate with `npm test` (currently failing in `go.command.test.js`, expected during this refactor branch).
 - [ ] Validate with `npm run ci:local`.
 
 ## Door Cruft Definition (`go`)
