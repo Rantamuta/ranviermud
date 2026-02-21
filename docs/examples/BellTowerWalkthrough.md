@@ -53,8 +53,8 @@ That script sets:
 
 Implementation:
 
-- `bundles/bundle-rantamuta/areas/rantamuta/scripts/items/ritualPutTarget.js`
-- `bundles/bundle-rantamuta/areas/rantamuta/scripts/helpers/putPolicy.js`
+- `bundles/bundle-rantamuta/areas/codex/scripts/items/ritualPutTarget.js`
+- `bundles/bundle-rantamuta/areas/codex/scripts/helpers/putPolicy.js`
 
 ## Crypt Exit Gate Pattern
 
@@ -84,8 +84,8 @@ Room YAML uses exit gate metadata:
 
 Room script/helper:
 
-- `bundles/bundle-rantamuta/areas/rantamuta/scripts/rooms/bellCryptGate.js`
-- `bundles/bundle-rantamuta/areas/rantamuta/scripts/helpers/exitGate.js`
+- `bundles/bundle-rantamuta/areas/codex/scripts/rooms/bellCryptGate.js`
+- `bundles/bundle-rantamuta/areas/codex/scripts/helpers/exitGate.js`
 
 ## Why This Is Architecturally Clean
 

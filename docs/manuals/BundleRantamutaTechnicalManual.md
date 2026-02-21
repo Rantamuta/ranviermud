@@ -79,7 +79,7 @@ Room rendering:
 
 Area predicate registries:
 
-- `bundles/bundle-rantamuta/areas/rantamuta/predicates.js`
+- `bundles/bundle-rantamuta/areas/codex/predicates.js`
 - `bundles/bundle-rantamuta/areas/test/predicates.js`
 
 Reference commands:
@@ -99,13 +99,13 @@ Reference commands:
 
 Reference area scripts (Bell Tower):
 
-- `bundles/bundle-rantamuta/areas/rantamuta/scripts/items/ritualPutTarget.js`
-- `bundles/bundle-rantamuta/areas/rantamuta/scripts/items/bronzeClapperGuard.js`
-- `bundles/bundle-rantamuta/areas/rantamuta/scripts/items/waxSealGuard.js`
-- `bundles/bundle-rantamuta/areas/rantamuta/scripts/items/prayerStoneGuard.js`
-- `bundles/bundle-rantamuta/areas/rantamuta/scripts/rooms/bellCryptGate.js`
-- `bundles/bundle-rantamuta/areas/rantamuta/scripts/helpers/putPolicy.js`
-- `bundles/bundle-rantamuta/areas/rantamuta/scripts/helpers/exitGate.js`
+- `bundles/bundle-rantamuta/areas/codex/scripts/items/ritualPutTarget.js`
+- `bundles/bundle-rantamuta/areas/codex/scripts/items/bronzeClapperGuard.js`
+- `bundles/bundle-rantamuta/areas/codex/scripts/items/waxSealGuard.js`
+- `bundles/bundle-rantamuta/areas/codex/scripts/items/prayerStoneGuard.js`
+- `bundles/bundle-rantamuta/areas/codex/scripts/rooms/bellCryptGate.js`
+- `bundles/bundle-rantamuta/areas/codex/scripts/helpers/putPolicy.js`
+- `bundles/bundle-rantamuta/areas/codex/scripts/helpers/exitGate.js`
 
 ## VirtualDoor service internals (current concrete layout)
 
@@ -571,7 +571,7 @@ Bell Tower examples:
 2. `bellCryptGate.js`:
    - attaches Bell Crypt gate policy and keeps runes detail text synchronized with basin contents,
    - gates `go down` using exit metadata requirements.
-3. `areas/rantamuta/predicates.js`:
+3. `areas/codex/predicates.js`:
    - defines area-local render predicates for slab/runes state (`is_slab_open`, `is_basin_runes_glowing`).
    - paired fallback lines are authored with `whenNot` in room metadata (for example slab-blocking and runes-dormant text).
    - for documentation examples, use snake_case yes/no names with `is_`, `can_`, or `does_` (for example `is_slab_open`, `can_descend`, `does_basin_contain_stone`).

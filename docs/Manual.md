@@ -320,6 +320,190 @@ The default `ranvier.json` defines entity loader categories:
 
 These names are configuration keys.  The wrapper explicitly wires the `accounts` and `players` loaders into their managers in the wrapper via `EntityLoaderRegistry.get('accounts')` and `get('players')`. ([GitHub][2])
 
+#### 4.1.4 NPCs
+
+This subsection documents NPCs as implemented in the engine (`core`) layer: data model, load path, lifecycle, runtime ownership, and extension interfaces.
+
+##### 4.1.4.1 NPC object model
+
+In engine code, NPCs are implemented by `Npc` in `src/Npc.js`.
+
+Core facts:
+
+* `Npc` extends `Scriptable(Character)`, so an NPC is both:
+  * a full `Character` (attributes, effects, inventory/equipment, combat/follow APIs), and
+  * a scriptable entity (behavior/script listeners attach through `Scriptable`).
+* Required NPC definition fields are:
+  * `id`
+  * `name`
+  * `keywords`
+* At construction/hydration time, NPC instances hold:
+  * identity: `id`, `entityReference`, `uuid`
+  * classification: `isNpc === true`
+  * content pointers: `script`, `behaviors`, `quests`, `description`
+  * inventory/equipment defaults: `defaultItems`, `defaultEquipment`
+  * runtime command queue object: `commandQueue`
+
+##### 4.1.4.2 NPC definitions and on-disk schema
+
+NPC definitions are loaded through the configured `npcs` entity loader category. In default wrapper config this resolves to:
+
+* `bundles/[BUNDLE]/areas/[AREA]/npcs.yml`
+
+Entity reference and keying:
+
+* NPC definitions are keyed internally by `area:id` using `EntityFactory.createEntityRef(area, id)`.
+* Room spawn entries refer to these entity refs when spawning NPC instances.
+
+Type-level shape (`types/Npc.d.ts`) includes:
+
+* required: `id`, `name`, `keywords`
+* optional/common: `script`, `behaviors`, `items`, `equipment`, `description`, `quests`, `metadata`, `uuid`
+
+##### 4.1.4.3 Load and hydrate pipeline
+
+NPC load path is split into two stages: definition registration, then runtime instance hydration.
+
+Definition stage:
+
+1. `BundleManager.loadArea(...)` calls `loadEntities(..., 'npcs', state.MobFactory)`.
+2. Each parsed NPC record is stored as a definition in `MobFactory.entities`.
+3. If `script` is declared, entity script listeners are loaded from `areas/<area>/scripts/npcs/<script>.js` and attached at create-time via the factory script registry.
+4. If NPC declares `quests`, load-time quest definitions are updated so each referenced quest gets `quest.npc = <npcEntityRef>`.
+
+Instance stage:
+
+1. Area hydration creates/hydrates rooms.
+2. Room hydration iterates `defaultNpcs` and calls `room.spawnNpc(state, entityRef)`.
+3. `spawnNpc(...)` creates NPC instance via `MobFactory.create(...)`, hydrates it, places it in area/room sets, records source room, and emits NPC `spawn`.
+4. `Npc.hydrate(...)`:
+   * calls `Character.hydrate(...)`
+   * registers NPC in `MobManager`
+   * attaches NPC behaviors from `MobBehaviorManager`
+   * creates/hydrates default items and equipment and attaches/equips them
+
+##### 4.1.4.4 Runtime ownership and indexes
+
+NPC runtime ownership is intentionally multi-indexed:
+
+* `MobManager.mobs: Map<uuid, npc>` is the global NPC registry.
+* `Area.npcs: Set<npc>` tracks NPCs that originate from that area.
+* `Room.npcs: Set<npc>` tracks NPCs currently present in that room.
+* `Room.spawnedNpcs: Set<npc>` tracks NPC lineage for spawn/respawn-oriented bookkeeping even when NPCs walk away.
+
+This separation is important for cleanup and area-level ticking.
+
+##### 4.1.4.5 NPC event surface and script hooks
+
+NPC-specific lifecycle events emitted by engine flows:
+
+* `spawn` (after room spawn)
+* `enterRoom` (after `moveTo`)
+* `updateTick` (from area update loop)
+
+Room movement events are also proxied to entities in room context:
+
+* `npcEnter`
+* `npcLeave`
+* `playerEnter`
+* `playerLeave`
+
+Because NPC extends `Character`, it also emits Character events (combat, attributes, effects, equip/unequip, follow, damage/heal lifecycle).
+
+##### 4.1.4.6 Movement semantics
+
+`Npc.moveTo(nextRoom, onMoved)` is the canonical movement API.
+
+Order of operations:
+
+1. Emit `npcLeave` on current room (if present) and remove NPC from old room set.
+2. Add NPC to new room and update `npc.room`.
+3. Run `onMoved` callback.
+4. Emit `npcEnter` on destination room.
+5. Emit NPC `enterRoom`.
+
+This order is stable and is part of how room/NPC scripts observe movement.
+
+##### 4.1.4.7 Behavior and script attachment interfaces
+
+NPC extension points are event-driven.
+
+Engine-level behavior interface:
+
+* Behavior files under `behaviors/npc/` export a `listeners` map.
+* `BundleManager.loadBehaviors(...)` registers listeners into `MobBehaviorManager`.
+* `Npc.hydrate(...)` calls `setupBehaviors(state.MobBehaviorManager)`.
+
+Entity script interface:
+
+* NPC definitions can declare `script: <name>`.
+* Entity script listeners are loaded per-entity-ref and attached by the factory when the NPC instance is created.
+
+Handler binding semantics:
+
+* listener `this` is bound to the NPC emitter.
+* behavior listeners receive behavior config as first argument when configured in YAML.
+
+##### 4.1.4.8 API and interface summary (core classes)
+
+Primary NPC-related engine classes:
+
+* `Npc`
+  * `moveTo(nextRoom, onMoved?)`
+  * `hydrate(state)`
+  * `isNpc` getter
+* `MobFactory` (extends `EntityFactory`)
+  * `create(area, entityRef)` -> `Npc`
+* `MobManager`
+  * `addMob(mob)`
+  * `removeMob(mob)`
+* `Room`
+  * `spawnNpc(state, entityRef)` -> `Npc`
+  * `addNpc`, `removeNpc`
+* `Area`
+  * `addNpc`, `removeNpc`
+  * `update(state)` emits NPC `updateTick`
+
+##### 4.1.4.9 Cleanup and prune semantics
+
+`MobManager.removeMob(mob)` is the hard-delete path for NPC instances:
+
+1. clears active effects,
+2. removes NPC from room/area sets (including `spawnedNpcs` when requested),
+3. marks entity as pruned (`__pruned = true`),
+4. removes all listeners,
+5. deletes registry entry from `MobManager.mobs`.
+
+`Scriptable.emit(...)` suppresses further event emission on pruned entities.
+
+##### 4.1.4.10 Persistence and compatibility caveats
+
+NPC/world spawn persistence behavior:
+
+* Room hydration comments in engine code define current semantics that room-spawned world entities (items/NPCs) are reconstructed from definitions on boot; they are not persisted like players by default.
+
+Attribute contract caveat:
+
+* NPC attribute keys must exist in `AttributeFactory`; unknown attribute keys fail character hydration.
+
+Type/API caveat:
+
+* `Npc` has `commandQueue`, but default engine tick wiring does not automatically execute queued NPC commands; command queue presence is a capability surface, not an implicit behavior guarantee.
+
+##### 4.1.4.11 What engine provides vs what content provides
+
+Engine provides:
+
+* data model, factories/managers, lifecycle/event plumbing, script/behavior wiring.
+
+Content/bundles provide:
+
+* actual NPC definitions (`npcs.yml`),
+* authored NPC scripts/behaviors,
+* gameplay policy (dialogue, aggro, quest flow specifics, vendor mechanics, etc.).
+
+So NPC support is first-class in engine architecture, while concrete NPC behavior is intentionally content-driven.
+
 ### 4.2 EntityLoader: the executable interface
 
 `EntityLoader` is a thin adapter around:
@@ -1095,7 +1279,7 @@ Edge behavior:
 
 Current repo reality:
 
-* `ranvier.json` enables `bundle-rantamuta`
+* `ranvier.json` enables a primary gameplay bundle (alongside minimal/core support bundles)
 * new players are initialized with `attributes: {}`
 * persisted players under `data/player/*.json` include concrete attribute maps in some records
 
@@ -1377,7 +1561,7 @@ How registration and attachment actually work:
 * `Set` dedupes by function identity only.
 * Attach-time behavior:
   * `PlayerManager.loadPlayer(...)` attaches all currently-registered player event listeners to each loaded player (`PlayerManager:116`).
-  * New-player creation code in this repo manually does `state.PlayerManager.events.attach(player)` before add/hydrate (`bundles/bundle-rantamuta/lib/session/player-lifecycle.js:52`, `bundles/bundle-minimal/input-events/main.js:84`).
+  * New-player creation code in this repo manually does `state.PlayerManager.events.attach(player)` before add/hydrate (`bundles/bundle-minimal/input-events/main.js:84` and project-local session lifecycle code).
 
 Operational implication:
 
@@ -1456,7 +1640,7 @@ Persistence integration (easy to misunderstand):
 Engineering caution:
 
 * If no `save` listener path performs persistence, calling `player.save()` alone does not guarantee disk write.
-* In this wrapper, explicit code paths call `PlayerManager.save(player)` on quit/socket close (`bundles/bundle-rantamuta/lib/session/player-lifecycle.js:108`, `bundles/bundle-rantamuta/server-events/telnet.js:96`), but that is not the same as global `save` event policy.
+* In this wrapper, explicit code paths call `PlayerManager.save(player)` on quit/socket close (project-local session lifecycle and telnet shutdown handlers), but that is not the same as global `save` event policy.
 
 Command queue coupling note:
 
@@ -1491,7 +1675,7 @@ Recommended maintainer guardrails for `player-events`:
 
 Current workspace state (important):
 
-* `ranvier.json` currently loads only `bundle-rantamuta` (`ranvier.json:3`).
+* `ranvier.json` currently loads a single primary gameplay bundle (`ranvier.json:3`).
 * No `player-events.js` is currently present in active bundles in this workspace.
 * Therefore the player-events mechanism exists and is wired, but no bundle-level player listeners are currently registered by default.
 
@@ -1503,13 +1687,12 @@ Forward-looking note:
 ##### 6. Observed hooks currently used in this workspace bundles
 
 * Server events used:
-  * `startup`, `shutdown` in `bundles/bundle-rantamuta/server-events/telnet.js:51`
-  * same in minimal bundle `bundles/bundle-minimal/server-events/telnet.js:50`
+  * `startup`, `shutdown` in telnet server-event modules (for example `bundles/bundle-minimal/server-events/telnet.js:50`)
 * Input event used:
-  * `main` handler via `event: state => async (...)` in `bundles/bundle-rantamuta/input-events/main.js:10`
+  * `main` handler via `event: state => async (...)` in input-event modules (for example `bundles/bundle-minimal/input-events/main.js:84`)
 * Entity script listeners used in active content:
-  * `spawn` on items and rooms (`bundles/bundle-rantamuta/areas/rantamuta/scripts/items/*.js`, `bundles/bundle-rantamuta/areas/rantamuta/scripts/rooms/bellCryptGate.js:333`)
-  * `ready` on room (`bundles/bundle-rantamuta/areas/rantamuta/scripts/rooms/bellCryptGate.js:334`)
+  * `spawn` on item/room scripts in content areas
+  * `ready` on room scripts
 * No `player-events.js` currently present in bundled content (`find bundles ...` result).
 
 ##### 7. Important implementation quirks / gotchas
