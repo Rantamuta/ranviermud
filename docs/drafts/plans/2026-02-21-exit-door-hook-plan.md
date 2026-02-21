@@ -26,11 +26,11 @@ Move door/facade behavior to the `exit` target hook path (`canDirect`/`planDirec
 - [x] Remove door cruft from `go` by moving door-specific policy/render work to exit hooks.
 - [x] Remove facade-specific render assembly logic from `go`.
 - [x] Keep runtime/content layering clean (`commands/` and `lib/` stay content-agnostic).
-- [ ] Add/adjust tests for:
-  - [ ] `planDirect` path invoked for exit target during `go`.
-  - [ ] Facade success replaces generic success.
-  - [ ] Warning/fallback for empty replacement case.
-  - [ ] Direction travel still works (`go north`, etc.).
+- [x] Add/adjust tests for:
+  - [x] `planDirect` path invoked for exit target during `go`.
+  - [x] Facade success replaces generic success.
+  - [x] Warning/fallback for empty replacement case.
+  - [x] Direction travel still works (`go north`, etc.).
 - [ ] Validate with `npm test`.
 - [ ] Validate with `npm run ci:local`.
 
