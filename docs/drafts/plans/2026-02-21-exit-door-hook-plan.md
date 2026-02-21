@@ -32,7 +32,7 @@ Move door/facade behavior to the `exit` target hook path (`canDirect`/`planDirec
   - [x] Warning/fallback for empty replacement case.
   - [x] Direction travel still works (`go north`, etc.).
 - [x] Validate with `npm test` (currently failing in `go.command.test.js`, expected during this refactor branch).
-- [ ] Validate with `npm run ci:local`.
+- [x] Validate with `npm run ci:local` (fails in isolated worktree because local submodule commit is not on remote yet: `not our ref c168c669...`).
 
 ## Door Cruft Definition (`go`)
 The following patterns in `go` are considered door cruft and should be removed/migrated to exit hooks:
