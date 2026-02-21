@@ -16,7 +16,7 @@ Move door/facade behavior to the `exit` target hook path (`canDirect`/`planDirec
 
 ## Checklist
 - [x] Confirm current `go` behavior baseline with tests.
-- [ ] Add/adjust tests for target end-state behavior first (these are expected to fail initially).
+- [x] Add/adjust tests for target end-state behavior first (these are expected to fail initially).
 - [ ] Keep new end-state tests failing during refactor; they must pass only when the full plan is complete.
 - [ ] Implement/finish exit hook attachment in facade script (`canDirect` + `planDirect` on matching exit).
 - [ ] Keep exit identity stable (`direction`, `name`, `keywords` remain direction-first).
