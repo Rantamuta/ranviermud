@@ -43,7 +43,7 @@ File scope: `bundles/bundle-rantamuta/tests/command.dispatch.test.js`
 Acceptance criteria: tests prove deterministic output order (`actor`, `target`, `others`), no duplicate delivery when actor/target/others overlap, and policy-driven inclusion/exclusion behavior for `self`, `others`, `self_and_others`, `self_target_and_others`, and `target_and_others`.
 Validation commands: `npx mocha bundles/bundle-rantamuta/tests/command.dispatch.test.js --grep \"semanticEvent|recipient|dedup|target_and_others\"`
 
-4. [ ] Add fail-first dispatch test for no-partial-send on semantic render failure.
+4. [x] Add fail-first dispatch test for no-partial-send on semantic render failure.
 File scope: `bundles/bundle-rantamuta/tests/command.dispatch.test.js`
 Acceptance criteria: for a single invalid semantic instruction, no recipient receives partial semantic output; dispatch logs failure and continues with following render instructions.
 Validation commands: `npx mocha bundles/bundle-rantamuta/tests/command.dispatch.test.js --grep \"semanticEvent|partial|continues\"`
