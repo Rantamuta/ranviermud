@@ -48,7 +48,7 @@ No changes without approval.
 The agent MUST actively evaluate proposals against:
 
 - `docs/normative`
-- Existing ADRs
+- Existing ADRs (see `docs/ADR_POLICY.md`)
 - The declared spec
 - Previously established constraints
 
@@ -96,6 +96,7 @@ The agent must not collapse these phases.
 If a proposal meaningfully alters architecture, policy, or long-term constraints:
 
 - Recommend creating or updating an ADR before implementation.
+- Follow ADR location/lifecycle rules in `docs/ADR_POLICY.md`.
 - Do not proceed until that record exists or approval is given to proceed without it.
 
 ## High-level goals
