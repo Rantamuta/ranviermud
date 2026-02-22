@@ -23,6 +23,8 @@ This directory contains behavior contracts that are normative for this repositor
 
 - `../BundleRantamutaTechnicalManual.md`
   - Bundle-level implementation map (file-by-file runtime flow, hooks, mutator, rendering, and scenario/test surfaces).
+- `../ProjectDirection.md`
+  - Project mission and direction summary, including the working definition of the Rantamuta approach.
 
 ## Proposed normative extensions (in review)
 
