@@ -33,7 +33,7 @@ File scope: `bundles/bundle-rantamuta/tests/semantic.message.test.js`
 Acceptance criteria: add tests that assert `SEMANTIC_ACTOR_ALIAS_MISMATCH` when both `currentActor` and `currentPlayer` are present but resolve to different entity identity; assert success when both refer to same identity.
 Validation commands: `npx mocha bundles/bundle-rantamuta/tests/semantic.message.test.js`
 
-2. [ ] Implement actor alias validation in semantic renderer.
+2. [x] Implement actor alias validation in semantic renderer.
 File scope: `bundles/bundle-rantamuta/lib/session/semantic-message.js`
 Acceptance criteria: when both actor aliases are present and identity differs, renderer returns structured failure with `SEMANTIC_ACTOR_ALIAS_MISMATCH`; valid alias mappings continue to render unchanged.
 Validation commands: `npx mocha bundles/bundle-rantamuta/tests/semantic.message.test.js`
