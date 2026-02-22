@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This repository is maintained with help from automated agents (Codex). This document defines non-negotiable constraints, maintenance policy, and the expected workflow so changes remain incremental, reviewable, and safe.
+This repository is maintained with help from automated agents (Codex). This document defines non-negotiable constraints, compatibility policy, and the expected workflow so changes remain incremental, reviewable, and safe.
 
 `ranviermud` is the **runnable wrapper and integration surface** for the Rantamuta MUD engine. It owns boot, configuration, wiring, and example playability, not engine internals.
 
@@ -89,9 +89,12 @@ If a proposal meaningfully alters architecture, policy, or long-term constraints
 ## High-level goals
 
 - Keep the project runnable and usable on modern Node LTS.
-- Support a **pure maintenance 1.0 release** after a long dormancy.
-- Restore and preserve a reliable out-of-the-box experience.
+- Preserve a reliable out-of-the-box experience for builders and players.
+- Evolve `bundles/bundle-rantamuta` as a reference bundle for the Rantamuta approach.
+- Emphasize deterministic command flow, careful mutation, principled typing, and strong ergonomics for developers, designers, and players.
 - Prefer small, reversible changes over rewrites.
+
+Project direction and terminology are documented in `docs/ProjectDirection.md` (non-normative).
 
 ## Non-goals
 
@@ -99,7 +102,7 @@ If a proposal meaningfully alters architecture, policy, or long-term constraints
 - No changes to engine internals (`Rantamuta/core`) unless explicitly requested.
 - No CLI UX redesign.
 - No “cleanup” refactors for style or aesthetics.
-- No new features beyond maintenance and playability fixes.
+- No speculative work without a clear behavior goal and validation plan.
 
 ## Bundle layering boundary
 
@@ -192,15 +195,13 @@ Before upgrading dependencies, changing runtime behavior, or touching boot logic
 
 Prefer a minimal smoke test over broad refactors.
 
-## Modernization posture
-
-This repository is in **maintenance mode**.
+## Delivery posture
 
 Default bias:
 
 - document > test > guard > refactor
-- configuration and tooling over code changes
 - clarity and playability over elegance
+- focused changes over broad rewrites
 
 Avoid:
 
