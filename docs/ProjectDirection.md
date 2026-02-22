@@ -34,4 +34,4 @@ Build a MUD development system on Ranvier that is fast to work in, reliable to r
 
 - If bundle mechanisms prove stable and valuable, upstream selected patterns into core for a future major release.
 - A future 2.0 line may prioritize architecture over backward compatibility.
-- Major direction changes should be recorded with ADRs before implementation.
+- Major direction changes should be recorded with ADRs before implementation (see `docs/ADR_POLICY.md`).
