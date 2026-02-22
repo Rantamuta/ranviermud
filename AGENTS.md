@@ -157,8 +157,7 @@ Assume compatibility matters unless explicitly instructed otherwise.
 
 This repository must maintain a **local equivalent of CI** so changes are reproducible without relying on external systems.
 
-- `npm test` **must always pass**.
-- `npm run ci:local` **must exist** and **must always pass**
+- `npm run ci:local` **must exist**.
 - GitHub Actions CI is the final gate, but agents must not claim CI is green unless they can directly observe it.
 
 ### CI change rule
@@ -177,10 +176,21 @@ If a PR or task changes GitHub Actions workflows or CI expectations:
 
 In the `ci:local` runner, annotate each step with `// CI: <step name>`. For skipped steps use `// CI: <step name> (SKIPPED)` and include a short reason on the next line.
 
-### `ci:local` expectations
+### Validation requirements by task type
 
-- agents must ensure `npm run ci:local` passes locally before stopping the current task.
-- `ci:local` must be a faithful representation of `.github/workflows/ci.yml`
+Behavior-changing tasks (runtime behavior, executable code, CI/scripts, dependencies, config resolution, or normative behavior contract changes):
+
+- MUST run `npm test`.
+- MUST run `npm run ci:local`.
+- If `ci:local` is blocked by dirty-tree checks during in-progress work, `npm run ci:local -- --force` MAY be used for interim validation.
+- Before final completion, validation SHOULD be re-run from a clean tree when practical.
+
+Docs-only or information-gathering tasks:
+
+- MAY skip `npm test` and `npm run ci:local`.
+- MUST explicitly state which validations were skipped and why.
+
+If task classification is unclear, default to behavior-changing validation or request maintainer confirmation.
 
 ## Required safety rails before risky changes
 
@@ -231,7 +241,7 @@ User-visible changes, dependency removals, or security-motivated actions should 
 Stop work immediately when:
 
 - all explicitly requested tasks or checklist items are complete
-- `npm test` and `npm run ci:local` pass locally
+- required validations from `Validation requirements by task type` are complete and passing (or explicitly skipped when allowed)
 - no new correctness issues are discovered in a final pass
 
 Do not continue with “nice-to-have” improvements beyond the stated scope.
