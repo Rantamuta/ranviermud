@@ -1,11 +1,11 @@
-# Changelog Policy (Maintenance Releases)
+# Changelog Policy
 
-This repository is a maintenance and stewardship fork of RanvierMUD. The changelog exists to document:
+This repository builds on RanvierMUD as the runnable wrapper and integration surface for Rantamuta. The changelog exists to document:
 
 - user-visible changes,
 - dependency and security actions,
 - runtime/CI changes, and
-- deliberate drifts or modernizations relative to the original RanvierMUD behavior or dependencies.
+- deliberate drifts or directional changes relative to original RanvierMUD behavior or dependencies.
 
 The policy below is intentionally lightweight. It should be followed by maintainers, downstream game repo owners, bundle authors, and automated agents working on the core engine.
 
