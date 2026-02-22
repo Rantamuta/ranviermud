@@ -20,15 +20,15 @@ Implement the actor-general semantic messaging amendment in runtime behavior and
 
 ## Preconditions (Command 2)
 
-- [ ] Approval to execute this checklist is explicit.
-- [ ] Working tree is clean in repository root.
-- [ ] Working tree is clean in `bundles/bundle-rantamuta`.
-- [ ] Branch is created and checked out with descriptive `<imperative>-<noun>` naming.
-- [ ] Task classification is recorded as `behavior-changing`.
+- [x] Approval to execute this checklist is explicit.
+- [x] Working tree is clean in repository root.
+- [x] Working tree is clean in `bundles/bundle-rantamuta`.
+- [x] Branch is created and checked out with descriptive `<imperative>-<noun>` naming.
+- [x] Task classification is recorded as `behavior-changing`.
 
 ## Checklist
 
-1. [ ] Add fail-first semantic renderer tests for actor alias contract.
+1. [x] Add fail-first semantic renderer tests for actor alias contract.
 File scope: `bundles/bundle-rantamuta/tests/semantic.message.test.js`
 Acceptance criteria: add tests that assert `SEMANTIC_ACTOR_ALIAS_MISMATCH` when both `currentActor` and `currentPlayer` are present but resolve to different entity identity; assert success when both refer to same identity.
 Validation commands: `npx mocha bundles/bundle-rantamuta/tests/semantic.message.test.js`
