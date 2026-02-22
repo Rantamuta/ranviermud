@@ -4,6 +4,25 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Semantic messaging actor-general amendment
+
+Summary:
+
+- Amended `docs/normative/SemanticMessaging.md` to support actor-general semantic dispatch via `currentActor` with `currentPlayer` compatibility aliasing.
+- Added render-context and failure-code guidance for actor alias mismatches and unresolved actor room dispatch.
+Why:
+- Shared semantic-event commands (including NPC-triggered speech/actions) need one canonical render/dispatch contract instead of a player-only actor selector.
+Impact:
+- Normative semantic-event contract now defines actor-general selector behavior and diagnostics expectations.
+- Existing `currentPlayer` content remains valid as compatibility behavior.
+Migration/Action:
+- Prefer `participants.actor: { selector: 'currentActor' }` in new semantic-event content.
+- Existing `currentPlayer` usage can remain; no immediate migration is required.
+References:
+- `docs/drafts/SemanticMessagingAmendment-ActorGeneral.md`
+- `docs/normative/SemanticMessaging.md`
+Timestamp: 2026.02.22 14:50
+
 ### NPC visibility in room look output
 
 Summary:

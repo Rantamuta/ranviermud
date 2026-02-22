@@ -11,7 +11,7 @@
 
 ## Purpose
 
-Define a deterministic messaging model where one canonical semantic event is rendered into perspective-correct text for different recipients (actor, target, bystanders) and delivered through the existing command pipeline.
+Define a deterministic messaging model where one canonical semantic event is rendered into perspective-correct text for different recipients (actor, target, bystanders) and delivered through the existing command pipeline for player and non-player actors.
 
 This specification is greenfield. It does not require compatibility with legacy token systems.
 
@@ -83,7 +83,7 @@ Illustrative shape:
   template: '{actor.you} {verb:wave} to {target.you}.',
   audiencePolicy: 'self_target_and_others',
   participants: {
-    actor: { selector: 'currentPlayer' },
+    actor: { selector: 'currentActor' },
     target: { selector: 'entityByContextRole', role: 'indirectTarget' },
     direct: { selector: 'entityByContextRole', role: 'directTarget' },
     indirect: { selector: 'entityByContextRole', role: 'indirectTarget' }
@@ -114,6 +114,7 @@ Participant constraints in v1:
 - `participants.actor` is required.
 - At most one perspective-differentiated non-actor recipient is supported: `participants.target`.
 - `participants.direct` and `participants.indirect` are supported as role/object references, but v1 does not introduce indexed or multi-target audience differentiation.
+- Participant declarations are selector declarations only; pre-bound runtime entity objects are invalid.
 
 ## Participant Selector Contract (v1)
 
@@ -121,15 +122,33 @@ Selector shape remains object-based in v1, with a closed set of allowed values.
 
 Allowed selectors:
 
+- `{ selector: 'currentActor' }`
 - `{ selector: 'currentPlayer' }`
 - `{ selector: 'entityByContextRole', role: 'directTarget' | 'indirectTarget' }`
 
 Rules:
 
+- `currentActor` is the preferred actor selector for new semantic-event content.
+- `currentPlayer` is a compatibility alias for player-scoped content.
+- When the command actor is player-backed, `currentPlayer` must resolve to the same entity identity as `currentActor`.
+- No deprecation/removal timeline for `currentPlayer` is defined in v1.
 - Unknown selector values are invalid.
 - Missing required selector fields are invalid.
 - Unknown role names are invalid.
 - Invalid participant declarations are rejected as dispatch diagnostics and the semantic event instruction is skipped.
+
+## Render Context Contract (v1)
+
+Semantic-event dispatch context must provide actor identity explicitly:
+
+- `currentActor` is required.
+- `currentPlayer` is optional and compatibility-only; it is expected for player-scoped execution paths.
+- Existing context-role bindings (`directTarget`, `indirectTarget`) remain unchanged.
+
+Rules:
+
+- If both `currentActor` and `currentPlayer` are present and they do not resolve to the same entity identity, dispatch fails with `SEMANTIC_ACTOR_ALIAS_MISMATCH`.
+- Actor resolution for semantic events must not depend on session/transport ownership.
 
 ## Audience Policies
 
@@ -148,11 +167,13 @@ Recipient set construction and output order must be deterministic.
 For a single semantic event instruction:
 
 1. Resolve actor from `participants.actor`.
-2. Resolve target from `participants.target` when present.
-3. Build the base `others` set from `actor.room.getBroadcastTargets()` in its iteration order.
-4. Remove null/invalid recipients.
-5. De-duplicate recipients by identity (first occurrence wins).
-6. Apply audience-policy exclusions (`self`/`target`) to derive final recipient partitions.
+2. If actor cannot be resolved, fail the instruction with `SEMANTIC_ACTOR_UNRESOLVED` and skip dispatch.
+3. Resolve target from `participants.target` when present.
+4. Require non-null `actor.room`; if null, fail the instruction with `SEMANTIC_ACTOR_ROOM_UNRESOLVED` and skip dispatch.
+5. Build the base `others` set from `actor.room.getBroadcastTargets()` in its iteration order.
+6. Remove null/invalid recipients.
+7. De-duplicate recipients by identity (first occurrence wins).
+8. Apply audience-policy exclusions (`self`/`target`) to derive final recipient partitions.
 
 `others` definition in v1:
 
@@ -367,6 +388,9 @@ Recommended stable codes for telemetry:
 - `SEMANTIC_TEMPLATE_INVALID`
 - `SEMANTIC_PARTICIPANT_MISSING`
 - `SEMANTIC_AUDIENCE_POLICY_INVALID`
+- `SEMANTIC_ACTOR_UNRESOLVED`
+- `SEMANTIC_ACTOR_ROOM_UNRESOLVED`
+- `SEMANTIC_ACTOR_ALIAS_MISMATCH`
 - `SEMANTIC_DISPATCH_FAILED`
 
 These are diagnostics codes. Player-facing fallback messaging remains command/dispatch owned.
@@ -375,6 +399,11 @@ These are diagnostics codes. Player-facing fallback messaging remains command/di
 
 `semanticEvent` is additive. Existing `broadcast` instructions remain valid
 under current command architecture/runtime contracts.
+
+Actor speech/action delivery rule:
+
+- When actor-authored speech/actions can be expressed as `semanticEvent`, commands/scripts should use `semanticEvent` instead of direct `broadcast` substitution.
+- `broadcast` remains valid for non-semantic/system output that does not require semantic participant perspective rendering.
 
 Render payload shape is `render.messages`:
 
@@ -405,7 +434,7 @@ Canonical event:
   template: '{actor.you} {verb:place} {object.direct} into {target.you}.',
   audiencePolicy: 'self_and_others',
   participants: {
-    actor: { selector: 'currentPlayer' },
+    actor: { selector: 'currentActor' },
     target: { selector: 'entityByContextRole', role: 'indirectTarget' }
   },
   objectText: {
