@@ -58,7 +58,7 @@ File scope: `bundles/bundle-rantamuta/lib/session/command-dispatch.js`
 Acceptance criteria: render dispatch context explicitly passes actor identity (not transport-derived); existing player-backed command behavior remains unchanged.
 Validation commands: `npx mocha bundles/bundle-rantamuta/tests/command.dispatch.test.js --grep \"semanticEvent|currentActor|currentPlayer\"`
 
-7. [ ] Remove stale semantic renderer integration note.
+7. [x] Remove stale semantic renderer integration note.
 File scope: `bundles/bundle-rantamuta/lib/session/semantic-message.js`
 Acceptance criteria: module comments accurately describe current runtime wiring through render-dispatch.
 Validation commands: `npm test -- --grep \"semantic-message|semanticEvent\"`
