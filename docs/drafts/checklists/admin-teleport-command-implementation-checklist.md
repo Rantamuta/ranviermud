@@ -43,83 +43,83 @@ These facts justify adding `teleport` at the same `input-events/main.js` layer a
 
 ## 1. Preflight
 
-- [ ] Open `bundles/bundle-rantamuta/input-events/main.js`.
-- [ ] Open `bundles/bundle-rantamuta/tests/input.events.main.test.js`.
+- [x] Open `bundles/bundle-rantamuta/input-events/main.js`.
+- [x] Open `bundles/bundle-rantamuta/tests/input.events.main.test.js`.
 - [ ] Confirm baseline tests pass before edits:
 - [ ] `npm test`
 
 ## 2. Add Teleport Fast-Path in `input-events/main.js`
 
-- [ ] In the `case 'inGame':` block, keep `quit`/`exit` fast-path behavior unchanged.
-- [ ] Immediately after `quit`/`exit` check and before `handleCommand(...)`, add `teleport` parsing logic.
-- [ ] Parse input into:
-- [ ] `commandToken` (first token, lowercase)
-- [ ] `commandArgsRaw` (remaining text after first token, unmodified except trim)
-- [ ] If using a `switch`, switch on `commandToken`, not full `input`.
-- [ ] Do not switch on full normalized input (`teleport codex:square` would miss `case 'teleport'`).
-- [ ] detect `teleport` by exact first-token match.
-- [ ] If first token is not `teleport`, keep existing path: `return await handleCommand(state, session, input);`.
+- [x] In the `case 'inGame':` block, keep `quit`/`exit` fast-path behavior unchanged.
+- [x] Immediately after `quit`/`exit` check and before `handleCommand(...)`, add `teleport` parsing logic.
+- [x] Parse input into:
+- [x] `commandToken` (first token, lowercase)
+- [x] `commandArgsRaw` (remaining text after first token, unmodified except trim)
+- [x] If using a `switch`, switch on `commandToken`, not full `input`.
+- [x] Do not switch on full normalized input (`teleport codex:square` would miss `case 'teleport'`).
+- [x] detect `teleport` by exact first-token match.
+- [x] If first token is not `teleport`, keep existing path: `return await handleCommand(state, session, input);`.
 
 ## 3. Add Admin Gate
 
-- [ ] Extract `player` from `session.player`.
-- [ ] Compute admin status as numeric `role >= 2`.
-- [ ] For non-admin `teleport` input:
-- [ ] do not emit custom messages.
-- [ ] do not call `moveTo`.
-- [ ] do not return early.
-- [ ] fall through to existing `handleCommand(state, session, input)` path so unknown-command flow owns `What?`.
+- [x] Extract `player` from `session.player`.
+- [x] Compute admin status as numeric `role >= 2`.
+- [x] For non-admin `teleport` input:
+- [x] do not emit custom messages.
+- [x] do not call `moveTo`.
+- [x] do not return early.
+- [x] fall through to existing `handleCommand(state, session, input)` path so unknown-command flow owns `What?`.
 
 ## 4. Add Teleport Execution Path (Admin Only)
 
-- [ ] Parse destination room ref from remainder of input after `teleport`.
-- [ ] Trim destination ref string.
-- [ ] Resolve destination with `state.RoomManager.getRoom(destinationRef)` if available.
-- [ ] Do not add existence checks/validation or custom destination error text.
-- [ ] Call `player.moveTo(resolvedRoom)` directly in this fast-path.
-- [ ] After movement call, show prompt to player and `return` so command-dispatch is not invoked.
+- [x] Parse destination room ref from remainder of input after `teleport`.
+- [x] Trim destination ref string.
+- [x] Resolve destination with `state.RoomManager.getRoom(destinationRef)` if available.
+- [x] Do not add existence checks/validation or custom destination error text.
+- [x] Call `player.moveTo(resolvedRoom)` directly in this fast-path.
+- [x] After movement call, show prompt to player and `return` so command-dispatch is not invoked.
 
 ## 5. Keep Scope Minimal
 
-- [ ] Do not add a new diegetic command file under `commands/`.
-- [ ] Do not modify command-dispatch unknown-command handling.
-- [ ] Do not modify parser/canonicalizer.
-- [ ] Do not touch engine/core internals.
+- [x] Do not add a new diegetic command file under `commands/`.
+- [x] Do not modify command-dispatch unknown-command handling.
+- [x] Do not modify parser/canonicalizer.
+- [x] Do not touch engine/core internals.
 
 ## 6. Add/Update Unit Tests in `input.events.main.test.js`
 
-- [ ] Keep existing `quit` and `exit` tests passing.
-- [ ] Add test: `non-admin teleport falls through to unknown-command What?`.
-- [ ] Use `role: 0` or `role: 1`.
-- [ ] Provide `state.CommandManager` stub that resolves no commands (`get` => `null`).
-- [ ] Stub `Broadcast.sayAt` and `Broadcast.prompt`.
-- [ ] Execute `mainInputEvent.event(state)(session, 'teleport codex:square')`.
-- [ ] Assert output includes `What?`.
-- [ ] Assert no `player.moveTo` call occurred.
+- [x] Keep existing `quit` and `exit` tests passing.
+- [x] Add test: `non-admin teleport falls through to unknown-command What?`.
+- [x] Use `role: 0` or `role: 1`.
+- [x] Provide `state.CommandManager` stub that resolves no commands (`get` => `null`).
+- [x] Stub `Broadcast.sayAt` and `Broadcast.prompt`.
+- [x] Execute `mainInputEvent.event(state)(session, 'teleport codex:square')`.
+- [x] Assert output includes `What?`.
+- [x] Assert no `player.moveTo` call occurred.
 
-- [ ] Add test: `admin teleport moves player to resolved room and bypasses command-dispatch`.
-- [ ] Use `role: 2`.
-- [ ] Stub `state.RoomManager.getRoom` to return a destination room object for a known ref.
-- [ ] Stub `player.moveTo` to capture argument.
-- [ ] Stub `state.CommandManager.get` to throw if invoked (proves bypass).
-- [ ] Execute `mainInputEvent.event(state)(session, 'teleport codex:square')`.
-- [ ] Assert `moveTo` called once with the destination room object.
-- [ ] Assert `session.processing` resets to `false`.
+- [x] Add test: `admin teleport moves player to resolved room and bypasses command-dispatch`.
+- [x] Use `role: 2`.
+- [x] Stub `state.RoomManager.getRoom` to return a destination room object for a known ref.
+- [x] Stub `player.moveTo` to capture argument.
+- [x] Stub `state.CommandManager.get` to throw if invoked (proves bypass).
+- [x] Execute `mainInputEvent.event(state)(session, 'teleport codex:square')`.
+- [x] Assert `moveTo` called once with the destination room object.
+- [x] Assert `session.processing` resets to `false`.
 
-- [ ] Add test: `admin teleport with unresolved destination still attempts moveTo without guardrails`.
-- [ ] Use `role: 2`.
-- [ ] Stub `state.RoomManager.getRoom` to return `undefined`.
-- [ ] Stub `player.moveTo` and capture the argument without throwing.
-- [ ] Execute `mainInputEvent.event(state)(session, 'teleport missing:room')`.
-- [ ] Assert `moveTo` called once with `undefined`.
-- [ ] Assert no custom fallback text was emitted by the teleport path.
+- [x] Add test: `admin teleport with unresolved destination still attempts moveTo without guardrails`.
+- [x] Use `role: 2`.
+- [x] Stub `state.RoomManager.getRoom` to return `undefined`.
+- [x] Stub `player.moveTo` and capture the argument without throwing.
+- [x] Execute `mainInputEvent.event(state)(session, 'teleport missing:room')`.
+- [x] Assert `moveTo` called once with `undefined`.
+- [x] Assert no custom fallback text was emitted by the teleport path.
 
 ## 7. Validation Commands
 
-- [ ] Run targeted test file:
-- [ ] `npx mocha bundles/bundle-rantamuta/tests/input.events.main.test.js`
-- [ ] Run full suite:
-- [ ] `npm test`
+- [x] Run targeted test file:
+- [x] `npx mocha bundles/bundle-rantamuta/tests/input.events.main.test.js`
+- [x] Run full suite:
+- [x] `npm test`
 - [ ] Run CI parity suite:
 - [ ] `npm run ci:local`
 
