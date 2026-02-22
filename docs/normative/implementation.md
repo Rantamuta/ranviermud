@@ -116,6 +116,13 @@ Implementation rules:
 
 After implementation, MUST check off the corresponding checklist item and commit implementation changes with an imperative subject derived from checklist intent.
 
+Checklist check-off and implementation commits are checkpoint-coupled:
+
+- When an item reaches done-state, the same checkpoint MUST include:
+  - the checklist check-off update, and
+  - the implementation change commit(s) for that item.
+- Deferring checklist check-off to a later unrelated checkpoint is not allowed.
+
 ## Dual-Repository Commit Ordering
 
 This repository has two git scopes:
@@ -131,6 +138,7 @@ Commit protocol for each checkpoint (test commit and implementation commit):
 Additional rules:
 
 - Root commit SHOULD include all changed root files for that checkpoint.
+- For item-completion checkpoints with `bundles/bundle-rantamuta` changes, the root checkpoint commit MUST include the checklist check-off update for that same item (alongside the submodule pointer update).
 - If either repository is clean at a checkpoint, no commit is required in that repository.
 - A commit MUST NOT be created for a clean tree.
 
