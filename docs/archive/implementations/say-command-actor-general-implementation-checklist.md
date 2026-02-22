@@ -19,30 +19,30 @@ Add in-pipeline `say <text>` for player and NPC actors using Render/Dispatch sem
 
 ## Preconditions (Command 2)
 
-- [ ] Approval to execute this checklist is explicit.
-- [ ] Working tree is clean in repository root.
-- [ ] Working tree is clean in `bundles/bundle-rantamuta`.
-- [ ] Branch created and checked out (`<imperative>-<noun>` descriptive name).
-- [ ] Task classification recorded: `behavior-changing`.
+- [x] Approval to execute this checklist is explicit.
+- [x] Working tree is clean in repository root.
+- [x] Working tree is clean in `bundles/bundle-rantamuta`.
+- [x] Branch created and checked out (`<imperative>-<noun>` descriptive name).
+- [x] Task classification recorded: `behavior-changing`.
 
 ## Checklist
 
-- [ ] Confirm baseline dispatch behavior and selector handling in:
+- [x] Confirm baseline dispatch behavior and selector handling in:
   - `bundles/bundle-rantamuta/lib/session/semantic-message.js`
   - `bundles/bundle-rantamuta/lib/session/render-dispatch.js`
   - `bundles/bundle-rantamuta/tests/command.dispatch.test.js`
 
-- [ ] Add fail-first tests for actor-general selector support (`currentActor`) and compatibility alias behavior (`currentPlayer`) in:
+- [x] Add fail-first tests for actor-general selector support (`currentActor`) and compatibility alias behavior (`currentPlayer`) in:
   - `bundles/bundle-rantamuta/tests/command.dispatch.test.js`
   Acceptance expectation:
   - `currentActor` resolves actor identity for player and NPC actor contexts.
   - Missing actor context returns structured semantic diagnostics.
 
-- [ ] Implement `currentActor` selector support in:
+- [x] Implement `currentActor` selector support in:
   - `bundles/bundle-rantamuta/lib/session/semantic-message.js`
   - `bundles/bundle-rantamuta/lib/session/render-dispatch.js`
 
-- [ ] Add fail-first command-contract tests for `say` in:
+- [x] Add fail-first command-contract tests for `say` in:
   - `bundles/bundle-rantamuta/tests/say.command.test.js` (new)
   Acceptance expectation:
   - deterministic sanitization: trim, newline-to-space, whitespace collapse
@@ -50,42 +50,43 @@ Add in-pipeline `say <text>` for player and NPC actors using Render/Dispatch sem
   - veto codes: `SAY_EMPTY`, `SAY_TOO_LONG`
   - success plan: one semantic event, `self_and_others`, actor selector `currentActor`, `plan.operations: [{ type: 'noop' }]`
 
-- [ ] Implement `say` command in:
+- [x] Implement `say` command in:
   - `bundles/bundle-rantamuta/commands/say.js` (new)
   Guardrails:
   - capture emits no output
   - no direct NPC script speech via `Broadcast.sayAt`
 
-- [ ] Add/adjust fail-first pipeline tests for player and NPC actor delivery using existing `handleCommand(...)` entrypoint in:
+- [x] Add/adjust fail-first pipeline tests for player and NPC actor delivery using existing `handleCommand(...)` entrypoint in:
   - `bundles/bundle-rantamuta/tests/command.dispatch.test.js`
   Acceptance expectation:
   - actor line: `You say, "<text>"`
   - bystander line: `<Name> says, "<text>"`
 
-- [ ] Implement/adjust dispatch integration until pipeline tests pass.
+- [x] Implement/adjust dispatch integration until pipeline tests pass.
 
-- [ ] Update `CHANGELOG.md` with unreleased entry for `say` and actor-general selector support (Summary/Why/Impact/Migration/References/Timestamp).
+- [x] Update `CHANGELOG.md` with unreleased entry for `say` and actor-general selector support (Summary/Why/Impact/Migration/References/Timestamp).
 
 ## Commit Plan (Recommended)
 
-- [ ] `Test currentActor and say dispatch`
-- [ ] `Support currentActor semantic selector`
-- [ ] `Test say command contract`
-- [ ] `Implement say command`
-- [ ] `Wire say through dispatch pipeline`
-- [ ] `Document say command in changelog`
+- [x] `Test currentActor selector behavior`
+- [x] `Support currentActor semantic selector`
+- [x] `Test say command contract`
+- [x] `Test say dispatch pipeline`
+- [x] `Implement say command`
+- [x] `Wire say through dispatch pipeline`
+- [x] `Document say command in changelog`
 
 ## Verification
 
-- [ ] `npx mocha bundles/bundle-rantamuta/tests/command.dispatch.test.js`
-- [ ] `npx mocha bundles/bundle-rantamuta/tests/say.command.test.js`
-- [ ] `npm test`
-- [ ] `npm run ci:local`
+- [x] `npx mocha bundles/bundle-rantamuta/tests/command.dispatch.test.js`
+- [x] `npx mocha bundles/bundle-rantamuta/tests/say.command.test.js`
+- [x] `npm test`
+- [x] `npm run ci:local -- --in-place` (worktree mode failed because local submodule commit is not yet on remote)
 
 ## Archive Handoff
 
-- [ ] Move this checklist from `docs/drafts/checklists/` to `docs/archive/implementations/`.
+- [x] Move this checklist from `docs/drafts/checklists/` to `docs/archive/implementations/`.
 
 ## Approval Gate
 
-- [ ] Checklist is complete and ready for maintainer approval before implementation.
+- [x] Checklist is complete and ready for maintainer approval before implementation.
