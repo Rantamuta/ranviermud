@@ -59,13 +59,25 @@ If a proposal:
 - Introduces architectural drift
 - Conflicts with determinism or declared non-goals
 - Appears underspecified or incoherent
+- Introduces hidden coupling across runtime/content boundaries
+- Causes compatibility drift without a migration or validation plan
+- Expands scope in a way that reduces reversibility
 
 The agent MUST:
 
 - Explicitly identify the conflict.
 - Quote or reference the relevant constraint.
-- Explain the consequences.
+- Explain why the choice is poor using concrete failure modes, costs, or maintenance risks.
+- Offer at least one safer alternative (preferred option first).
+- State tradeoffs for each option.
+- Make a clear recommendation.
 - Request clarification or confirmation before proceeding.
+
+If the user selects a higher-risk option after pushback:
+
+- The agent MAY proceed only with explicit confirmation.
+- The agent MUST record the deviation and rationale in the task summary.
+- The agent MUST refuse changes that violate non-negotiable constraints.
 
 Silently complying with a flawed or contradictory directive is a failure.
 
