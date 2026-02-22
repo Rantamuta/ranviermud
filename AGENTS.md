@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This repository is maintained with help from automated agents (Codex). This document defines non-negotiable constraints, maintenance policy, and the expected workflow so changes remain incremental, reviewable, and safe.
+This repository is maintained with help from automated agents (Codex). This document defines non-negotiable constraints, compatibility policy, and the expected workflow so changes remain incremental, reviewable, and safe.
 
 `ranviermud` is the **runnable wrapper and integration surface** for the Rantamuta MUD engine. It owns boot, configuration, wiring, and example playability, not engine internals.
 
@@ -48,7 +48,7 @@ No changes without approval.
 The agent MUST actively evaluate proposals against:
 
 - `docs/normative`
-- Existing ADRs
+- Existing ADRs (see `docs/ADR_POLICY.md`)
 - The declared spec
 - Previously established constraints
 
@@ -59,13 +59,25 @@ If a proposal:
 - Introduces architectural drift
 - Conflicts with determinism or declared non-goals
 - Appears underspecified or incoherent
+- Introduces hidden coupling across runtime/content boundaries
+- Causes compatibility drift without a migration or validation plan
+- Expands scope in a way that reduces reversibility
 
 The agent MUST:
 
 - Explicitly identify the conflict.
 - Quote or reference the relevant constraint.
-- Explain the consequences.
+- Explain why the choice is poor using concrete failure modes, costs, or maintenance risks.
+- Offer at least one safer alternative (preferred option first).
+- State tradeoffs for each option.
+- Make a clear recommendation.
 - Request clarification or confirmation before proceeding.
+
+If the user selects a higher-risk option after pushback:
+
+- The agent MAY proceed only with explicit confirmation.
+- The agent MUST record the deviation and rationale in the task summary.
+- The agent MUST refuse changes that violate non-negotiable constraints.
 
 Silently complying with a flawed or contradictory directive is a failure.
 
@@ -84,14 +96,18 @@ The agent must not collapse these phases.
 If a proposal meaningfully alters architecture, policy, or long-term constraints:
 
 - Recommend creating or updating an ADR before implementation.
+- Follow ADR location/lifecycle rules in `docs/ADR_POLICY.md`.
 - Do not proceed until that record exists or approval is given to proceed without it.
 
 ## High-level goals
 
 - Keep the project runnable and usable on modern Node LTS.
-- Support a **pure maintenance 1.0 release** after a long dormancy.
-- Restore and preserve a reliable out-of-the-box experience.
+- Preserve a reliable out-of-the-box experience for builders and players.
+- Evolve `bundles/bundle-rantamuta` as a reference bundle for the Rantamuta approach.
+- Emphasize deterministic command flow, careful mutation, principled typing, and strong ergonomics for developers, designers, and players.
 - Prefer small, reversible changes over rewrites.
+
+Project direction and terminology are documented in `docs/ProjectDirection.md` (non-normative).
 
 ## Non-goals
 
@@ -99,7 +115,7 @@ If a proposal meaningfully alters architecture, policy, or long-term constraints
 - No changes to engine internals (`Rantamuta/core`) unless explicitly requested.
 - No CLI UX redesign.
 - No “cleanup” refactors for style or aesthetics.
-- No new features beyond maintenance and playability fixes.
+- No speculative work without a clear behavior goal and validation plan.
 
 ## Bundle layering boundary
 
@@ -150,12 +166,23 @@ Treat any externally observable change as a behavior change, including:
 
 Assume compatibility matters unless explicitly instructed otherwise.
 
+## Compatibility change authorization
+
+Compatibility-impacting changes may proceed with explicit maintainer approval.
+
+For each approved compatibility change, the agent MUST:
+
+- capture approval scope (what boundary may change, and any explicit boundaries that must not change),
+- update affected normative contract file(s) in `docs/normative/`, or explicitly state why no normative update is needed,
+- update `CHANGELOG.md` when the change is user-visible/runtime-visible (per `docs/CHANGELOG_POLICY.md`),
+- create or update an ADR when long-term architecture/policy/compatibility posture changes (per `docs/ADR_POLICY.md`),
+- report validation evidence and rollback approach in the task summary.
+
 ## Local CI parity policy
 
 This repository must maintain a **local equivalent of CI** so changes are reproducible without relying on external systems.
 
-- `npm test` **must always pass**.
-- `npm run ci:local` **must exist** and **must always pass**
+- `npm run ci:local` **must exist**.
 - GitHub Actions CI is the final gate, but agents must not claim CI is green unless they can directly observe it.
 
 ### CI change rule
@@ -174,10 +201,21 @@ If a PR or task changes GitHub Actions workflows or CI expectations:
 
 In the `ci:local` runner, annotate each step with `// CI: <step name>`. For skipped steps use `// CI: <step name> (SKIPPED)` and include a short reason on the next line.
 
-### `ci:local` expectations
+### Validation requirements by task type
 
-- agents must ensure `npm run ci:local` passes locally before stopping the current task.
-- `ci:local` must be a faithful representation of `.github/workflows/ci.yml`
+Behavior-changing tasks (runtime behavior, executable code, CI/scripts, dependencies, config resolution, or normative behavior contract changes):
+
+- MUST run `npm test`.
+- MUST run `npm run ci:local`.
+- If `ci:local` is blocked by dirty-tree checks during in-progress work, `npm run ci:local -- --force` MAY be used for interim validation.
+- Before final completion, validation SHOULD be re-run from a clean tree when practical.
+
+Docs-only or information-gathering tasks:
+
+- MAY skip `npm test` and `npm run ci:local`.
+- MUST explicitly state which validations were skipped and why.
+
+If task classification is unclear, default to behavior-changing validation or request maintainer confirmation.
 
 ## Required safety rails before risky changes
 
@@ -192,15 +230,13 @@ Before upgrading dependencies, changing runtime behavior, or touching boot logic
 
 Prefer a minimal smoke test over broad refactors.
 
-## Modernization posture
-
-This repository is in **maintenance mode**.
+## Delivery posture
 
 Default bias:
 
 - document > test > guard > refactor
-- configuration and tooling over code changes
 - clarity and playability over elegance
+- focused changes over broad rewrites
 
 Avoid:
 
@@ -230,8 +266,14 @@ User-visible changes, dependency removals, or security-motivated actions should 
 Stop work immediately when:
 
 - all explicitly requested tasks or checklist items are complete
-- `npm test` and `npm run ci:local` pass locally
-- no new correctness issues are discovered in a final pass
+- required validations from `Validation requirements by task type` are complete and passing (or explicitly skipped when allowed)
+- no new blocking correctness issues remain in changed scope after a final pass
+
+If new correctness issues are discovered outside current scope:
+
+- document them in the task summary (file/path, risk, and recommended follow-up),
+- do not expand scope unless the maintainer explicitly asks,
+- escalate immediately instead of stopping only when the issue is critical (for example security, data loss, or startup failure).
 
 Do not continue with “nice-to-have” improvements beyond the stated scope.
 
@@ -239,56 +281,15 @@ Do not continue with “nice-to-have” improvements beyond the stated scope.
 
 If behavior is unclear:
 
-- Add a test that captures current behavior first, or
-- Document the uncertainty explicitly in the PR description.
+- If implementation approval is already granted, add a test that captures current behavior first unless equivalent coverage already exists; when using the coverage off-ramp, cite the existing test file(s) and case(s).
+- If implementation approval is not yet granted, propose the characterization test (including affected files) and wait for confirmation before changing files.
+- If no code change is requested, document the uncertainty explicitly in the task summary or PR description.
 - Do **not** guess and move on.
 
-## Typecheck triage and remediation policy
+## Typecheck policy
 
-Typecheck errors are compatibility signals. Agents must resolve root contract drift, not bypass the checker.
-
-When `npm run typecheck` fails, agents must triage before editing code.
-
-- For each error, provide an evidence table with:
-- `file:line`
-- error text
-- classification (`local type definition error`, `local implementation error`, or `core typedef error`)
-- reason and proposed fix type (`type-only` or `behavior-changing`)
-
-Default rule for typecheck tasks: **type-only fixes unless behavior change is explicitly approved**.
-
-Allowed in type-only fixes:
-
-- JSDoc/typedef corrections
-- explicit type annotations and narrowing
-- literal-type preservation (`ok: true` style)
-- safe, minimal casts with documented rationale
-
-Not allowed in type-only fixes:
-
-- adding fallback branches/defaults only to silence errors
-- changing control flow, side effects, emitted output, or command semantics
-- changing payload shapes unless behavior change is explicitly approved
-- introducing broad `any`, `as unknown as`, or suppression directives (`@ts-ignore`, `@ts-expect-error`) without explicit approval and written rationale
-
-If a type error appears to require behavior change:
-
-- Stop and request explicit approval.
-- Present two options:
-- type-only containment
-- behavior-changing implementation fix
-
-Core typedef handling:
-
-- Do not edit `node_modules` directly.
-- Do not contort local runtime code to satisfy a suspected wrong core typedef.
-- If a core typedef is wrong, propose a core typedef patch (or local override shim) and request approval, because engine/core changes are out of scope unless explicitly authorized.
-
-Validation requirements for typecheck work:
-
-- include `npm run typecheck` result before and after
-- include `npm test` result after changes
-- state explicitly whether behavior changed (`no` for type-only fixes)
+Typecheck triage and remediation requirements are normative in `docs/normative/TypecheckPolicy.md`.
+Agents MUST follow that policy for all typecheck tasks.
 
 ## Normative documents
 

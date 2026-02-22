@@ -1,11 +1,11 @@
-# Changelog Policy (Maintenance Releases)
+# Changelog Policy
 
-This repository is a maintenance and stewardship fork of RanvierMUD. The changelog exists to document:
+This repository builds on RanvierMUD as the runnable wrapper and integration surface for Rantamuta. The changelog exists to document:
 
 - user-visible changes,
 - dependency and security actions,
 - runtime/CI changes, and
-- deliberate drifts or modernizations relative to the original RanvierMUD behavior or dependencies.
+- deliberate drifts or directional changes relative to original RanvierMUD behavior or dependencies.
 
 The policy below is intentionally lightweight. It should be followed by maintainers, downstream game repo owners, bundle authors, and automated agents working on the core engine.
 
@@ -44,6 +44,13 @@ When documenting drift from RanvierMUD, be explicit about:
 - why the change was made,
 - any operational or compatibility implications.
 
+## Lightweight cross-check (required)
+
+When adding or updating a changelog entry, run this quick check:
+
+- ADR candidate check: did this change establish or alter architecture boundaries, long-term constraints, compatibility posture, or process policy? If yes, create or update an ADR per `docs/ADR_POLICY.md`.
+- Normative candidate check: did this change alter executable behavior contracts? If yes, update the relevant file(s) in `docs/normative/`.
+
 ## Format (recommended)
 
 Use a simple, consistent structure in `CHANGELOG.md`:
@@ -61,6 +68,8 @@ Use a simple, consistent structure in `CHANGELOG.md`:
 - Migration/Action:
   - ...
 - References:
+  - ...
+- Timestamp:
   - ...
 ```
 

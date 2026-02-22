@@ -16,6 +16,8 @@ This directory contains behavior contracts that are normative for this repositor
   - Defines read-only entity binding, deterministic scope/disambiguation behavior, and resolver failure ownership.
 - `PredicateStateRendering.md`
   - Defines predicates as the authoritative, render-only mechanism for state-dependent room description rendering (`descriptionVariants` / `descriptionFragments`).
+- `TypecheckPolicy.md`
+  - Defines the required triage and remediation workflow for typecheck failures, including type-only defaults and behavior-change escalation.
 - `VirtualDoor.md`
   - Defines virtual-door pairing, lifecycle ownership, mutation/query semantics, and door command/movement behavior.
 
@@ -23,6 +25,8 @@ This directory contains behavior contracts that are normative for this repositor
 
 - `../BundleRantamutaTechnicalManual.md`
   - Bundle-level implementation map (file-by-file runtime flow, hooks, mutator, rendering, and scenario/test surfaces).
+- `../ProjectDirection.md`
+  - Project mission and direction summary, including the working definition of the Rantamuta approach.
 
 ## Proposed normative extensions (in review)
 
