@@ -63,7 +63,7 @@ File scope: `bundles/bundle-rantamuta/lib/session/semantic-message.js`
 Acceptance criteria: module comments accurately describe current runtime wiring through render-dispatch.
 Validation commands: `npm test -- --grep \"semantic-message|semanticEvent\"`
 
-8. [ ] Update changelog for user-visible/runtime-visible semantic behavior changes.
+8. [x] Update changelog for user-visible/runtime-visible semantic behavior changes.
 File scope: `CHANGELOG.md`
 Acceptance criteria: unreleased entry summarizes behavior delta, why it changed, and impact/rollback notes where relevant.
 Validation commands: `npm test`
