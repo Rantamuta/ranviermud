@@ -48,12 +48,12 @@ File scope: `bundles/bundle-rantamuta/tests/command.dispatch.test.js`
 Acceptance criteria: for a single invalid semantic instruction, no recipient receives partial semantic output; dispatch logs failure and continues with following render instructions.
 Validation commands: `npx mocha bundles/bundle-rantamuta/tests/command.dispatch.test.js --grep \"semanticEvent|partial|continues\"`
 
-5. [ ] Refactor semantic dispatch recipient construction to match spec ordering and dedup semantics.
+5. [x] Refactor semantic dispatch recipient construction to match spec ordering and dedup semantics.
 File scope: `bundles/bundle-rantamuta/lib/session/render-dispatch.js`
 Acceptance criteria: recipient membership/order is frozen before send; dedup identity is applied across actor/target/others for each semantic event; policy exclusions are applied from actor-room broadcast roots in deterministic order.
 Validation commands: `npx mocha bundles/bundle-rantamuta/tests/command.dispatch.test.js --grep \"semanticEvent|recipient|dedup|ordering\"`
 
-6. [ ] Ensure semantic dispatch context includes explicit actor identity.
+6. [x] Ensure semantic dispatch context includes explicit actor identity.
 File scope: `bundles/bundle-rantamuta/lib/session/command-dispatch.js`
 Acceptance criteria: render dispatch context explicitly passes actor identity (not transport-derived); existing player-backed command behavior remains unchanged.
 Validation commands: `npx mocha bundles/bundle-rantamuta/tests/command.dispatch.test.js --grep \"semanticEvent|currentActor|currentPlayer\"`
