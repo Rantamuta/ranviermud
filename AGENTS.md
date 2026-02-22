@@ -262,8 +262,9 @@ Do not continue with “nice-to-have” improvements beyond the stated scope.
 
 If behavior is unclear:
 
-- Add a test that captures current behavior first, or
-- Document the uncertainty explicitly in the PR description.
+- If implementation approval is already granted, add a test that captures current behavior first unless equivalent coverage already exists; when using the coverage off-ramp, cite the existing test file(s) and case(s).
+- If implementation approval is not yet granted, propose the characterization test (including affected files) and wait for confirmation before changing files.
+- If no code change is requested, document the uncertainty explicitly in the task summary or PR description.
 - Do **not** guess and move on.
 
 ## Typecheck triage and remediation policy
