@@ -279,13 +279,13 @@ Verb inflection rules in v1:
 - if recipient is the subject, verb remains base form.
 - if recipient is not the subject, renderer inflects to third-person singular.
 
-2. Inflection pipeline (deterministic order):
+1. Inflection pipeline (deterministic order):
 
 - explicit irregular dictionary (highest priority)
 - targeted suffix rules
 - deterministic fallback rules
 
-3. Contraction handling:
+1. Contraction handling:
 
 - contractions are treated as one lexical unit for inflection (for example `don't`, `aren't`).
 
@@ -402,7 +402,7 @@ under current command architecture/runtime contracts.
 
 Actor speech/action delivery rule:
 
-- When actor-authored speech/actions can be expressed as `semanticEvent`, commands/scripts should use `semanticEvent` instead of direct `broadcast` substitution.
+- When actor-authored speech/actions can be expressed as `semanticEvent`, commands/scripts must use `semanticEvent` instead of direct `broadcast` substitution.
 - `broadcast` remains valid for non-semantic/system output that does not require semantic participant perspective rendering.
 
 Render payload shape is `render.messages`:
