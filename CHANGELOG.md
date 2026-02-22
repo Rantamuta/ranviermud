@@ -4,6 +4,27 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Say command with actor-general semantic selector
+
+Summary:
+
+- Added an in-pipeline `say <text>` command in `bundle-rantamuta` with deterministic speech normalization and structured capture veto codes (`SAY_EMPTY`, `SAY_TOO_LONG`).
+- Added semantic participant selector support for `currentActor` in semantic render/dispatch so actor-authored events render correctly for both player and NPC actor contexts.
+Why:
+- Speech must flow through the same transactional command pipeline and Render/Dispatch contract used by other diegetic commands.
+- Actor-general selector support is required so semantic events can use actor identity without coupling to player-only selector assumptions.
+Impact:
+- Players and NPC actors can now run `say` through command-dispatch and emit perspective-correct room speech lines (`You say, ...` / `<Name> says, ...`).
+- Existing `currentPlayer` semantic selector behavior remains supported for compatibility.
+Migration/Action:
+- None required.
+- New semantic-event content should prefer `participants.actor: { selector: 'currentActor' }`.
+References:
+- `bundles/bundle-rantamuta/commands/say.js`
+- `bundles/bundle-rantamuta/lib/session/semantic-message.js`
+- `bundles/bundle-rantamuta/lib/session/render-dispatch.js`
+Timestamp: 2026.02.22 18:15
+
 ### Semantic messaging actor-general amendment
 
 Summary:
