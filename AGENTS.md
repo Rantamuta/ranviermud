@@ -267,7 +267,13 @@ Stop work immediately when:
 
 - all explicitly requested tasks or checklist items are complete
 - required validations from `Validation requirements by task type` are complete and passing (or explicitly skipped when allowed)
-- no new correctness issues are discovered in a final pass
+- no new blocking correctness issues remain in changed scope after a final pass
+
+If new correctness issues are discovered outside current scope:
+
+- document them in the task summary (file/path, risk, and recommended follow-up),
+- do not expand scope unless the maintainer explicitly asks,
+- escalate immediately instead of stopping only when the issue is critical (for example security, data loss, or startup failure).
 
 Do not continue with “nice-to-have” improvements beyond the stated scope.
 
