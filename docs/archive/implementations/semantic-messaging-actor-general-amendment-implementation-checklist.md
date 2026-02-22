@@ -68,26 +68,26 @@ File scope: `CHANGELOG.md`
 Acceptance criteria: unreleased entry summarizes behavior delta, why it changed, and impact/rollback notes where relevant.
 Validation commands: `npm test`
 
-9. [ ] Record implementation completion status and archive checklist.
+9. [x] Record implementation completion status and archive checklist.
 File scope: `docs/drafts/checklists/semantic-messaging-actor-general-amendment-implementation-checklist.md`, `docs/archive/implementations/`
 Acceptance criteria: checklist items are checked with completion evidence; file is moved to archive after Command 2 completes.
 Validation commands: `git status --short`
 
 ## Commit Plan (Recommended)
 
-- [ ] `Test semantic actor alias mismatch`
-- [ ] `Enforce semantic actor alias contract`
-- [ ] `Test semantic recipient partition rules`
-- [ ] `Align semantic dispatch recipient ordering`
-- [ ] `Document semantic dispatch behavior update`
+- [x] `Test semantic actor alias mismatch`
+- [x] `Enforce semantic actor alias contract`
+- [x] `Test semantic recipient partition rules`
+- [x] `Align semantic dispatch recipient ordering`
+- [x] `Document semantic dispatch behavior update`
 
 ## Verification
 
-- [ ] `npx mocha bundles/bundle-rantamuta/tests/semantic.message.test.js`
-- [ ] `npx mocha bundles/bundle-rantamuta/tests/command.dispatch.test.js`
-- [ ] `npm test`
-- [ ] `npm run ci:local`
+- [x] `npx mocha bundles/bundle-rantamuta/tests/semantic.message.test.js`
+- [x] `npx mocha bundles/bundle-rantamuta/tests/command.dispatch.test.js`
+- [x] `npm test`
+- [x] `npm run ci:local -- --in-place` (default isolated mode could not fetch local submodule commits not present on remote)
 
 ## Approval Gate
 
-- [ ] Checklist reviewed and approved by maintainer before Command 2 execution.
+- [x] Checklist reviewed and approved by maintainer before Command 2 execution.
