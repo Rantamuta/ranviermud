@@ -61,23 +61,32 @@ Rules:
 - Branch naming SHOULD use `<imperative>-<noun>` (example: `implement-clock`).
 - A third clarifying word MAY be used (example: `fix-clock-bug`).
 
-## Checklist Item Quality Contract
+## Checklist Format (Reviewable By Default)
 
-Each checklist item MUST include:
+Checklist authoring MUST optimize for maintainer review speed and clarity.
 
-- A single behavior target (or a single documentation/information target).
-- Exact files expected to change.
-- Acceptance criteria stated as observable outcomes.
-- Test plan with explicit decision:
-  - `required`, or
-  - `omitted` with rationale.
-- Commit subjects:
-  - test commit subject (`Test ...`, under 50 characters),
-  - implementation commit subject (imperative, derived from the item text).
+Checklist documents MUST include:
 
-If an item can be interpreted in two valid ways, the item is invalid until rewritten.
+- Goal
+- Scope
+- Non-goals
+- Checklist (ordered, imperative, checkboxes)
+- Verification
+- Approval gate
 
-## Test-First Execution Rules (Per Item)
+Checklist items MUST be concise and execution-oriented:
+
+- one action per checkbox item
+- observable done-state
+- file/path references only where needed for clarity
+- avoid large narrative blocks and deep sub-bullets
+
+If an item can be interpreted in two valid ways, it is invalid until rewritten.
+
+Commit subjects MAY be listed in a short `Commit plan` section.
+Execution still MUST follow commit rules in this document even when subjects are not pre-written.
+
+## Test-First Execution Rules
 
 Default: tests are required for code-changing items.
 
@@ -105,10 +114,7 @@ Implementation rules:
 - If a test changes after initial failure, change is allowed only when the test is incorrect.
 - MUST record why the prior test was incorrect when such edits occur.
 
-After implementation:
-
-- MUST check off the checklist item.
-- MUST commit implementation changes with an imperative subject derived from the checklist item.
+After implementation, MUST check off the corresponding checklist item and commit implementation changes with an imperative subject derived from checklist intent.
 
 ## Dual-Repository Commit Ordering
 
