@@ -164,6 +164,8 @@ Standard scope sources currently supported by shared resolver helpers:
 
 - `player.inventory`
 - `room.items`
+- `room.npcs`
+- `room.details`
 - `room.exits`
 
 ### Role Binding
