@@ -322,11 +322,17 @@ These names are configuration keys.  The wrapper explicitly wires the `accounts`
 
 #### 4.1.4 NPCs
 
-This subsection documents NPCs as implemented in the engine (`core`) layer: data model, load path, lifecycle, runtime ownership, and extension interfaces.
+This subsection documents NPCs as implemented in the engine (`core`) layer: data model, load path, lifecycle, runtime ownership, extension interfaces, and known contract caveats.
 
 ##### 4.1.4.1 NPC object model
 
-In engine code, NPCs are implemented by `Npc` in `src/Npc.js`.
+In engine code, runtime creature entities are implemented by `Npc` in `src/Npc.js`.
+
+Terminology note:
+
+* Core manager/factory names still use `Mob` (`MobFactory`, `MobManager`).
+* Runtime instances are `Npc` objects.
+* In type declarations, `Mob` is an alias of `Npc` rather than a separate class.
 
 Core facts:
 
@@ -353,7 +359,7 @@ NPC definitions are loaded through the configured `npcs` entity loader category.
 Entity reference and keying:
 
 * NPC definitions are keyed internally by `area:id` using `EntityFactory.createEntityRef(area, id)`.
-* Room spawn entries refer to these entity refs when spawning NPC instances.
+* Room spawn entries in `rooms.yml` refer to these entity refs when spawning NPC instances.
 
 Type-level shape (`types/Npc.d.ts`) includes:
 
@@ -387,9 +393,9 @@ Instance stage:
 NPC runtime ownership is intentionally multi-indexed:
 
 * `MobManager.mobs: Map<uuid, npc>` is the global NPC registry.
-* `Area.npcs: Set<npc>` tracks NPCs that originate from that area.
+* `Area.npcs: Set<npc>` tracks NPCs associated with that area; by contract this is origin-oriented, but it is also used as the active iteration set for area NPC ticks.
 * `Room.npcs: Set<npc>` tracks NPCs currently present in that room.
-* `Room.spawnedNpcs: Set<npc>` tracks NPC lineage for spawn/respawn-oriented bookkeeping even when NPCs walk away.
+* `Room.spawnedNpcs: Set<npc>` tracks spawned NPC lineage for respawn-oriented bookkeeping semantics.
 
 This separation is important for cleanup and area-level ticking.
 
@@ -423,6 +429,10 @@ Order of operations:
 5. Emit NPC `enterRoom`.
 
 This order is stable and is part of how room/NPC scripts observe movement.
+
+Important caveat:
+
+* `moveTo(...)` is room-centric and does not explicitly remove old area membership when moving across areas. For cross-area NPC movement, area index correctness depends on higher-level cleanup discipline.
 
 ##### 4.1.4.7 Behavior and script attachment interfaces
 
@@ -476,7 +486,27 @@ Primary NPC-related engine classes:
 
 `Scriptable.emit(...)` suppresses further event emission on pruned entities.
 
-##### 4.1.4.10 Persistence and compatibility caveats
+Important caveats:
+
+* `removeMob(...)` does not itself call `removeFromCombat()`.
+* `removeMob(...)` does not itself drop/remove NPC-carried or equipped items.
+* therefore, robust teardown of combat and inventory side effects must be handled by caller policy or core hardening.
+
+##### 4.1.4.10 Visibility, messaging, and broadcast semantics
+
+NPC activity is not automatically visible to players unless output is authored.
+
+Core broadcast behavior:
+
+* rooms expose players and NPCs as broadcast targets,
+* but broadcast writes only to targets that have a writable socket.
+
+Practical consequence:
+
+* NPCs can receive room events and participate in scripted logic,
+* but player-visible narration of NPC actions requires explicit scripted or command-pipeline render output.
+
+##### 4.1.4.11 Persistence and compatibility caveats
 
 NPC/world spawn persistence behavior:
 
@@ -489,8 +519,9 @@ Attribute contract caveat:
 Type/API caveat:
 
 * `Npc` has `commandQueue`, but default engine tick wiring does not automatically execute queued NPC commands; command queue presence is a capability surface, not an implicit behavior guarantee.
+* Room/area respawn-oriented fields (`spawnedNpcs`, `lastRespawnTick` docs) exist, but core behavior should be treated as explicit code-path driven rather than assumed from comments alone.
 
-##### 4.1.4.11 What engine provides vs what content provides
+##### 4.1.4.12 What engine provides vs what content provides
 
 Engine provides:
 
@@ -502,7 +533,7 @@ Content/bundles provide:
 * authored NPC scripts/behaviors,
 * gameplay policy (dialogue, aggro, quest flow specifics, vendor mechanics, etc.).
 
-So NPC support is first-class in engine architecture, while concrete NPC behavior is intentionally content-driven.
+So NPC support is first-class in engine architecture, while concrete NPC behavior remains intentionally content-driven.
 
 ### 4.2 EntityLoader: the executable interface
 
