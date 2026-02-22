@@ -166,6 +166,18 @@ Treat any externally observable change as a behavior change, including:
 
 Assume compatibility matters unless explicitly instructed otherwise.
 
+## Compatibility change authorization
+
+Compatibility-impacting changes may proceed with explicit maintainer approval.
+
+For each approved compatibility change, the agent MUST:
+
+- capture approval scope (what boundary may change, and any explicit boundaries that must not change),
+- update affected normative contract file(s) in `docs/normative/`, or explicitly state why no normative update is needed,
+- update `CHANGELOG.md` when the change is user-visible/runtime-visible (per `docs/CHANGELOG_POLICY.md`),
+- create or update an ADR when long-term architecture/policy/compatibility posture changes (per `docs/ADR_POLICY.md`),
+- report validation evidence and rollback approach in the task summary.
+
 ## Local CI parity policy
 
 This repository must maintain a **local equivalent of CI** so changes are reproducible without relying on external systems.
