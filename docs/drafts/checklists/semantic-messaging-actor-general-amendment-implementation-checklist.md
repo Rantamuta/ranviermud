@@ -38,7 +38,7 @@ File scope: `bundles/bundle-rantamuta/lib/session/semantic-message.js`
 Acceptance criteria: when both actor aliases are present and identity differs, renderer returns structured failure with `SEMANTIC_ACTOR_ALIAS_MISMATCH`; valid alias mappings continue to render unchanged.
 Validation commands: `npx mocha bundles/bundle-rantamuta/tests/semantic.message.test.js`
 
-3. [ ] Add fail-first dispatch tests for recipient partition and dedup rules.
+3. [x] Add fail-first dispatch tests for recipient partition and dedup rules.
 File scope: `bundles/bundle-rantamuta/tests/command.dispatch.test.js`
 Acceptance criteria: tests prove deterministic output order (`actor`, `target`, `others`), no duplicate delivery when actor/target/others overlap, and policy-driven inclusion/exclusion behavior for `self`, `others`, `self_and_others`, `self_target_and_others`, and `target_and_others`.
 Validation commands: `npx mocha bundles/bundle-rantamuta/tests/command.dispatch.test.js --grep \"semanticEvent|recipient|dedup|target_and_others\"`
