@@ -267,52 +267,10 @@ If behavior is unclear:
 - If no code change is requested, document the uncertainty explicitly in the task summary or PR description.
 - Do **not** guess and move on.
 
-## Typecheck triage and remediation policy
+## Typecheck policy
 
-Typecheck errors are compatibility signals. Agents must resolve root contract drift, not bypass the checker.
-
-When `npm run typecheck` fails, agents must triage before editing code.
-
-- For each error, provide an evidence table with:
-- `file:line`
-- error text
-- classification (`local type definition error`, `local implementation error`, or `core typedef error`)
-- reason and proposed fix type (`type-only` or `behavior-changing`)
-
-Default rule for typecheck tasks: **type-only fixes unless behavior change is explicitly approved**.
-
-Allowed in type-only fixes:
-
-- JSDoc/typedef corrections
-- explicit type annotations and narrowing
-- literal-type preservation (`ok: true` style)
-- safe, minimal casts with documented rationale
-
-Not allowed in type-only fixes:
-
-- adding fallback branches/defaults only to silence errors
-- changing control flow, side effects, emitted output, or command semantics
-- changing payload shapes unless behavior change is explicitly approved
-- introducing broad `any`, `as unknown as`, or suppression directives (`@ts-ignore`, `@ts-expect-error`) without explicit approval and written rationale
-
-If a type error appears to require behavior change:
-
-- Stop and request explicit approval.
-- Present two options:
-- type-only containment
-- behavior-changing implementation fix
-
-Core typedef handling:
-
-- Do not edit `node_modules` directly.
-- Do not contort local runtime code to satisfy a suspected wrong core typedef.
-- If a core typedef is wrong, propose a core typedef patch (or local override shim) and request approval, because engine/core changes are out of scope unless explicitly authorized.
-
-Validation requirements for typecheck work:
-
-- include `npm run typecheck` result before and after
-- include `npm test` result after changes
-- state explicitly whether behavior changed (`no` for type-only fixes)
+Typecheck triage and remediation requirements are normative in `docs/normative/TypecheckPolicy.md`.
+Agents MUST follow that policy for all typecheck tasks.
 
 ## Normative documents
 
