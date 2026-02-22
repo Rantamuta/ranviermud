@@ -4,6 +4,30 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Semantic dispatch ordering and dedup alignment
+
+Summary:
+
+- Enforced `SEMANTIC_ACTOR_ALIAS_MISMATCH` in semantic rendering when both `currentActor` and `currentPlayer` are present but resolve to different identity.
+- Refactored semantic dispatch to freeze and deduplicate recipient delivery across actor/target/others before any send.
+- Prevented partial semantic delivery when one audience render fails; failed semantic instructions are skipped while later render instructions still run.
+- Corrected `others` audience behavior so target recipients from actor-room broadcast targets are included when policy allows.
+Why:
+- Runtime behavior needed to align with the actor-general semantic messaging contract and deterministic recipient partition rules.
+Impact:
+- Semantic event delivery is now deterministic across audience partitions with one line per recipient identity.
+- `others` policy output now includes eligible target recipients instead of dropping them unconditionally.
+- Invalid `others` templates no longer leak actor lines before dispatch failure.
+Migration/Action:
+- None required.
+References:
+- `bundles/bundle-rantamuta/lib/session/semantic-message.js`
+- `bundles/bundle-rantamuta/lib/session/render-dispatch.js`
+- `bundles/bundle-rantamuta/lib/session/command-dispatch.js`
+- `bundles/bundle-rantamuta/tests/command.dispatch.test.js`
+- `bundles/bundle-rantamuta/tests/semantic.message.test.js`
+Timestamp: 2026.02.22 18:08
+
 ### Say command with actor-general semantic selector
 
 Summary:
