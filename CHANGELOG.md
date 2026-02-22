@@ -4,6 +4,22 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### NPC visibility in room look output
+
+Summary:
+
+- Added room-NPC visibility to room-view rendering and enabled direct `look <npc>` / `x <npc>` targeting via shared entity resolution.
+Why:
+- NPCs spawned in rooms were not discoverable in room output and could not be targeted by direct look, which blocked authored NPC guidance flow.
+Impact:
+- Players now see NPC presence lines in normal room look output.
+- `look tomo` style direct look now resolves in-room NPCs when command scope includes `room.npcs`.
+Migration/Action:
+- None.
+References:
+- None.
+Timestamp: 2026.02.22 12:52
+
 ### Root test discovery includes all repo test files
 
 Summary:
