@@ -16,8 +16,8 @@
 - [x] 2) Wire NPC dispatch into the exact existing Phase 1–6 path
 - [x] 3) Enforce Capture contract for actor-kind privilege gating
 - [x] 4) Migrate Tomo speech to dispatcher + shared `say`
-- [ ] 5) Validation and compatibility checks (minimal required)
-- [ ] 6) Small-scope rollout and rollback notes
+- [x] 5) Validation and compatibility checks (minimal required)
+- [x] 6) Small-scope rollout and rollback notes
 
 ---
 
@@ -207,6 +207,21 @@ Run and record:
 - New NPC dispatch/capture/speech bypass tests are green.
 - Any failure is documented with impact and rollback path.
 
+### Validation results (completed)
+
+1. Targeted tests (Sections 1-4):
+   - `cd bundles/bundle-rantamuta && npx mocha tests/npc.intent.normalization.test.js tests/npc.dispatch.pipeline.test.js tests/npc.capture.actor-kind.test.js tests/tomo.caretaker.script.test.js`
+   - Result: pass (`15 passing`).
+2. Full repository tests:
+   - `npm test`
+   - Result: pass (all tests + typecheck pass).
+3. Local CI parity runner:
+   - `npm run ci:local -- --force`
+   - Result: blocked at `Install bundles (CI)` with submodule fetch failure because the referenced submodule commit is local-only in this workspace:
+     - `fatal: remote error: upload-pack: not our ref cd04bf...`
+   - Impact: local CI worktree cannot fetch `bundles/bundle-rantamuta` at the current gitlink from remote.
+   - Rollback for this validation blocker: push/sync submodule commit to configured remote (or point gitlink to a fetchable commit), then rerun `npm run ci:local`.
+
 ---
 
 ## 6) Small-scope rollout and rollback notes
@@ -231,3 +246,23 @@ PR summary includes:
 ### Acceptance Criteria
 
 - Rollback is possible by reverting a small set of commits without touching unrelated systems.
+
+### Rollout + rollback notes (completed)
+
+1. Exact files changed:
+   - `bundles/bundle-rantamuta/lib/session/command-dispatch.js`
+   - `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js`
+   - `bundles/bundle-rantamuta/tests/npc.intent.normalization.test.js`
+   - `bundles/bundle-rantamuta/tests/npc.dispatch.pipeline.test.js`
+   - `bundles/bundle-rantamuta/tests/npc.capture.actor-kind.test.js`
+   - `bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js`
+2. Why each change is required:
+   - `command-dispatch.js`: adds NPC intent normalization, shared NPC/player dispatch pipeline entrypoint, and capture actor-kind gate.
+   - `tomoCaretaker.js`: removes direct speech output and routes Tomo speech through dispatcher + shared `say`.
+   - New/updated tests: lock normalization, phase traversal, actor-kind gate ordering, and Tomo direct-speech bypass regression.
+3. Risk note:
+   - NPC text/structured intents are normalized through the same parser artifact shape consumed by Entity Resolution, reducing divergence risk from player intake.
+4. Rollback steps:
+   - Revert NPC dispatch wiring commits in `bundles/bundle-rantamuta` and corresponding root gitlink commits.
+   - Revert Tomo speech migration commits in `bundles/bundle-rantamuta` and corresponding root gitlink commits.
+   - Rerun targeted tests, `npm test`, and `npm run ci:local` (after ensuring fetchable submodule ref).
