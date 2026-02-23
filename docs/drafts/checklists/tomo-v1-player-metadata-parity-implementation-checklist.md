@@ -61,7 +61,7 @@ Replace Tomo's NPC-local per-player runtime memory with persisted player metadat
   Acceptance: New tests fail before implementation and cover missing path default, nested read, null-safe behavior, and read-only non-mutation.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/player.metadata.helper.test.js`
 
-- [ ] Implement read-only metadata helper module.
+- [x] Implement read-only metadata helper module.
   Acceptance: Helper is deterministic, has no writes/output side effects, and passes helper tests.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/player.metadata.helper.test.js`
 
