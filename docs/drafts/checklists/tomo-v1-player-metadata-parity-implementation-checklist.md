@@ -106,19 +106,24 @@ Replace Tomo's NPC-local per-player runtime memory with persisted player metadat
   Notes:
   - `tomoCaretaker` now reads `tomo.*` keys via `getPlayerMetadata` with runtime fallback during transitional write-path migration.
 
-- [ ] Refactor Tomo writes to dispatch `setplayermetadata` through shared command pipeline.
+- [x] Refactor Tomo writes to dispatch `setplayermetadata` through shared command pipeline.
   Acceptance: Tomo does not directly mutate player metadata or NPC per-player runtime storage for guidance state.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/tomo.caretaker.script.test.js -g "dispatch|setplayermetadata|guidance-state writes"`
+  Notes:
+  - Added fail-first coverage: `Test tomo guidance write dispatch` (`9ca6591` in `bundles/bundle-rantamuta`).
+  - Updated legacy Tomo tests that were asserting obsolete NPC-local runtime memory behavior; new assertions require pipeline-dispatched `setplayermetadata` writes.
 
-- [ ] Remove obsolete Tomo runtime per-player guidance memory fields/comments.
+- [x] Remove obsolete Tomo runtime per-player guidance memory fields/comments.
   Acceptance: `playerMemoryById` and related parity TODOs are removed from authoritative Tomo guidance path.
   Validation: `rg -n "playerMemoryById|TODO\(v1-parity\)" bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js`
+  Notes:
+  - Validation returns no matches.
 
-- [ ] Add integration coverage proving NPC metadata write command reaches commit mutator path.
+- [x] Add integration coverage proving NPC metadata write command reaches commit mutator path.
   Acceptance: Integration test asserts command dispatch -> mutation plan -> mutator application for player metadata update.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/npc.dispatch.pipeline.test.js -g "metadata|commit|setplayermetadata"`
 
-- [ ] Run targeted bundle suite for all changed features.
+- [x] Run targeted bundle suite for all changed features.
   Acceptance: Targeted suite is green.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/player.metadata.helper.test.js tests/mutator.test.js tests/set-player-metadata.command.test.js tests/tomo.caretaker.script.test.js tests/npc.dispatch.pipeline.test.js`
 
