@@ -15,7 +15,7 @@
 - [x] 1) Add NPC intent normalization into existing command artifact
 - [x] 2) Wire NPC dispatch into the exact existing Phase 1–6 path
 - [x] 3) Enforce Capture contract for actor-kind privilege gating
-- [ ] 4) Migrate Tomo speech to dispatcher + shared `say`
+- [x] 4) Migrate Tomo speech to dispatcher + shared `say`
 - [ ] 5) Validation and compatibility checks (minimal required)
 - [ ] 6) Small-scope rollout and rollback notes
 
