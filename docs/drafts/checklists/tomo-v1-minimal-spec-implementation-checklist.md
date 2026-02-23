@@ -84,11 +84,11 @@ Bring `codex` Tomo behavior into v1-minimal compliance with `docs/normative/NpcA
   Acceptance: Tests no longer rely on player metadata mutation assumptions and include explicit command-dispatch assertions.
   Validation: `npx mocha bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js`
 
-- [ ] Add/adjust integration test proving Tomo movement/speech still runs through shared NPC dispatch pipeline phases.
+- [x] Add/adjust integration test proving Tomo movement/speech still runs through shared NPC dispatch pipeline phases.
   Acceptance: Integration coverage confirms capture->plan->commit->render path for Tomo-issued actions.
   Validation: `npx mocha bundles/bundle-rantamuta/tests/npc.dispatch.pipeline.test.js`
 
-- [ ] Run targeted test suite for Tomo + NPC dispatch changes.
+- [x] Run targeted test suite for Tomo + NPC dispatch changes.
   Acceptance: All targeted tests pass after implementation.
   Validation: `npx mocha bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js bundles/bundle-rantamuta/tests/npc.dispatch.pipeline.test.js bundles/bundle-rantamuta/tests/say.command.test.js`
 
@@ -96,9 +96,11 @@ Bring `codex` Tomo behavior into v1-minimal compliance with `docs/normative/NpcA
   Acceptance: `npm test` and `npm run ci:local` both pass.
   Validation: `npm test && npm run ci:local`
 
-- [ ] Document deferred follow-up for persistent player-memory parity via command+mutator path.
+- [x] Document deferred follow-up for persistent player-memory parity via command+mutator path.
   Acceptance: Checklist execution summary includes explicit deferred item referencing v1-parity memory design work.
   Validation: `rg -n "v1-parity|persistent.*memory|command\\+mutator" docs/drafts/checklists/tomo-v1-minimal-spec-implementation-checklist.md`
+  Notes:
+  - Deferred parity memory path recorded in `TODO(v1-parity)` comments at `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:113` and `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:418`.
 
 ## Commit Plan (Optional but Recommended)
 
