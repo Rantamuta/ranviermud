@@ -40,15 +40,15 @@ Bring `codex` Tomo behavior into v1-minimal compliance with `docs/normative/NpcA
   - direct persisted player metadata writes: `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:100`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:104`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:108`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:113`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:117`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:120`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:122`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:125`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:231`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:237`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:238`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:244`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:250`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:251`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:262`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:263`
   - wall-clock dependency in script decisions: `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:225`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:290`
 
-- [ ] Add fail-first test proving patrol path does not call direct `npc.moveTo(...)`.
+- [x] Add fail-first test proving patrol path does not call direct `npc.moveTo(...)`.
   Acceptance: New/updated test fails before implementation and explicitly asserts zero `moveTo` calls for patrol.
   Validation: `npx mocha bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js -g "patrol.*moveTo|moveTo.*patrol"`
 
-- [ ] Add fail-first test proving patrol emits NPC command dispatch intent instead of direct room mutation.
+- [x] Add fail-first test proving patrol emits NPC command dispatch intent instead of direct room mutation.
   Acceptance: New/updated test fails before implementation and asserts `dispatchNpcIntent` call with patrol movement intent.
   Validation: `npx mocha bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js -g "patrol.*dispatch|dispatch.*patrol"`
 
-- [ ] Add fail-first test proving unsupported patrol movement path returns `UNSUPPORTED_MUTATION_OP` and does not direct-mutate.
+- [x] Add fail-first test proving unsupported patrol movement path returns `UNSUPPORTED_MUTATION_OP` and does not direct-mutate.
   Acceptance: New/updated test fails before implementation with expected error code and zero direct mutation calls.
   Validation: `npx mocha bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js -g "UNSUPPORTED_MUTATION_OP|unsupported patrol"`
 
