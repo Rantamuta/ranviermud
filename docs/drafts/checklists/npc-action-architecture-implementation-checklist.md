@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: draft-v3
+- Status: draft-v4
 - Scope: remaining NPC dispatch wiring work for v1 execution semantics
 - Binding: no
 - Audience: maintainers implementing the post–pre-flight slice
@@ -56,6 +56,7 @@ Pin the exact code surfaces needed for wiring only.
 Discovery note identifying current files/functions for:
 
 - player dispatch entrypoint and phase orchestration,
+- parse/canonicalization path used by players,
 - parse artifact shape consumed by Entity Resolution,
 - capture policy/veto handling,
 - NPC speech callsites (Tomo) currently using direct `Broadcast.*`,
@@ -79,13 +80,16 @@ Allow NPC callers to provide `text` or `structured` intents while still feeding 
 1. Normalization path for:
    - `text` intent,
    - `structured` intent.
-2. Both forms output the same artifact shape currently consumed by Phase 1 Entity Resolution.
-3. Validation that rejects pre-bound runtime entity objects in structured intents.
+2. Normalization output is byte-for-byte compatible with the artifact the player path currently passes into Entity Resolution (same field names, same optional fields, same raw/canonical preservation behavior).
+3. For `text` intents, normalization reuses the same canonicalization and parsing rules/functions used by player intake (no second text normalization model).
+4. Validation that rejects:
+   - pre-bound runtime entity objects,
+   - pre-resolved role bindings or short-circuit binding fields that bypass normal resolution.
 
 ### Acceptance Criteria
 
 - No new resolver artifact variant for NPCs.
-- Structured intents are token/span/string data only (no bound entity instances).
+- Structured intents are token/span/string input only and always proceed through normal Phase 1 resolution.
 - Invalid input fails with established structured failure envelope style (not uncaught throw).
 
 ---
@@ -98,9 +102,10 @@ Ensure NPC commands execute through the same Resolution, Capture, Plan, Bubble, 
 
 ### Deliverables
 
-1. Minimal wiring from NPC intent dispatch into existing player phase pipeline.
-2. No alternate NPC execution lane for mutation/output.
-3. Tests showing NPC-issued commands traverse all existing phases.
+1. A single minimal NPC dispatch entrypoint (documented name + parameters) used by callers for NPC command execution.
+2. Minimal wiring from NPC intent dispatch into existing player phase pipeline.
+3. NPC dispatch entrypoint calls the same underlying dispatcher function used by players (not a copy). If extraction is needed, do the minimum extraction and keep behavior identical.
+4. Tests showing NPC-issued commands traverse all existing phases.
 
 ### Acceptance Criteria
 
@@ -119,9 +124,10 @@ Keep privilege/eligibility enforcement in Capture with the same semantics for pl
 ### Deliverables
 
 1. Actor-kind gating enforced in Capture via command metadata/policy.
-2. Capture remains “silent assent unless deny” for hook return behavior.
-3. Structured deny/veto envelope shape is identical for player and NPC dispatch.
-4. Planner checks, if present, are only redundant backstops (not primary gate).
+2. Actor-kind gating runs before any entity-level capture hooks and before any planner invocation.
+3. Capture remains “silent assent unless deny” for hook return behavior.
+4. Structured deny/veto envelope shape is identical for player and NPC dispatch.
+5. Planner checks, if present, are only redundant backstops (not primary gate).
 
 ### Acceptance Criteria
 
@@ -141,7 +147,7 @@ Remove direct NPC speech broadcasts by routing speech through command dispatch.
 
 1. Replace Tomo NPC direct `Broadcast.*` speech path with NPC dispatcher call to shared `say`.
 2. Preserve player-facing speech behavior except changes required for actor-general dispatch correctness.
-3. Add a minimal regression guardrail/test preventing NPC speech bypass in the touched Tomo path.
+3. Add a minimal regression test in the touched Tomo path that spies/stubs the direct speech helper (`Broadcast.sayAt`, or the helper Tomo previously used) and asserts zero calls during NPC speech after migration.
 
 ### Acceptance Criteria
 
@@ -185,7 +191,8 @@ PR summary includes:
 1. exact files changed,
 2. why each change is required for the five in-scope wiring items,
 3. validation evidence,
-4. rollback steps:
+4. risk note: avoid divergence by ensuring NPC text intents reuse player canonicalization/parsing and artifact shape,
+5. rollback steps:
    - revert NPC dispatch wiring commits,
    - revert Tomo speech migration commits,
    - rerun tests from Section 5.
@@ -193,4 +200,3 @@ PR summary includes:
 ### Acceptance Criteria
 
 - Rollback is possible by reverting a small set of commits without touching unrelated systems.
-
