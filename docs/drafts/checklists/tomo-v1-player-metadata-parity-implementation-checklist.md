@@ -69,9 +69,11 @@ Replace Tomo's NPC-local per-player runtime memory with persisted player metadat
   Acceptance: New tests fail before implementation and cover successful apply+undo, rollback, invalid target, invalid key, and non-object intermediate segment.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/mutator.test.js -g "setPlayerMetadata|player metadata"`
 
-- [ ] Implement `setPlayerMetadata` mutation in mutator.
+- [x] Implement `setPlayerMetadata` mutation in mutator.
   Acceptance: Mutator supports `setPlayerMetadata`, applies changes only in commit execution, and passes targeted mutator tests.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/mutator.test.js -g "setPlayerMetadata|player metadata"`
+  Notes:
+  - Corrected bad fail-first regex patterns (`/setPlayerMetadata\\\\.*/`) to intended literal-dot match (`/setPlayerMetadata\\.*/`) after implementation, because original patterns matched backslash-dot and falsely failed.
 
 - [ ] Add fail-first tests for NPC-only `setplayermetadata` command surface.
   Acceptance: New tests fail before implementation and cover actorKindsAllowed, usage failure, player-not-found, invalid key, and plan-only success.
