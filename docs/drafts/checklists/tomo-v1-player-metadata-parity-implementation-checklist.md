@@ -41,49 +41,43 @@ Replace Tomo's NPC-local per-player runtime memory with persisted player metadat
 
 ## Preconditions (Command 2)
 
-- [x] Approval to execute this checklist is explicit.
-- [x] Working tree is clean in repository root.
-- [x] Working tree is clean in `bundles/bundle-rantamuta`.
-- [x] Branch created and checked out (`<imperative>-<noun>` descriptive name).
-- [x] Task classification recorded: `behavior-changing`.
+- [ ] Approval to execute this checklist is explicit.
+- [ ] Working tree is clean in repository root.
+- [ ] Working tree is clean in `bundles/bundle-rantamuta`.
+- [ ] Branch created and checked out (`<imperative>-<noun>` descriptive name).
+- [ ] Task classification recorded: `behavior-changing`.
 
 ## Checklist
 
-- [x] Record execution contract notes from `docs/normative/NpcActionArchitecture.md` (shared pipeline, no script mutation fallback, unsupported mutation rule).
+- [ ] Record execution contract notes from `docs/normative/NpcActionArchitecture.md` (shared pipeline, no script mutation fallback, unsupported mutation rule).
   Acceptance: Notes include exact constraint summary with file references.
   Validation: `rg -n "Core Invariant|Non-Negotiable Contract|Unsupported mutation rule" docs/normative/NpcActionArchitecture.md`
-  Notes:
-  - Source constraints: `docs/normative/NpcActionArchitecture.md:45`, `docs/normative/NpcActionArchitecture.md:53`, `docs/normative/NpcActionArchitecture.md:69`.
-  - Tomo script may decide behavior, but authoritative state mutation must occur only through shared dispatch -> plan -> commit pipeline.
-  - If required behavior cannot be represented by existing planner+mutator operations, no direct script fallback is allowed.
 
-- [x] Add fail-first tests for `getPlayerMetadata(player, key, defaultValue?)` helper.
+- [ ] Add fail-first tests for `getPlayerMetadata(player, key, defaultValue?)` helper.
   Acceptance: New tests fail before implementation and cover missing path default, nested read, null-safe behavior, and read-only non-mutation.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/player.metadata.helper.test.js`
 
-- [x] Implement read-only metadata helper module.
+- [ ] Implement read-only metadata helper module.
   Acceptance: Helper is deterministic, has no writes/output side effects, and passes helper tests.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/player.metadata.helper.test.js`
 
-- [x] Add fail-first mutator tests for `setPlayerMetadata` instruction.
+- [ ] Add fail-first mutator tests for `setPlayerMetadata` instruction.
   Acceptance: New tests fail before implementation and cover successful apply+undo, rollback, invalid target, invalid key, and non-object intermediate segment.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/mutator.test.js -g "setPlayerMetadata|player metadata"`
 
-- [x] Implement `setPlayerMetadata` mutation in mutator.
+- [ ] Implement `setPlayerMetadata` mutation in mutator.
   Acceptance: Mutator supports `setPlayerMetadata`, applies changes only in commit execution, and passes targeted mutator tests.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/mutator.test.js -g "setPlayerMetadata|player metadata"`
-  Notes:
-  - Corrected bad fail-first regex patterns (`/setPlayerMetadata\\\\.*/`) to intended literal-dot match (`/setPlayerMetadata\\.*/`) after implementation, because original patterns matched backslash-dot and falsely failed.
 
-- [x] Add fail-first tests for NPC-only `setplayermetadata` command surface.
+- [ ] Add fail-first tests for NPC-only `setplayermetadata` command surface.
   Acceptance: New tests fail before implementation and cover actorKindsAllowed, usage failure, player-not-found, invalid key, and plan-only success.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/set-player-metadata.command.test.js`
 
-- [x] Implement NPC-only `setplayermetadata` command.
+- [ ] Implement NPC-only `setplayermetadata` command.
   Acceptance: Command returns structured failures, emits a `setPlayerMetadata` plan operation, and does not mutate directly.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/set-player-metadata.command.test.js`
 
-- [x] Add fail-first Tomo tests requiring persisted player metadata as source of truth.
+- [ ] Add fail-first Tomo tests requiring persisted player metadata as source of truth.
   Acceptance: New tests fail before implementation and prove runtime per-player memory is no longer authoritative.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/tomo.caretaker.script.test.js -g "persistent|metadata|runtime memory|guidance-state writes"`
 
