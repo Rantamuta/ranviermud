@@ -12,7 +12,7 @@
 ## Execution Status
 
 - [x] 0) Confirm touchpoints and constraints
-- [ ] 1) Add NPC intent normalization into existing command artifact
+- [x] 1) Add NPC intent normalization into existing command artifact
 - [ ] 2) Wire NPC dispatch into the exact existing Phase 1–6 path
 - [ ] 3) Enforce Capture contract for actor-kind privilege gating
 - [ ] 4) Migrate Tomo speech to dispatcher + shared `say`
