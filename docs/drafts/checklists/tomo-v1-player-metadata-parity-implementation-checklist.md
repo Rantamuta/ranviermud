@@ -100,9 +100,11 @@ Replace Tomo's NPC-local per-player runtime memory with persisted player metadat
   - Existing fail-first commit in bundle history: `ef04366` (`Test tomo metadata parity behavior`).
   - Validation currently fails by design until subsequent implementation items are complete.
 
-- [ ] Refactor Tomo reads to use persisted metadata helper.
+- [x] Refactor Tomo reads to use persisted metadata helper.
   Acceptance: Intro/progress/completion/gallery branch decisions read from player metadata.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/tomo.caretaker.script.test.js -g "intro|progress|completion|gallery"`
+  Notes:
+  - `tomoCaretaker` now reads `tomo.*` keys via `getPlayerMetadata` with runtime fallback during transitional write-path migration.
 
 - [ ] Refactor Tomo writes to dispatch `setplayermetadata` through shared command pipeline.
   Acceptance: Tomo does not directly mutate player metadata or NPC per-player runtime storage for guidance state.
