@@ -52,11 +52,11 @@ Bring `codex` Tomo behavior into v1-minimal compliance with `docs/normative/NpcA
   Acceptance: New/updated test fails before implementation with expected error code and zero direct mutation calls.
   Validation: `npx mocha bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js -g "UNSUPPORTED_MUTATION_OP|unsupported patrol"`
 
-- [ ] Implement patrol movement via `CommandDispatch.dispatchNpcIntent(...)` in `tomoCaretaker.js`.
+- [x] Implement patrol movement via `CommandDispatch.dispatchNpcIntent(...)` in `tomoCaretaker.js`.
   Acceptance: Tomo patrol code path no longer invokes direct room mutation APIs; patrol movement attempts are command-dispatched.
   Validation: `rg -n "moveTo\\(|dispatchNpcIntent\\(" bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js`
 
-- [ ] Ensure route index/cadence updates occur only after successful command-path movement outcome.
+- [x] Ensure route index/cadence updates occur only after successful command-path movement outcome.
   Acceptance: Runtime patrol state updates are conditioned on dispatch success.
   Validation: `npx mocha bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js -g "patrol.*route|patrol.*cadence|patrol.*success"`
 
