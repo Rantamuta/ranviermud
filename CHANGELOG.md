@@ -4,6 +4,29 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### NPC command dispatch wiring and Tomo speech migration
+
+Summary:
+
+- Added NPC intent dispatch support (`text` and `structured`) that normalizes into the same parse artifact and runs through the existing Phase 1-6 command pipeline.
+- Added Capture actor-kind gating via `metadata.actorKindsAllowed` with `ACTOR_KIND_FORBIDDEN` denial handling.
+- Migrated Codex Tomo caretaker speech from direct `Broadcast.sayAt` to dispatcher + shared `say`.
+Why:
+- NPC actions needed to execute through the same transactional command architecture as player commands.
+- Capture-based actor-kind policy needed to be enforced before planner execution and entity-level policy hooks.
+- Tomo speech needed to stop bypassing command render/dispatch.
+Impact:
+- NPC scripts can dispatch command intents without introducing a second execution pipeline.
+- Commands may now deny by actor kind through capture metadata policy.
+- Tomo guidance lines are emitted through command render/dispatch semantics instead of direct broadcast helper calls.
+Migration/Action:
+- None required.
+References:
+- `bundles/bundle-rantamuta/lib/session/command-dispatch.js`
+- `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js`
+- `docs/archive/implementations/npc-action-architecture-implementation-checklist.md`
+Timestamp: 2026.02.23 09:36
+
 ### Semantic dispatch ordering and dedup alignment
 
 Summary:

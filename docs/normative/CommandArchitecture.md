@@ -97,8 +97,13 @@ Rules:
 - First deny wins.
 - If denied, command terminates with failure envelope and does not enter Plan.
 - Capture runs in two steps:
+  - actor-kind gate from command metadata (`metadata.actorKindsAllowed`)
   - command-level `captureChecks` functions (if declared)
   - shared policy evaluation on ordered capture subjects
+- `metadata.actorKindsAllowed` contract:
+  - optional string array, default `['player', 'npc']`
+  - evaluated before command-level capture checks and entity-level policy hooks
+  - if actor kind is disallowed, capture returns deny code `ACTOR_KIND_FORBIDDEN` and Plan is not executed
 - Runtime policy hooks are role-routed:
   - direct role: `canDirect(actor, verbId, context)`
   - indirect role: `canIndirect(actor, verbId, relationTokenCanonical, context)`
