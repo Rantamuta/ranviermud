@@ -34,6 +34,8 @@ This directory contains behavior contracts that are normative for this repositor
 
 - `SemanticMessaging.md`
   - Draft semantic-event render/dispatch contract for perspective-aware audience messaging via render-phase delivery instructions.
+- `NpcActionArchitecture.md`
+  - Proposed actor-general NPC action architecture, including the non-negotiable NPC script mutation boundary contract.
 
 ## Precedence
 
