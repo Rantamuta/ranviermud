@@ -9,6 +9,18 @@
 
 ---
 
+## Execution Status
+
+- [x] 0) Confirm touchpoints and constraints
+- [ ] 1) Add NPC intent normalization into existing command artifact
+- [ ] 2) Wire NPC dispatch into the exact existing Phase 1–6 path
+- [ ] 3) Enforce Capture contract for actor-kind privilege gating
+- [ ] 4) Migrate Tomo speech to dispatcher + shared `say`
+- [ ] 5) Validation and compatibility checks (minimal required)
+- [ ] 6) Small-scope rollout and rollback notes
+
+---
+
 ## Pre-flight dependency note (already done)
 
 Treat the following as completed dependencies and **do not re-implement/redesign them in this task**:
@@ -66,6 +78,25 @@ Discovery note identifying current files/functions for:
 
 - Every in-scope item maps to concrete touchpoints.
 - No unrelated subsystems are added.
+
+### Discovery note (completed)
+
+- Player dispatch entrypoint + phase orchestration:
+  - `bundles/bundle-rantamuta/lib/session/command-dispatch.js`
+  - `handleCommand(...)`, `runCaptureChecks(...)`, `collectTargetPlanContributions(...)`, `collectBubbleContributions(...)`, `renderSuccess(...)`
+- Parse/canonicalization path used by players:
+  - `bundles/bundle-rantamuta/lib/parse-input.js` (`parseInput(...)`)
+  - `bundles/bundle-rantamuta/lib/input-canonicalizer.js` (`canonicalizeInput(...)`)
+- Parse artifact shape consumed by Entity Resolution:
+  - `bundles/bundle-rantamuta/lib/session/entity-resolution.js` (`resolveEntityContext(..., parsedInput)`)
+- Capture policy/veto handling:
+  - `bundles/bundle-rantamuta/lib/session/command-dispatch.js`
+  - `runCaptureChecks(...)`, `runCapturePolicyHooks(...)`, `capturePolicySubjects(...)`, `resolveErrorMessage(...)`
+- NPC speech callsites (Tomo) currently using direct `Broadcast.*`:
+  - `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js` (`sayToPlayer(...)` uses `Broadcast.sayAt(...)`)
+- Shared `say` command invocation path:
+  - `bundles/bundle-rantamuta/commands/say.js`
+  - Executed today through `handleCommand(...)` in `lib/session/command-dispatch.js`
 
 ---
 
