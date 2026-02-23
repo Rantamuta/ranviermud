@@ -24,17 +24,21 @@ Bring `codex` Tomo behavior into v1-minimal compliance with `docs/normative/NpcA
 
 ## Preconditions (Command 2)
 
-- [ ] Approval to execute this checklist is explicit.
-- [ ] Working tree is clean in repository root.
-- [ ] Working tree is clean in `bundles/bundle-rantamuta`.
-- [ ] Branch created and checked out (`<imperative>-<noun>` descriptive name).
-- [ ] Task classification recorded: `behavior-changing`.
+- [x] Approval to execute this checklist is explicit.
+- [x] Working tree is clean in repository root.
+- [x] Working tree is clean in `bundles/bundle-rantamuta`.
+- [x] Branch created and checked out (`<imperative>-<noun>` descriptive name).
+- [x] Task classification recorded: `behavior-changing`.
 
 ## Checklist
 
-- [ ] Confirm and record Tomo drift points with file+line references in checklist execution notes.
+- [x] Confirm and record Tomo drift points with file+line references in checklist execution notes.
   Acceptance: Execution notes list each non-compliant direct mutation/output path with path and line.
   Validation: `rg -n "moveTo\\(|metadata\\.codex|Date\\.now\\(|dispatchNpcIntent\\(" bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js`
+  Notes:
+  - direct movement mutation: `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:311`
+  - direct persisted player metadata writes: `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:100`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:104`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:108`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:113`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:117`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:120`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:122`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:125`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:231`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:237`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:238`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:244`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:250`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:251`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:262`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:263`
+  - wall-clock dependency in script decisions: `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:225`, `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:290`
 
 - [ ] Add fail-first test proving patrol path does not call direct `npc.moveTo(...)`.
   Acceptance: New/updated test fails before implementation and explicitly asserts zero `moveTo` calls for patrol.
