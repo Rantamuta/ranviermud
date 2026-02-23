@@ -4,6 +4,28 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Tomo player-metadata parity via command commit path
+
+Summary:
+
+- Replaced Tomo guidance-state runtime memory writes with NPC-dispatched `setplayermetadata` command writes through the shared command pipeline.
+- Added integration coverage proving NPC `setplayermetadata` dispatch reaches commit mutator application.
+- Updated Tomo behavior tests to assert persisted metadata flow and reject NPC-local per-player guidance storage.
+Why:
+- NPC guidance-state mutation must not bypass shared dispatch/plan/commit architecture.
+- Tomo v1 parity requires persisted player metadata as authoritative guidance-state storage.
+Impact:
+- Tomo guidance progression persists in player metadata keys under `tomo.*` instead of NPC runtime memory.
+- NPC metadata writes now execute through command planning and mutator commit semantics.
+Migration/Action:
+- None.
+References:
+- `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js`
+- `bundles/bundle-rantamuta/commands/setplayermetadata.js`
+- `bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js`
+- `bundles/bundle-rantamuta/tests/npc.dispatch.pipeline.test.js`
+Timestamp: 2026.02.23 20:59
+
 ### NPC command dispatch wiring and Tomo speech migration
 
 Summary:

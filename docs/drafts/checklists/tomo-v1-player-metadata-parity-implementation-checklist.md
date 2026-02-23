@@ -127,9 +127,11 @@ Replace Tomo's NPC-local per-player runtime memory with persisted player metadat
   Acceptance: Targeted suite is green.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/player.metadata.helper.test.js tests/mutator.test.js tests/set-player-metadata.command.test.js tests/tomo.caretaker.script.test.js tests/npc.dispatch.pipeline.test.js`
 
-- [ ] Apply changelog policy and update `CHANGELOG.md` if required.
+- [x] Apply changelog policy and update `CHANGELOG.md` if required.
   Acceptance: Changelog decision is explicit (entry added or rationale documented).
   Validation: `rg -n "Tomo|metadata|setplayermetadata|NPC" CHANGELOG.md`
+  Notes:
+  - Added `CHANGELOG.md` Unreleased entry: `Tomo player-metadata parity via command commit path`.
 
 - [ ] Run required behavior-changing validations.
   Acceptance: `npm test` passes and `npm run ci:local` is executed; any blocked step is explicitly documented.
