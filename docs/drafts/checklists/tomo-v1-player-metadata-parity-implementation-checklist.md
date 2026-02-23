@@ -75,7 +75,7 @@ Replace Tomo's NPC-local per-player runtime memory with persisted player metadat
   Notes:
   - Corrected bad fail-first regex patterns (`/setPlayerMetadata\\\\.*/`) to intended literal-dot match (`/setPlayerMetadata\\.*/`) after implementation, because original patterns matched backslash-dot and falsely failed.
 
-- [ ] Add fail-first tests for NPC-only `setplayermetadata` command surface.
+- [x] Add fail-first tests for NPC-only `setplayermetadata` command surface.
   Acceptance: New tests fail before implementation and cover actorKindsAllowed, usage failure, player-not-found, invalid key, and plan-only success.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/set-player-metadata.command.test.js`
 
