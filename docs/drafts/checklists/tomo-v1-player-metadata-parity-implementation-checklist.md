@@ -41,17 +41,21 @@ Replace Tomo's NPC-local per-player runtime memory with persisted player metadat
 
 ## Preconditions (Command 2)
 
-- [ ] Approval to execute this checklist is explicit.
-- [ ] Working tree is clean in repository root.
-- [ ] Working tree is clean in `bundles/bundle-rantamuta`.
-- [ ] Branch created and checked out (`<imperative>-<noun>` descriptive name).
-- [ ] Task classification recorded: `behavior-changing`.
+- [x] Approval to execute this checklist is explicit.
+- [x] Working tree is clean in repository root.
+- [x] Working tree is clean in `bundles/bundle-rantamuta`.
+- [x] Branch created and checked out (`<imperative>-<noun>` descriptive name).
+- [x] Task classification recorded: `behavior-changing`.
 
 ## Checklist
 
-- [ ] Record execution contract notes from `docs/normative/NpcActionArchitecture.md` (shared pipeline, no script mutation fallback, unsupported mutation rule).
+- [x] Record execution contract notes from `docs/normative/NpcActionArchitecture.md` (shared pipeline, no script mutation fallback, unsupported mutation rule).
   Acceptance: Notes include exact constraint summary with file references.
   Validation: `rg -n "Core Invariant|Non-Negotiable Contract|Unsupported mutation rule" docs/normative/NpcActionArchitecture.md`
+  Notes:
+  - Source constraints: `docs/normative/NpcActionArchitecture.md:45`, `docs/normative/NpcActionArchitecture.md:53`, `docs/normative/NpcActionArchitecture.md:69`.
+  - Tomo script may decide behavior, but authoritative state mutation must occur only through shared dispatch -> plan -> commit pipeline.
+  - If required behavior cannot be represented by existing planner+mutator operations, no direct script fallback is allowed.
 
 - [ ] Add fail-first tests for `getPlayerMetadata(player, key, defaultValue?)` helper.
   Acceptance: New tests fail before implementation and cover missing path default, nested read, null-safe behavior, and read-only non-mutation.
