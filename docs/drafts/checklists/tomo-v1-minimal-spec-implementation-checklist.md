@@ -68,19 +68,19 @@ Bring `codex` Tomo behavior into v1-minimal compliance with `docs/normative/NpcA
   Acceptance: New/updated test fails before implementation and expects NPC-local storage, not player metadata.
   Validation: `npx mocha bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js -g "npc-local|ephemeral|player memory"`
 
-- [ ] Implement Tomo per-player guidance memory under NPC-local runtime storage (for example `npc.__tomoRuntime.playerMemoryById`).
+- [x] Implement Tomo per-player guidance memory under NPC-local runtime storage (for example `npc.__tomoRuntime.playerMemoryById`).
   Acceptance: Script reads/writes guidance state only in NPC-local ephemeral memory and not in player persisted metadata.
   Validation: `rg -n "metadata\\.codex\\.tomo|playerMemory|__tomoRuntime" bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js`
 
-- [ ] Add concise `TODO(v1-parity)` comments at Tomo decision points where persistent player-memory behavior is intentionally deferred.
+- [x] Add concise `TODO(v1-parity)` comments at Tomo decision points where persistent player-memory behavior is intentionally deferred.
   Acceptance: `tomoCaretaker.js` contains short TODO comments describing deferred command+mutator parity work, with no commented-out code blocks.
   Validation: `rg -n "TODO\\(v1-parity\\)" bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js`
 
-- [ ] Add fail-first regression test proving intro/progress/completion/gallery guidance behavior remains equivalent post-migration.
+- [x] Add fail-first regression test proving intro/progress/completion/gallery guidance behavior remains equivalent post-migration.
   Acceptance: Test cases cover all four guidance branches and fail before migration updates.
   Validation: `npx mocha bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js -g "intro|progress|completion|gallery redirect"`
 
-- [ ] Update/replace existing Tomo tests so command-path behavior and memory-location behavior are asserted explicitly.
+- [x] Update/replace existing Tomo tests so command-path behavior and memory-location behavior are asserted explicitly.
   Acceptance: Tests no longer rely on player metadata mutation assumptions and include explicit command-dispatch assertions.
   Validation: `npx mocha bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js`
 
