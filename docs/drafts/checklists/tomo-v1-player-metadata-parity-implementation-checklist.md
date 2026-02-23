@@ -65,7 +65,7 @@ Replace Tomo's NPC-local per-player runtime memory with persisted player metadat
   Acceptance: Helper is deterministic, has no writes/output side effects, and passes helper tests.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/player.metadata.helper.test.js`
 
-- [ ] Add fail-first mutator tests for `setPlayerMetadata` instruction.
+- [x] Add fail-first mutator tests for `setPlayerMetadata` instruction.
   Acceptance: New tests fail before implementation and cover successful apply+undo, rollback, invalid target, invalid key, and non-object intermediate segment.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/mutator.test.js -g "setPlayerMetadata|player metadata"`
 
