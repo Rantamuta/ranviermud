@@ -60,11 +60,11 @@ Bring `codex` Tomo behavior into v1-minimal compliance with `docs/normative/NpcA
   Acceptance: Runtime patrol state updates are conditioned on dispatch success.
   Validation: `npx mocha bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js -g "patrol.*route|patrol.*cadence|patrol.*success"`
 
-- [ ] Add fail-first test proving Tomo script does not write `player.metadata.codex.tomo`.
+- [x] Add fail-first test proving Tomo script does not write `player.metadata.codex.tomo`.
   Acceptance: New/updated test fails before implementation and detects metadata write attempts.
   Validation: `npx mocha bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js -g "metadata.*tomo|tomo.*metadata"`
 
-- [ ] Add fail-first test proving per-player Tomo guidance memory is NPC-local ephemeral runtime state.
+- [x] Add fail-first test proving per-player Tomo guidance memory is NPC-local ephemeral runtime state.
   Acceptance: New/updated test fails before implementation and expects NPC-local storage, not player metadata.
   Validation: `npx mocha bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js -g "npc-local|ephemeral|player memory"`
 
