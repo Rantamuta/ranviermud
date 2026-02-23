@@ -218,7 +218,7 @@ Run and record:
 3. Local CI parity runner:
    - `npm run ci:local -- --force`
    - Result: blocked at `Install bundles (CI)` with submodule fetch failure because the referenced submodule commit is local-only in this workspace:
-     - `fatal: remote error: upload-pack: not our ref cd04bf...`
+     - `fatal: remote error: upload-pack: not our ref 605ddcc...`
    - Impact: local CI worktree cannot fetch `bundles/bundle-rantamuta` at the current gitlink from remote.
    - Rollback for this validation blocker: push/sync submodule commit to configured remote (or point gitlink to a fetchable commit), then rerun `npm run ci:local`.
 
