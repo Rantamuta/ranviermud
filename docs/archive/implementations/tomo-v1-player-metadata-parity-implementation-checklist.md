@@ -133,9 +133,12 @@ Replace Tomo's NPC-local per-player runtime memory with persisted player metadat
   Notes:
   - Added `CHANGELOG.md` Unreleased entry: `Tomo player-metadata parity via command commit path`.
 
-- [ ] Run required behavior-changing validations.
+- [x] Run required behavior-changing validations.
   Acceptance: `npm test` passes and `npm run ci:local` is executed; any blocked step is explicitly documented.
   Validation: `npm test && npm run ci:local`
+  Notes:
+  - `npm test` passed.
+  - `npm run ci:local` executed from clean tree and failed during submodule init in isolated worktree because submodule commit `34d842d` is local-only and not yet fetchable from remote (`not our ref`).
 
 ## Commit Plan (Optional but Recommended)
 
@@ -164,18 +167,18 @@ For each completed item:
 
 ## Verification
 
-- [ ] Required validations per `AGENTS.md` `Validation requirements by task type` are complete and passing.
-- [ ] `npm test` run and passing.
-- [ ] `npm run ci:local` run and outcome recorded.
-- [ ] Additional task-specific validation:
+- [x] Required validations per `AGENTS.md` `Validation requirements by task type` are complete (with blocked `ci:local` outcome documented above).
+- [x] `npm test` run and passing.
+- [x] `npm run ci:local` run and outcome recorded.
+- [x] Additional task-specific validation:
   - `cd bundles/bundle-rantamuta && npx mocha tests/player.metadata.helper.test.js`
   - `cd bundles/bundle-rantamuta && npx mocha tests/set-player-metadata.command.test.js`
   - `cd bundles/bundle-rantamuta && npx mocha tests/tomo.caretaker.script.test.js`
 
 ## Archive Handoff
 
-- [ ] Move this checklist from `docs/drafts/checklists/` to `docs/archive/implementations/`.
+- [x] Move this checklist from `docs/drafts/checklists/` to `docs/archive/implementations/`.
 
 ## Approval Gate
 
-- [ ] Checklist is complete, unambiguous, and ready for maintainer approval before implementation.
+- [x] Checklist is complete, unambiguous, and ready for maintainer approval before implementation.
