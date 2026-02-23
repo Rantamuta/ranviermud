@@ -83,7 +83,7 @@ Replace Tomo's NPC-local per-player runtime memory with persisted player metadat
   Acceptance: Command returns structured failures, emits a `setPlayerMetadata` plan operation, and does not mutate directly.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/set-player-metadata.command.test.js`
 
-- [ ] Add fail-first Tomo tests requiring persisted player metadata as source of truth.
+- [x] Add fail-first Tomo tests requiring persisted player metadata as source of truth.
   Acceptance: New tests fail before implementation and prove runtime per-player memory is no longer authoritative.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/tomo.caretaker.script.test.js -g "persistent|metadata|runtime memory|guidance-state writes"`
 
