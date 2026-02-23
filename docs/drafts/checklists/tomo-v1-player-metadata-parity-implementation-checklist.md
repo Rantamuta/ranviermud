@@ -57,7 +57,7 @@ Replace Tomo's NPC-local per-player runtime memory with persisted player metadat
   - Tomo script may decide behavior, but authoritative state mutation must occur only through shared dispatch -> plan -> commit pipeline.
   - If required behavior cannot be represented by existing planner+mutator operations, no direct script fallback is allowed.
 
-- [ ] Add fail-first tests for `getPlayerMetadata(player, key, defaultValue?)` helper.
+- [x] Add fail-first tests for `getPlayerMetadata(player, key, defaultValue?)` helper.
   Acceptance: New tests fail before implementation and cover missing path default, nested read, null-safe behavior, and read-only non-mutation.
   Validation: `cd bundles/bundle-rantamuta && npx mocha tests/player.metadata.helper.test.js`
 
