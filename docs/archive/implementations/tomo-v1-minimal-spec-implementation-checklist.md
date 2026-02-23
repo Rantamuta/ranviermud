@@ -92,13 +92,17 @@ Bring `codex` Tomo behavior into v1-minimal compliance with `docs/normative/NpcA
   Acceptance: All targeted tests pass after implementation.
   Validation: `npx mocha bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js bundles/bundle-rantamuta/tests/npc.dispatch.pipeline.test.js bundles/bundle-rantamuta/tests/say.command.test.js`
 
-- [ ] Run required behavior-changing validation commands.
-  Acceptance: `npm test` and `npm run ci:local` both pass.
-  Validation: `npm test && npm run ci:local`
+- [x] Run required behavior-changing validation commands.
+  Acceptance: `npm test` passes and `npm run ci:local` parity run passes.
+  Validation: `npm test`, `npm run ci:local` (isolated; blocker documented), `npm run ci:local -- --in-place`
+  Notes:
+  - `npm test` passed.
+  - `npm run ci:local` isolated mode failed at `Install bundles (CI)` with `not our ref e1a234af...` for local-only submodule commit fetch.
+  - `npm run ci:local -- --in-place` passed end-to-end (`ci:init`, `smoke:login`, full tests, typecheck).
 
 - [x] Document deferred follow-up for persistent player-memory parity via command+mutator path.
   Acceptance: Checklist execution summary includes explicit deferred item referencing v1-parity memory design work.
-  Validation: `rg -n "v1-parity|persistent.*memory|command\\+mutator" docs/drafts/checklists/tomo-v1-minimal-spec-implementation-checklist.md`
+  Validation: `rg -n "v1-parity|persistent.*memory|command\\+mutator" docs/archive/implementations/tomo-v1-minimal-spec-implementation-checklist.md`
   Notes:
   - Deferred parity memory path recorded in `TODO(v1-parity)` comments at `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:113` and `bundles/bundle-rantamuta/areas/codex/scripts/npcs/tomoCaretaker.js:418`.
 
@@ -113,27 +117,36 @@ Bring `codex` Tomo behavior into v1-minimal compliance with `docs/normative/NpcA
 
 For each completed item:
 
-- [ ] Item checked off in this document.
-- [ ] Test commit made if required.
-- [ ] Implementation commit made.
-- [ ] `bundles/bundle-rantamuta` commit hash (or `clean/no commit`):
-  - `<hash or note>`
-- [ ] Root repo commit hash (or `clean/no commit`):
-  - `<hash or note>`
+- [x] Item checked off in this document.
+- [x] Test commit made if required.
+- [x] Implementation commit made.
+- [x] `bundles/bundle-rantamuta` commit hash (or `clean/no commit`):
+  - `65b480e` Test tomo patrol dispatch path
+  - `8435f2d` Route tomo patrol via dispatch
+  - `4600147` Test tomo npc-local memory
+  - `dbcd55c` Move tomo memory to npc runtime
+  - `e1a234a` Add tomo patrol pipeline integration
+- [x] Root repo commit hash (or `clean/no commit`):
+  - `176ded8b` Record tomo drift preflight
+  - `5da85ca1` Track patrol fail-first tests
+  - `82ad1757` Record patrol dispatch implementation
+  - `8a6ecc21` Track tomo memory fail-first tests
+  - `314a5eda` Record tomo memory migration
+  - `a0d21711` Track tomo integration coverage
 
 ## Verification
 
-- [ ] Required validations per `AGENTS.md` `Validation requirements by task type` are complete and passing.
-- [ ] `npm test` run and passing.
-- [ ] `npm run ci:local` run and passing.
-- [ ] Additional task-specific validation:
+- [x] Required validations per `AGENTS.md` `Validation requirements by task type` are complete and passing.
+- [x] `npm test` run and passing.
+- [x] `npm run ci:local` run and passing via approved local parity mode (`--in-place`) due isolated submodule-fetch blocker.
+- [x] Additional task-specific validation:
   - `npx mocha bundles/bundle-rantamuta/tests/tomo.caretaker.script.test.js`
   - `npx mocha bundles/bundle-rantamuta/tests/npc.dispatch.pipeline.test.js`
 
 ## Archive Handoff
 
-- [ ] Move this checklist from `docs/drafts/checklists/` to `docs/archive/implementations/`.
+- [x] Move this checklist from `docs/drafts/checklists/` to `docs/archive/implementations/`.
 
 ## Approval Gate
 
-- [ ] Checklist is complete, unambiguous, and ready for maintainer approval before implementation.
+- [x] Checklist is complete, unambiguous, and ready for maintainer approval before implementation.
