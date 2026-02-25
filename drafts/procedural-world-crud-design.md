@@ -382,3 +382,7 @@ For behavior-changing implementation PRs, include:
 5. Keep sharding support as metadata + lock abstraction now, distributed mechanics later.
 
 This path is incremental, reversible, and aligned with the current engine’s primitive-based runtime model.
+
+
+## Addendum: persistence deep dive
+- See `drafts/designer-persistence-options.md` for a focused analysis of designer-writable persistence options, tradeoffs, and recommended rollout.
