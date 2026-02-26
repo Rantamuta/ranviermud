@@ -2,12 +2,12 @@
 
 ## Goal
 
-Implement a first-pass, predicate-only inline-tag runtime for perceivable descriptions using JIT compile + AST caching, while explicitly deferring strict validation mode and eager precompile controls to the immediate follow-up phase.
+Implement a first-pass, predicate-only inline-tag runtime for room, item, and PC descriptions using JIT compile + AST caching, while explicitly deferring strict validation mode and eager precompile controls to the immediate follow-up phase.
 
 ## Scope
 
 - In scope:
-  - Implement runtime parser/evaluator integration for `[predicate:then|else]` tags on perceivable descriptions.
+  - Implement runtime parser/evaluator integration for `[predicate:then|else]` tags on room, item, and PC descriptions.
   - Support nested tags and documented escaping semantics.
   - Enforce v1 runtime cache policy (LRU, default capacity 10000).
   - Add performance tests for cold compile, warm cache, and mixed access patterns.
@@ -33,13 +33,13 @@ Implement a first-pass, predicate-only inline-tag runtime for perceivable descri
 
 ## Checklist
 
-- [ ] Confirm existing perceivable render entry points and list touched files; acceptance: file list is recorded in this checklist Execution Log.
+- [ ] Confirm existing room/item/PC render entry points and list touched files; acceptance: file list is recorded in this checklist Execution Log.
 - [ ] Add fail-first parser unit tests for predicate tags, escaping, malformed syntax, and nesting; acceptance: new tests fail before implementation.
 - [ ] Commit failing parser/evaluator tests with subject beginning `Test `; acceptance: commit hash recorded.
 - [ ] Implement parser/AST module for `[predicate:then|else]`; acceptance: add `bundles/bundle-rantamuta/lib/inline-tags/parseInlineTags.js` exporting `parseInlineTags(template, options)` plus node typedefs (`TextNode`, `TagNode`, `ConditionNode`), and add `bundles/bundle-rantamuta/test/inline-tags/parseInlineTags.spec.js` covering grammar/escaping/nesting without weakening assertions.
 - [ ] Add fail-first evaluator/render tests for true/false branches, unknown predicate fallback-to-false, throw/non-boolean handling, and deterministic output; acceptance: tests fail before evaluator changes.
 - [ ] Commit failing evaluator/render tests with subject beginning `Test `; acceptance: commit hash recorded.
-- [ ] Implement evaluator integration against predicate runtime contract and perceivable render paths; acceptance: add `bundles/bundle-rantamuta/lib/inline-tags/renderInlineTags.js` exporting `renderInlineTags(ast, renderContext, evaluatePredicate)` and wire room/item/npc perceivable description render entry points so this executes in render-time assembly (not Capture/Plan/Commit/Bubble), preserving command architecture boundaries in `docs/normative/CommandArchitecture.md` and `docs/normative/PredicateStateRendering.md`.
+- [ ] Implement evaluator integration against predicate runtime contract and room/item/PC render paths; acceptance: add `bundles/bundle-rantamuta/lib/inline-tags/renderInlineTags.js` exporting `renderInlineTags(ast, renderContext, evaluatePredicate)` and wire room/item/PC description render entry points so this executes in render-time assembly (not Capture/Plan/Commit/Bubble), preserving command architecture boundaries in `docs/normative/CommandArchitecture.md` and `docs/normative/PredicateStateRendering.md`.
 - [ ] Add fail-first runtime cache tests for LRU behavior and default capacity 10000; acceptance: tests fail before cache implementation.
 - [ ] Commit failing cache tests with subject beginning `Test `; acceptance: commit hash recorded.
 - [ ] Implement LRU compiled-template cache keyed by surface reference + source hash; acceptance: cache tests pass.
