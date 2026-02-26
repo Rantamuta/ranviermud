@@ -39,7 +39,7 @@ Implement a first-pass, predicate-only inline-tag runtime for room, item, and PC
 - [ ] Implement parser/AST module for `[predicate:then|else]`; acceptance: add `bundles/bundle-rantamuta/lib/inline-tags/parseInlineTags.js` exporting `parseInlineTags(template, options)` plus node typedefs (`TextNode`, `TagNode`, `ConditionNode`), and add `bundles/bundle-rantamuta/test/inline-tags/parseInlineTags.spec.js` covering grammar/escaping/nesting without weakening assertions.
 - [ ] Add fail-first evaluator/render tests for true/false branches, unknown predicate fallback-to-false, throw/non-boolean handling, and deterministic output; acceptance: tests fail before evaluator changes.
 - [ ] Commit failing evaluator/render tests with subject beginning `Test `; acceptance: commit hash recorded.
-- [ ] Implement evaluator integration against predicate runtime contract and room/item/PC render paths; acceptance: add `bundles/bundle-rantamuta/lib/inline-tags/renderInlineTags.js` exporting `renderInlineTags(ast, renderContext, evaluatePredicate)` and wire room/item/PC description render entry points so this executes in render-time assembly (not Capture/Plan/Commit/Bubble), preserving command architecture boundaries in `docs/normative/CommandArchitecture.md` and `docs/normative/PredicateStateRendering.md`.
+- [ ] Implement evaluator integration against predicate runtime contract and room/item/PC render paths; acceptance: add `bundles/bundle-rantamuta/lib/inline-tags/renderInlineTags.js` exporting `renderInlineTags(ast, renderContext, runtime)` and wire room/item/PC description render entry points so this executes in render-time assembly (not Capture/Plan/Commit/Bubble), preserving command architecture boundaries in `docs/normative/CommandArchitecture.md` and `docs/normative/PredicateStateRendering.md`.
 - [ ] Add fail-first runtime cache tests for LRU behavior and default capacity 10000; acceptance: tests fail before cache implementation.
 - [ ] Commit failing cache tests with subject beginning `Test `; acceptance: commit hash recorded.
 - [ ] Implement LRU compiled-template cache keyed by surface reference + source hash; acceptance: cache tests pass.
@@ -52,7 +52,7 @@ Implement a first-pass, predicate-only inline-tag runtime for room, item, and PC
 - `bundles/bundle-rantamuta/lib/inline-tags/parseInlineTags.js`
   - `parseInlineTags(template, { surfaceRef }) -> { ast, diagnostics }`
 - `bundles/bundle-rantamuta/lib/inline-tags/renderInlineTags.js`
-  - `renderInlineTags(ast, renderContext, evaluatePredicate) -> string`
+  - `renderInlineTags(ast, renderContext, runtime) -> string`
 - `bundles/bundle-rantamuta/lib/inline-tags/cache.js`
   - `getCompiledTemplate(surfaceRef, sourceText)` / `putCompiledTemplate(surfaceRef, sourceText, compiled)`
 - `bundles/bundle-rantamuta/test/inline-tags/parseInlineTags.spec.js`
@@ -63,6 +63,7 @@ Notes:
 
 - Exact file names may be adjusted to existing repo conventions discovered in checklist item 1, but function responsibilities and command-phase boundaries must remain equivalent.
 - Hook-in point is description render assembly only; no inline-tag evaluation in command mutation phases.
+- Resolver integration must call `runtime.evaluate(name, renderContext)` per normative contract; helper aliases are acceptable only as thin wrappers.
 
 ## Commit Plan (Optional but Recommended)
 

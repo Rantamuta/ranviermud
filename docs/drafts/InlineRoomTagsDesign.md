@@ -1,4 +1,4 @@
-# Inline Entity Tags in Room, Item, and PC Descriptions (Design Proposal)
+# Inline Entity Tags in Perceivable Descriptions (Design Proposal)
 
 ## Status
 
@@ -29,7 +29,7 @@ This document preserves a constrained author contract (`[predicate:then|else]`) 
 
 ## 2) Formal grammar (v1)
 
-EBNF-like grammar over a single supported description string (room, item, or PC):
+EBNF-like grammar over a single perceivable description string:
 
 ```ebnf
 Document        := Segment*
@@ -85,7 +85,7 @@ Rationale: one escape mechanism avoids mode switching for authors and works in p
 
 ### Compile on first render (JIT)
 
-At first render of a supported description surface (room, item, or PC), parse the template into a compact compiled tree and cache it for subsequent renders:
+At first render of a perceivable description, parse the template into a compact compiled tree and cache it for subsequent renders:
 
 - `TextNode { value }`
 - `TagNode { condition, thenNodes, elseNodes, sourceRange }`
@@ -96,21 +96,21 @@ Where:
   - `{ kind: 'predicate', name }`
 - `thenNodes` and `elseNodes` are arrays of `TextNode | TagNode` (nested tags supported).
 
-Cache compiled AST by description surface reference + source hash:
+Cache compiled AST by perceivable reference + source hash:
 
 - key: `<surfaceRef>:sha1(description)`
 - value: compiled AST + diagnostics (if any)
 
 JIT motivation:
 
-- Large procedural worlds may include many description surfaces that are never visited/read.
+- Large procedural worlds may include many perceivable surfaces that are never visited/read.
 - Eager compile-at-load wastes CPU and memory churn for cold content.
 - JIT compilation keeps startup and generation costs lower while preserving fast repeated renders for hot rooms.
 - First view of a room may pay a small one-time compile cost; subsequent renders are cached.
 
 Validation note:
 
-- Bundle/area validation tools should still be able to parse room/item/PC descriptions for author feedback.
+- Bundle/area validation tools should still be able to parse all perceivable descriptions for author feedback.
 - Runtime render path compiles lazily and reuses compiled results.
 
 ### Evaluate many
@@ -135,8 +135,10 @@ Determinism requirement:
 Condition names are resolved through the area-local predicate registry contract in `docs/normative/PredicateStateRendering.md`:
 
 ```js
-evaluatePredicate(name, renderContext) -> boolean
+runtime.evaluate(name, renderContext) -> boolean
 ```
+
+Implementation note: if a local helper named `evaluatePredicate` is used, it must delegate to `runtime.evaluate` and remain a thin alias only.
 
 Evaluation semantics:
 
@@ -198,7 +200,7 @@ Rationale: deterministic and unsurprising; avoids hidden formatting side effects
 
 ### Failure mode
 
-- **Validation path (`util/validate-bundles.js`)**: hard fail on syntax errors in room/item/PC descriptions (default).
+- **Validation path (`util/validate-bundles.js`)**: hard fail on syntax errors in perceivable descriptions (default).
 - Runtime compiles lazily on first render and should cache the compiled result for subsequent evaluations.
 - If a runtime parse fails unexpectedly, output a diegetic fallback line and log diagnostics. Runtime must not expose raw source template text and must not return blank output.
 
@@ -206,7 +208,7 @@ Rationale: deterministic and unsurprising; avoids hidden formatting side effects
 
 Each parse error reports:
 
-- description-surface reference (`area:entityId:field`)
+- perceivable reference (`area:entityId:field`)
 - line and column
 - absolute index
 - short code (`E_TAG_UNTERMINATED`, `E_MISSING_COLON`, etc.)
@@ -227,7 +229,7 @@ limbo:white rooms.yml:12:34 E_MISSING_COLON
 
 Add validation to bundle/area load path and `util/validate-bundles.js`:
 
-- Parse room/item/PC `description` surfaces.
+- Parse every perceivable `description` surface (rooms/items/NPCs/look-read outputs).
 - Emit diagnostics with room/file location mapping.
 - Exit non-zero on syntax errors.
 - Optional `--warn-unknown-tags` for unresolved predicate names.
@@ -264,7 +266,7 @@ This gives fast author feedback before runtime playtesting.
 
 1. Implement parser + evaluator in isolated module.
 2. Add unit tests for parser/evaluator first.
-3. Integrate into room/item/PC description render paths directly (no feature flag).
+3. Integrate into perceivable description render paths directly (no feature flag).
 4. Add bundle validation checks.
 5. Enable in example content and smoke test.
 This staged approach limits compatibility risk while preserving author-facing syntax.
@@ -281,7 +283,7 @@ Implementation mapping for phase 1 should target bundle runtime modules, for exa
 
 Integration points:
 
-- apply to room/item/PC description render entry points,
+- apply to perceivable description render entry points (room/item/NPC/look/read surfaces),
 - execute after command-side mutation decisions are complete,
 - execute before final formatting/ANSI pipeline pass.
 

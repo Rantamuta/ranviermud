@@ -10,7 +10,7 @@ Summary:
 
 - Updated the normative predicate rendering contract to apply to room, item, and PC description rendering paths (not room-only).
 - Added normative inline-tag rendering rules for `[predicate:then]` and `[predicate:then|else]` on room/item/PC description surfaces.
-- Updated inline-tag design/checklist drafts to align implementation scope with room/item/PC descriptions.
+- Updated the implementation checklist to align implementation scope with room/item/PC descriptions while preserving the broader inline-tag design proposal for later phases.
 Why:
 - Current implementation planning requires room, item, and PC description support, and normative scope must match planned behavior to avoid architecture/compatibility drift.
 Impact:
