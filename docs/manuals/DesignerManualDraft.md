@@ -507,7 +507,7 @@ This is a content‑authoring guide for designers. It focuses on the bundle cont
 
 ## Entity References
 
-- Use `area:id` (e.g., `limbo:white`, `limbo:rustysword`).
+- Use `area:id` (e.g., `rantamuta:start`, `rantamuta:rustysword`).
 - Cross‑area references are valid (e.g., `craft:greenplant` in a Limbo room).
 
 ---
@@ -515,20 +515,20 @@ This is a content‑authoring guide for designers. It focuses on the bundle cont
 ## Areas
 
 - Each area has a `manifest.yml`, plus `rooms.yml`, `items.yml`, `npcs.yml`, `quests.yml`, and optionally `loot-pools.yml`.
-- Example area: `bundles/bundle-example-areas/areas/limbo/manifest.yml`.
+- Example area: `bundles/bundle-rantamuta/areas/rantamuta/manifest.yml`.
 - Area behaviors can be attached via `behaviors:` in `manifest.yml` (e.g., `progressive-respawn`).
 
 ---
 
 ## Rooms
 
-Example: `bundles/bundle-example-areas/areas/limbo/rooms.yml`
+Example: `bundles/bundle-rantamuta/areas/rantamuta/rooms.yml`
 
 Common fields:
 
 - `id`: Room id (used in `area:id`).
 - `title`, `description`.
-- `coordinates: [x, y, z]`: For mapped areas. Example in `bundles/bundle-example-areas/areas/mapped/rooms.yml`.
+- `coordinates: [x, y, z]`: For mapped areas. Example in `bundles/bundle-rantamuta/areas/mapped/rooms.yml`.
 - `items`: List of item entries.
 - `npcs`: List of NPC entries.
 - `exits`: Explicit exits, `direction` + `roomId`.
@@ -540,11 +540,11 @@ Room‑spawn entries can be strings or objects. Example object (from Limbo):
 
 ```yaml
 npcs:
-  - id: "limbo:trainingdummy"
+  - id: "rantamuta:trainingdummy"
     respawnChance: 25
     maxLoad: 3
 items:
-  - id: "limbo:woodenchest"
+  - id: "rantamuta:woodenchest"
     respawnChance: 20
     replaceOnRespawn: true
 ```
@@ -553,8 +553,8 @@ Door example:
 
 ```yaml
 doors:
-  "limbo:context":
-    lockedBy: "limbo:test_key"
+  "rantamuta:context":
+    lockedBy: "rantamuta:test_key"
     locked: true
     closed: true
 ```
@@ -563,7 +563,7 @@ doors:
 
 ## Items
 
-Example: `bundles/bundle-example-areas/areas/limbo/items.yml`
+Example: `bundles/bundle-rantamuta/areas/rantamuta/items.yml`
 
 Common fields:
 
@@ -585,7 +585,7 @@ Examples:
 
 ## NPCs
 
-Example: `bundles/bundle-example-areas/areas/limbo/npcs.yml`
+Example: `bundles/bundle-rantamuta/areas/rantamuta/npcs.yml`
 
 Common fields:
 
@@ -616,24 +616,24 @@ behaviors:
         min: 10
         max: 20
     pools:
-      - "limbo:junk"
-      - "limbo:potions"
-      - "limbo:sliceofcheese": 25
+      - "rantamuta:junk"
+      - "rantamuta:potions"
+      - "rantamuta:sliceofcheese": 25
 ```
 
 Loot pools live in `loot-pools.yml`:
 
 ```yaml
 potions:
-  - "limbo:potionhealth1": 10
-  - "limbo:potionstrength1": 5
+  - "rantamuta:potionhealth1": 10
+  - "rantamuta:potionstrength1": 5
 ```
 
 ---
 
 ## Quests
 
-Example: `bundles/bundle-example-areas/areas/limbo/quests.yml`
+Example: `bundles/bundle-rantamuta/areas/rantamuta/quests.yml`
 
 Quest structure:
 
@@ -668,7 +668,7 @@ Vendor config example:
 metadata:
   vendor:
     items:
-      "limbo:trainingsword":
+      "rantamuta:trainingsword":
         cost: 30
         currency: gold
     enterMessage: "Step right up!"
@@ -696,7 +696,7 @@ Recipe example:
 
 ```json
 {
-  "item": "limbo:potionhealth1",
+  "item": "rantamuta:potionhealth1",
   "recipe": { "plant_material": 3, "rose_petal": 1 }
 }
 ```
@@ -720,7 +720,7 @@ Scripts live under `areas/<area>/scripts/rooms|npcs|items/` and are referenced b
 
 Examples show these event listeners:
 
-- Room: `channelReceive`, `command` (see `bundles/bundle-example-areas/areas/limbo/scripts/rooms/ancientwayshrine.js`).
+- Room: `channelReceive`, `command` (see `bundles/bundle-rantamuta/areas/rantamuta/scripts/rooms/ancientwayshrine.js`).
 - NPC: `spawn`, `updateTick`, `deathblow`, `playerEnter`, `playerLeave`.
 - Item: `hit` (weapon scripts).
 

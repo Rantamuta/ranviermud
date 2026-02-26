@@ -1,8 +1,0 @@
-# Basic scenario-runner smoke commands
-# See /docs/BundleValidationUserManual.md and /util/scenario-runner.js
-look
-north
-look
-inventory
-sing
-say hi

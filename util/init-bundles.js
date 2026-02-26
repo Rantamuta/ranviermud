@@ -3,7 +3,6 @@
 
 const cp = require('child_process');
 const fs = require('fs');
-const os = require('os');
 const readline = require('readline');
 
 const argv = process.argv.slice(2);
@@ -22,6 +21,46 @@ function isPathIgnored(targetPath) {
     return false;
   }
   return false;
+}
+
+function getBundleName(remote) {
+  const name = remote
+    .trim()
+    .replace(/\/+$/, '')
+    .replace(/\.git$/i, '')
+    .split('/')
+    .pop();
+
+  return name;
+}
+
+function hasSubmoduleStageEntry(stageOutput) {
+  return stageOutput
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .some(line => line.startsWith('160000 '));
+}
+
+function isTrackedSubmodule(bundlePath) {
+  const result = cp.spawnSync('git', ['ls-files', '--stage', '--', bundlePath], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  });
+
+  if (result.status !== 0) {
+    return false;
+  }
+
+  return hasSubmoduleStageEntry(result.stdout || '');
+}
+
+function ensureSubmoduleInitialized(bundlePath) {
+  if (!isTrackedSubmodule(bundlePath)) {
+    return;
+  }
+
+  cp.execSync(`git submodule update --init -- ${bundlePath}`);
 }
 
 async function prompt() {
@@ -51,26 +90,8 @@ async function main() {
   }
 
   const defaultBundles = [
-    'https://github.com/Rantamuta/bundle-example-areas',
-    'https://github.com/Rantamuta/bundle-example-channels',
-    'https://github.com/Rantamuta/bundle-example-classes',
-    'https://github.com/Rantamuta/bundle-example-combat',
-    'https://github.com/Rantamuta/bundle-example-commands',
-    'https://github.com/Rantamuta/bundle-example-debug',
-    'https://github.com/Rantamuta/bundle-example-effects',
-    'https://github.com/Rantamuta/bundle-example-input-events',
-    'https://github.com/Rantamuta/bundle-example-lib',
-    'https://github.com/Rantamuta/bundle-example-npc-behaviors',
-    'https://github.com/Rantamuta/bundle-example-player-events',
-    'https://github.com/Rantamuta/bundle-example-quests',
-    'https://github.com/Rantamuta/simple-crafting',
-    'https://github.com/Rantamuta/vendor-npcs',
-    'https://github.com/Rantamuta/player-groups',
-    'https://github.com/Rantamuta/progressive-respawn',
-    'https://github.com/Rantamuta/telnet-networking',
-    'https://github.com/Rantamuta/websocket-networking',
+    'https://github.com/Rantamuta/bundle-rantamuta',
   ];
-  const enabledBundles = [];
 
   if (!allowDirty) {
     const modified = cp.execSync('git status -uno --porcelain').toString();
@@ -83,7 +104,9 @@ async function main() {
 
   // install each bundle
   for (const bundle of defaultBundles) {
-    const bundlePath = `bundles/${bundle}`;
+    const bundleName = getBundleName(bundle);
+    const bundlePath = `bundles/${bundleName}`;
+    ensureSubmoduleInitialized(bundlePath);
     cp.execSync(`npm run install-bundle ${bundle}`);
   }
   console.info('Done.');
@@ -91,7 +114,7 @@ async function main() {
   console.info('Enabling bundles...');
   const ranvierJsonPath = __dirname + '/../ranvier.json';
   const ranvierJson = require(ranvierJsonPath);
-  ranvierJson.bundles = defaultBundles.map(bundle => bundle.replace(/^.+\/([a-z\-]+)$/, '$1'));
+  ranvierJson.bundles = defaultBundles.map(getBundleName);
   fs.writeFileSync(ranvierJsonPath, JSON.stringify(ranvierJson, null, 2));
   console.info('Done.');
 
@@ -116,9 +139,14 @@ You're all set! See https://ranviermud.com for guides and API references
   process.exit(0);
 }
 
-try {
-  main();
-} catch (err) {
-  console.error(err);
-  process.exit(1);
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
 }
+
+module.exports = {
+  getBundleName,
+  hasSubmoduleStageEntry,
+};

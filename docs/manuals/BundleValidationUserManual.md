@@ -196,19 +196,19 @@ node util/scenario-runner.js --commandsFile test/scenarios/smoke.commands
 If your commands require a room context (for example `look`), specify a starting room:
 
 ```bash
-node util/scenario-runner.js --room "limbo:white" --command "look"
+node util/scenario-runner.js --room "rantamuta:start" --command "look"
 ```
 
 Movement commands are supported directly (e.g., `east`, `e`, `north`, `up`) and use the room exits in the current area:
 
 ```bash
-node util/scenario-runner.js --room "limbo:white" --command "east"
+node util/scenario-runner.js --room "rantamuta:start" --command "east"
 ```
 
 You can also emit player events explicitly using `--playerEmit:<event>`:
 
 ```bash
-node util/scenario-runner.js --room "limbo:white" --playerEmit:move east
+node util/scenario-runner.js --room "rantamuta:start" --playerEmit:move east
 ```
 
 Legacy fallback builds a single command line:
@@ -220,7 +220,7 @@ node util/scenario-runner.js --command "look" --args "at statue"
 JSON transcript output (structured events, no extra stdout):
 
 ```bash
-node util/scenario-runner.js --room "limbo:white" --command "look" --json
+node util/scenario-runner.js --room "rantamuta:start" --command "look" --json
 ```
 
 ### Output and exit behavior

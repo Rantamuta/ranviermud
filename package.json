@@ -18,7 +18,8 @@
     "remove-bundle": "node ./util/remove-bundle.js",
     "install-bundle": "node ./util/install-bundle.js",
     "smoke:login": "node ./scripts/smoke-login.js",
-    "test": "mocha",
+    "typecheck": "tsc --project tsconfig.json --pretty false",
+    "test": "mocha \"**/*.test.js\" --ignore \"**/node_modules/**\" && npm run typecheck",
     "bundle:install": "node util/install-bundle.js",
     "bundle:remove": "node util/remove-bundle.js",
     "bundle:update": "node util/update-bundle-url.js",
@@ -27,12 +28,18 @@
     "bundles:test:contract": "node --test test/bundles.contract.test.js",
     "bundles:validate": "node util/validate-bundles.js",
     "bundles:nuke": "node util/nuke-bundles.js",
-    "scenario": "node util/scenario-runner.js"
+    "scenario": "node util/scenario-runner.js",
+    "bench:predicate": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-predicate-runtime.js",
+    "bench:room": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-room-view.js",
+    "bench:scenario": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-scenario.js",
+    "bench:all": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-all.js",
+    "bench:record": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-record.js",
+    "bench:check": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-check.js"
   },
   "dependencies": {
     "commander": "^2.19.0",
     "rando-js": "^0.2.0",
-    "ranvier": "github:Rantamuta/core#v1.0.0",
+    "ranvier": "github:Rantamuta/core#8f9d2076d8a17c4570d919acc855e352b942d8c2",
     "ranvier-datasource-file": "github:Rantamuta/datasource-file#v1.0.0",
     "ranvier-telnet": "github:Rantamuta/ranvier-telnet#v1.0.0",
     "semver": "^7.6.0",
@@ -40,8 +47,11 @@
     "winston": "^2.4.4"
   },
   "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^25.2.3",
     "git-url-parse": "^16.1.0",
-    "mocha": "^11.7.5"
+    "mocha": "^11.7.5",
+    "typescript": "^5.9.3"
   },
   "overrides": {
     "glob": "13.0.1"

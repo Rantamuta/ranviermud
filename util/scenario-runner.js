@@ -11,20 +11,24 @@
  *
  * Usage:
  * - `node util/scenario-runner.js --command "look" --command "north"`
- * - `node util/scenario-runner.js --commandsFile test/scenarios/smoke.commands`
- * - `node util/scenario-runner.js --room "limbo:white" --command "look"`
+ * - `node util/scenario-runner.js --scenario test/scenarios/smoke.scenario`
+ * - `node util/scenario-runner.js --room "test:room" --command "look"`
  *
  * Flags:
  * - `--command <text>`: add a command line to run (repeatable).
- * - `--commandsFile <path>`: load line-separated commands (# for comments).
+ * - `--scenario <path>`: load scenario directives from file.
  * - `--args "<args>"`: legacy args appended to a single `--command`.
  * - `--room "<area:roomId>"`: start the player in a specific room.
+ * - `--seedInventory "<area:itemId>"`: seed a resolved item into player inventory (repeatable).
+ * - `--seedRoomItem "<area:itemId>"`: seed a resolved item into the player's room (repeatable).
  * - `--playerEmit:<event> [args]`: emit player events (e.g., `--playerEmit:move east`).
  * - `--failOnUnknown`: exit non-zero if any unknown commands are encountered.
  * - `--json`: emit machine-readable JSON (includes log capture events).
+ * - `--whitespace`: with --json, include blank/ANSI-only output lines.
  */
 const fs = require('fs');
 const path = require('path');
+const { parseInput } = require('../bundles/bundle-rantamuta/lib/parse-input');
 
 let activeLogCapture = null;
 
@@ -37,13 +41,18 @@ function ensureTrailingSeparator(targetPath) {
 }
 
 function printHelp() {
-  console.log('Usage: node util/scenario-runner.js [--command "look"] [--commandsFile <path>] [--room "area:roomId"] [--failOnUnknown] [--json]');
+  console.log('Usage: node util/scenario-runner.js [--command "look"] [--scenario <path>] [--room "area:roomId"] [--failOnUnknown] [--json]');
   console.log('       node util/scenario-runner.js [--command <name>] [--args "<args>"]');
+  console.log('       node util/scenario-runner.js [--seedInventory "<area:itemId>"] [--seedRoomItem "<area:itemId>"]');
   console.log('       node util/scenario-runner.js --playerEmit:<event> [args]');
+  console.log('       --scenario             load directives from .scenario files');
   console.log('       --failOnUnknown        exit non-zero if any unknown commands are encountered');
   console.log('       --json                 emit machine-readable JSON output');
-  console.log('Boots the engine in no-transport mode, loads bundles, and executes one or more commands.');
-  console.log('Command files are line-separated: one command per line, # for comments, blank lines ignored.');
+  console.log('       --whitespace           with --json, keep blank/ANSI-only output lines');
+  console.log('       --seedInventory        seed an item into player inventory (repeatable)');
+  console.log('       --seedRoomItem         seed an item into the current room (repeatable)');
+  console.log('Boots the engine in no-transport mode, loads bundles, and executes commands through InputEvent "main".');
+  console.log('Scenario files are key/value directives: command, room, seedInventory, seedRoomItem.');
   console.log('Unknown flags are ignored.');
 }
 
@@ -86,19 +95,42 @@ function parseCommandLine(line) {
   };
 }
 
-function readCommandsFile(filePath) {
+function readScenarioFile(filePath) {
   const content = fs.readFileSync(filePath, 'utf8');
+  const lines = content.split(/\r?\n/u);
+  const directives = [];
 
-  return content
-    .split(/\r?\n/u)
-    .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith('#'));
+  for (let lineNumber = 0; lineNumber < lines.length; lineNumber += 1) {
+    const rawLine = lines[lineNumber];
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) {
+      continue;
+    }
+
+    const separator = line.indexOf(':');
+    if (separator === -1) {
+      throw new Error(`Invalid scenario directive at ${filePath}:${lineNumber + 1}`);
+    }
+
+    const key = line.slice(0, separator).trim();
+    const value = line.slice(separator + 1).trim();
+    if (!value) {
+      throw new Error(`Missing scenario value for "${key}" at ${filePath}:${lineNumber + 1}`);
+    }
+
+    directives.push({ key, value, filePath, lineNumber: lineNumber + 1 });
+  }
+
+  return directives;
 }
 
-function collectCommandLines(args, root) {
+function collectScenarioConfig(args, root) {
   const commandLines = [];
+  const seedInventoryRefs = [];
+  const seedRoomItemRefs = [];
+  let roomRef = null;
   let legacyArgs = '';
-  let sawCommandsFile = false;
+  let sawScenarioFile = false;
 
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
@@ -113,16 +145,39 @@ function collectCommandLines(args, root) {
       continue;
     }
 
-    if (arg === '--commandsFile') {
+    if (arg === '--scenario') {
       if (i + 1 >= args.length) {
-        throw new Error('Missing value for --commandsFile');
+        throw new Error('Missing value for --scenario');
       }
 
-      const commandFilePath = path.resolve(root, args[i + 1]);
-      commandLines.push(...readCommandsFile(commandFilePath));
-      sawCommandsFile = true;
+      const scenarioPath = path.resolve(root, args[i + 1]);
+      const directives = readScenarioFile(scenarioPath);
+      for (const directive of directives) {
+        switch (directive.key) {
+          case 'command':
+            commandLines.push(directive.value);
+            break;
+          case 'room':
+            roomRef = directive.value;
+            break;
+          case 'seedInventory':
+            seedInventoryRefs.push(directive.value);
+            break;
+          case 'seedRoomItem':
+            seedRoomItemRefs.push(directive.value);
+            break;
+          default:
+            throw new Error(`Unknown scenario directive "${directive.key}" at ${directive.filePath}:${directive.lineNumber}`);
+        }
+      }
+
+      sawScenarioFile = true;
       i += 1;
       continue;
+    }
+
+    if (arg === '--commandsFile') {
+      throw new Error('--commandsFile is not supported. Use --scenario <path>.');
     }
 
     if (arg.startsWith('--playerEmit:')) {
@@ -162,12 +217,33 @@ function collectCommandLines(args, root) {
         throw new Error('Missing value for --room');
       }
 
+      roomRef = args[i + 1];
+      i += 1;
+      continue;
+    }
+
+    if (arg === '--seedInventory') {
+      if (i + 1 >= args.length) {
+        throw new Error('Missing value for --seedInventory');
+      }
+
+      seedInventoryRefs.push(args[i + 1]);
+      i += 1;
+      continue;
+    }
+
+    if (arg === '--seedRoomItem') {
+      if (i + 1 >= args.length) {
+        throw new Error('Missing value for --seedRoomItem');
+      }
+
+      seedRoomItemRefs.push(args[i + 1]);
       i += 1;
       continue;
     }
   }
 
-  if (commandLines.length === 1 && legacyArgs && !sawCommandsFile) {
+  if (commandLines.length === 1 && legacyArgs && !sawScenarioFile) {
     if (typeof commandLines[0] === 'string') {
       commandLines[0] = `${commandLines[0]} ${legacyArgs}`;
     } else if (commandLines[0].type === 'command') {
@@ -183,20 +259,14 @@ function collectCommandLines(args, root) {
     commandLines.push(commandArgs ? `${commandName} ${commandArgs}` : commandName);
   }
 
-  return commandLines;
-}
-
-function getRoomRef(args) {
-  const roomIndex = args.indexOf('--room');
-  if (roomIndex === -1) {
-    return null;
-  }
-
-  if (roomIndex + 1 >= args.length) {
-    throw new Error('Missing value for --room');
-  }
-
-  return args[roomIndex + 1];
+  return {
+    commandLines,
+    roomRef,
+    seedRefs: {
+      seedInventoryRefs,
+      seedRoomItemRefs,
+    },
+  };
 }
 
 async function bootEngine(root, config) {
@@ -293,6 +363,133 @@ function createFakePlayer(output, GameState) {
   return player;
 }
 
+function createInGameSession(player) {
+  return {
+    state: 'inGame',
+    socket: player.socket,
+    username: player.name,
+    account: player.account || null,
+    player,
+    isNewAccount: false,
+    processing: false,
+  };
+}
+
+function getMainInputListeners(GameState) {
+  const listeners = GameState.InputEventManager.get('main');
+  if (!listeners || listeners.size === 0) {
+    return [];
+  }
+
+  return [...listeners];
+}
+
+/**
+ * Resolve the canonical intent token from raw command text.
+ *
+ * @param {string} raw
+ * @returns {string}
+ */
+function resolveCanonicalIntent(raw) {
+  const parsed = parseInput(raw);
+  if (!parsed || typeof parsed !== 'object' || typeof parsed.intentToken !== 'string') {
+    return '';
+  }
+
+  return parsed.intentToken.trim().split(/\s+/u)[0] || '';
+}
+
+function resolveCommandExact(GameState, commandName) {
+  const normalizedName = String(commandName || '').trim().toLowerCase();
+  if (!normalizedName) {
+    return { command: null, alias: null };
+  }
+
+  const manager = GameState && GameState.CommandManager;
+  if (!manager || typeof manager !== 'object') {
+    return { command: null, alias: null };
+  }
+
+  if (typeof manager.get === 'function') {
+    const command = manager.get(normalizedName);
+    if (!command) {
+      return { command: null, alias: null };
+    }
+
+    const isAlias = Array.isArray(command.aliases) &&
+      command.aliases.includes(normalizedName) &&
+      command.name !== normalizedName;
+
+    return { command, alias: isAlias ? normalizedName : null };
+  }
+
+  if (typeof manager.find === 'function') {
+    const match = manager.find(normalizedName, true);
+    if (!match) {
+      return { command: null, alias: null };
+    }
+
+    if (typeof match === 'object' && 'command' in match && 'alias' in match) {
+      if (match.alias !== normalizedName) {
+        return { command: null, alias: null };
+      }
+
+      return { command: match.command, alias: match.alias };
+    }
+
+    return { command: null, alias: null };
+  }
+
+  return { command: null, alias: null };
+}
+
+function createSeedItem(GameState, itemRef) {
+  const area = GameState.AreaManager.getAreaByReference(itemRef);
+  if (!area) {
+    throw new Error(`seed area not found for item: ${itemRef}`);
+  }
+
+  let item;
+  try {
+    item = GameState.ItemFactory.create(area, itemRef);
+  } catch (error) {
+    throw new Error(`seed item not found: ${itemRef}`);
+  }
+
+  item.hydrate(GameState);
+  GameState.ItemManager.add(item);
+  return item;
+}
+
+function applySeeds(GameState, player, seedRefs, emitEvent) {
+  for (const itemRef of seedRefs.seedInventoryRefs) {
+    const item = createSeedItem(GameState, itemRef);
+    player.addItem(item);
+    emitEvent({
+      type: 'seed',
+      scope: 'inventory',
+      entityReference: itemRef,
+      itemName: item.name,
+    });
+  }
+
+  for (const itemRef of seedRefs.seedRoomItemRefs) {
+    if (!player.room) {
+      throw new Error('Cannot seed room items without a room. Pass --room "<area:roomId>".');
+    }
+
+    const item = createSeedItem(GameState, itemRef);
+    player.room.addItem(item);
+    emitEvent({
+      type: 'seed',
+      scope: 'room',
+      entityReference: itemRef,
+      itemName: item.name,
+      room: player.room.entityReference,
+    });
+  }
+}
+
 function flushOutput(output, emitOutput) {
   if (output.length) {
     if (emitOutput) {
@@ -303,10 +500,84 @@ function flushOutput(output, emitOutput) {
         }
       }
     } else {
-      process.stdout.write(`${output.join('\n')}\n`);
+      for (const entry of output) {
+        process.stdout.write(String(entry));
+      }
     }
     output.length = 0;
   }
+}
+
+/**
+ * @param {string} text
+ * @returns {string}
+ */
+function stripAnsi(text) {
+  return String(text).replace(
+    // Adapted ANSI escape matcher (CSI and related sequences).
+    // eslint-disable-next-line no-control-regex
+    /[\u001B\u009B][[\]()#;?]*(?:(?:(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-ntqry=><]))/g,
+    ''
+  );
+}
+
+/**
+ * @param {string} text
+ * @returns {boolean}
+ */
+function isBlankOrAnsiOnly(text) {
+  return stripAnsi(text).trim().length === 0;
+}
+
+/**
+ * @param {*} value
+ * @returns {string | null}
+ */
+function nullableString(value) {
+  return typeof value === 'string' ? value : null;
+}
+
+/**
+ * Build the stable JSON run payload from runner-observable data.
+ *
+ * Scenario runner intentionally does not depend on internal command-dispatch
+ * telemetry. This keeps the JSON contract stable even if dispatch internals
+ * change.
+ *
+ * @param {Record<string, *>} parsedInput
+ * @param {object} lookup
+ * @param {boolean} lookup.commandFound
+ * @param {string | null} lookup.commandName
+ * @param {string | null} lookup.alias
+ * @param {string} [code]
+ * @returns {{ parse: Record<string, *>, lookup: Record<string, *>, phases: Record<string, *>, outcome: Record<string, *> }}
+ */
+function mapRunEvent(parsedInput, lookup, code) {
+  const commandFound = !!lookup.commandFound;
+  const outcomeCode = code || (commandFound ? 'OK' : 'UNKNOWN_COMMAND');
+  const outcomeOk = outcomeCode === 'OK';
+  return {
+    parse: {
+      intentToken: nullableString(parsedInput.intentToken),
+      canonicalInput: typeof parsedInput.canonicalInput === 'string' ? parsedInput.canonicalInput : '',
+      normalizedInput: typeof parsedInput.normalizedInput === 'string' ? parsedInput.normalizedInput : '',
+      primaryTargetSpan: Array.isArray(parsedInput.primaryTargetSpan) ? parsedInput.primaryTargetSpan : null,
+      relationToken: nullableString(parsedInput.relationToken),
+      secondaryTargetSpan: Array.isArray(parsedInput.secondaryTargetSpan) ? parsedInput.secondaryTargetSpan : null,
+    },
+    lookup: {
+      commandFound,
+      commandName: nullableString(lookup.commandName),
+      alias: nullableString(lookup.alias),
+    },
+    phases: {},
+    outcome: {
+      ok: outcomeOk,
+      phase: outcomeOk ? 'success' : 'lookup',
+      code: outcomeCode,
+      errorTag: null,
+    },
+  };
 }
 
 function resolveLogLevel(text, fallback) {
@@ -438,11 +709,14 @@ async function main() {
   }
 
   const root = process.cwd();
-  const commandLines = collectCommandLines(args, root);
+  const scenarioConfig = collectScenarioConfig(args, root);
+  const commandLines = scenarioConfig.commandLines;
   const parsedCommands = commandLines.map(parseCommandLine).filter(Boolean);
-  const roomRef = getRoomRef(args);
+  const roomRef = scenarioConfig.roomRef;
+  const seedRefs = scenarioConfig.seedRefs;
   const failOnUnknown = args.includes('--failOnUnknown');
   const jsonOutput = args.includes('--json');
+  const includeWhitespace = args.includes('--whitespace');
 
   if (!parsedCommands.length) {
     throw new Error('No commands were provided to execute');
@@ -455,7 +729,13 @@ async function main() {
     }
   };
   const emitOutput = jsonOutput
-    ? (text) => emitEvent({ type: 'output', text })
+    ? (text) => {
+      const line = String(text);
+      if (!includeWhitespace && isBlankOrAnsiOnly(line)) {
+        return;
+      }
+      emitEvent({ type: 'output', text: line });
+    }
     : null;
   const logCapture = jsonOutput ? createLogCapture(emitEvent) : null;
   activeLogCapture = logCapture;
@@ -464,6 +744,11 @@ async function main() {
   const GameState = await bootEngine(root, config);
   const output = [];
   const player = createFakePlayer(output, GameState);
+  const inputListeners = getMainInputListeners(GameState);
+  if (inputListeners.length === 0) {
+    throw new Error('No input-event listeners are registered for "main"');
+  }
+  const inputSession = createInGameSession(player);
 
   if (roomRef) {
     const room = GameState.RoomManager.getRoom(roomRef);
@@ -487,20 +772,25 @@ async function main() {
     player.hydrate(GameState);
   }
 
+  applySeeds(GameState, player, seedRefs, emitEvent);
+
   if (jsonOutput) {
     emitEvent({ type: 'start', commands: parsedCommands.length });
-  } else {
-    console.log(`[info] scenario starting (commands=${parsedCommands.length})`);
   }
   let unknownCount = 0;
 
   for (let i = 0; i < parsedCommands.length; i += 1) {
     const commandSpec = parsedCommands[i];
+    if (!jsonOutput) {
+      process.stdout.write(`${commandSpec.raw}\n`);
+    }
+
+    /** @type {Record<string, *> | null} */
+    let runEvent = null;
 
     if (jsonOutput) {
-      emitEvent({ type: 'run', index: i + 1, raw: commandSpec.raw });
-    } else {
-      console.log(`[run] ${i + 1}/${parsedCommands.length}: ${commandSpec.raw}`);
+      runEvent = { type: 'run', index: i + 1, raw: commandSpec.raw };
+      emitEvent(runEvent);
     }
 
     if (commandSpec.type === 'playerEmit') {
@@ -512,29 +802,64 @@ async function main() {
       } else {
         player.emit(commandSpec.event, commandSpec.args);
       }
+      if (runEvent) {
+        Object.assign(runEvent, {
+          parse: {
+            intentToken: null,
+            canonicalInput: '',
+            normalizedInput: '',
+            primaryTargetSpan: null,
+            relationToken: null,
+            secondaryTargetSpan: null,
+          },
+          lookup: {
+            commandFound: false,
+            commandName: null,
+            alias: null,
+          },
+          phases: {
+            input: { ok: true, code: 'PLAYER_EVENT' },
+          },
+          outcome: {
+            ok: true,
+            phase: 'success',
+            code: 'PLAYER_EVENT',
+            errorTag: null,
+          },
+        });
+      }
       flushOutput(output, emitOutput);
       continue;
     }
 
-    const commandName = commandSpec.name.toLowerCase();
-    const movement = resolveMovementCommand(player, commandName);
-    if (movement) {
-      player.emit('move', { roomExit: movement.roomExit, originalCommand: movement.direction });
-      flushOutput(output, emitOutput);
-      continue;
+    const parsedInput = /** @type {Record<string, *>} */ (parseInput(commandSpec.raw));
+    const intentToken = typeof parsedInput.intentToken === 'string'
+      ? parsedInput.intentToken
+      : resolveCanonicalIntent(commandSpec.raw);
+    const { command, alias } = resolveCommandExact(GameState, intentToken);
+    const fallbackLookup = {
+      commandFound: !!command,
+      commandName: command && typeof command.name === 'string' ? command.name : (intentToken || null),
+      alias: alias || null,
+    };
+
+    for (const listener of inputListeners) {
+      await listener(inputSession, commandSpec.raw);
     }
 
-    const commandMatch = GameState.CommandManager.find(commandSpec.name, true);
-    if (!commandMatch) {
+    if (runEvent) {
+      Object.assign(runEvent, mapRunEvent(parsedInput, fallbackLookup));
+      const outcome = runEvent.outcome && typeof runEvent.outcome === 'object'
+        ? /** @type {Record<string, *>} */ (runEvent.outcome)
+        : null;
+      if (outcome && outcome.code === 'UNKNOWN_COMMAND') {
+        unknownCount += 1;
+        emitEvent({ type: 'unknown', index: i + 1, raw: commandSpec.raw });
+      }
+    } else if (!fallbackLookup.commandFound) {
       unknownCount += 1;
-      player.send('Unknown command.');
-      emitEvent({ type: 'unknown', index: i + 1, raw: commandSpec.raw });
-      flushOutput(output, emitOutput);
-      continue;
     }
 
-    const { command, alias } = commandMatch;
-    await command.execute(commandSpec.args, player, alias);
     flushOutput(output, emitOutput);
   }
 
@@ -561,8 +886,6 @@ async function main() {
     } else {
       process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
     }
-  } else {
-    console.log(`[info] scenario complete (commands=${parsedCommands.length}, unknown=${unknownCount}, failed=${failed})`);
   }
   process.exit(failed);
 }
