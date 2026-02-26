@@ -93,9 +93,9 @@ Rationale: one escape mechanism avoids mode switching for authors and works in p
 
 ## 4) Compiled representation and render contract
 
-### Compile once
+### Compile on first render (JIT)
 
-At area load (or bundle validation), parse each room description into a compact compiled tree:
+At first render of a room description, parse the template into a compact compiled tree and cache it for subsequent renders:
 
 - `TextNode { value }`
 - `TagNode { condition, thenNodes, elseNodes, sourceRange }`
@@ -111,6 +111,18 @@ Cache compiled AST by room reference + source hash:
 
 - key: `<area>:<roomId>:sha1(description)`
 - value: compiled AST + diagnostics (if any)
+
+JIT motivation:
+
+- Large procedural worlds may include many rooms that are never visited.
+- Eager compile-at-load wastes CPU and memory churn for cold content.
+- JIT compilation keeps startup and generation costs lower while preserving fast repeated renders for hot rooms.
+- First view of a room may pay a small one-time compile cost; subsequent renders are cached.
+
+Validation note:
+
+- Bundle/area validation tools should still be able to parse all descriptions for author feedback.
+- Runtime render path compiles lazily and reuses compiled results.
 
 ### Evaluate many
 
@@ -199,8 +211,8 @@ Rationale: deterministic and unsurprising; avoids hidden formatting side effects
 
 ### Failure mode
 
-- **Area/bundle load**: hard fail on syntax errors in descriptions (default).
-- Runtime should not parse; it only evaluates previously compiled templates.
+- **Validation path (`util/validate-bundles.js`)**: hard fail on syntax errors in descriptions (default).
+- Runtime compiles lazily on first render and should cache the compiled result for subsequent evaluations.
 
 ### Diagnostic shape
 
