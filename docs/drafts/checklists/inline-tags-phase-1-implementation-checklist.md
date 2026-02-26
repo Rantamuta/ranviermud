@@ -36,15 +36,33 @@ Implement a first-pass, predicate-only inline-tag runtime for perceivable descri
 - [ ] Confirm existing perceivable render entry points and list touched files; acceptance: file list is recorded in this checklist Execution Log.
 - [ ] Add fail-first parser unit tests for predicate tags, escaping, malformed syntax, and nesting; acceptance: new tests fail before implementation.
 - [ ] Commit failing parser/evaluator tests with subject beginning `Test `; acceptance: commit hash recorded.
-- [ ] Implement parser/AST module for `[predicate:then|else]` with documented grammar and escape semantics; acceptance: parser tests pass without weakening assertions.
+- [ ] Implement parser/AST module for `[predicate:then|else]`; acceptance: add `bundles/bundle-rantamuta/lib/inline-tags/parseInlineTags.js` exporting `parseInlineTags(template, options)` plus node typedefs (`TextNode`, `TagNode`, `ConditionNode`), and add `bundles/bundle-rantamuta/test/inline-tags/parseInlineTags.spec.js` covering grammar/escaping/nesting without weakening assertions.
 - [ ] Add fail-first evaluator/render tests for true/false branches, unknown predicate fallback-to-false, throw/non-boolean handling, and deterministic output; acceptance: tests fail before evaluator changes.
 - [ ] Commit failing evaluator/render tests with subject beginning `Test `; acceptance: commit hash recorded.
-- [ ] Implement evaluator integration against predicate runtime contract and perceivable render paths; acceptance: evaluator/render tests pass and no raw template leaks on runtime parse failure.
+- [ ] Implement evaluator integration against predicate runtime contract and perceivable render paths; acceptance: add `bundles/bundle-rantamuta/lib/inline-tags/renderInlineTags.js` exporting `renderInlineTags(ast, renderContext, evaluatePredicate)` and wire room/item/npc perceivable description render entry points so this executes in render-time assembly (not Capture/Plan/Commit/Bubble), preserving command architecture boundaries in `docs/normative/CommandArchitecture.md` and `docs/normative/PredicateStateRendering.md`.
 - [ ] Add fail-first runtime cache tests for LRU behavior and default capacity 10000; acceptance: tests fail before cache implementation.
 - [ ] Commit failing cache tests with subject beginning `Test `; acceptance: commit hash recorded.
 - [ ] Implement LRU compiled-template cache keyed by surface reference + source hash; acceptance: cache tests pass.
 - [ ] Add performance tests for cold compile, hot cache throughput, and mixed-surface access; acceptance: tests are runnable and produce stable pass/fail thresholds or invariant assertions.
 - [ ] Update design/progress docs to record deferred-immediate follow-up items (strict validation mode + eager precompile controls) and runtime mutation policy constraints; acceptance: decisions are explicit and unambiguous.
+
+
+## Proposed File/Function Map (Phase 1 target)
+
+- `bundles/bundle-rantamuta/lib/inline-tags/parseInlineTags.js`
+  - `parseInlineTags(template, { surfaceRef }) -> { ast, diagnostics }`
+- `bundles/bundle-rantamuta/lib/inline-tags/renderInlineTags.js`
+  - `renderInlineTags(ast, renderContext, evaluatePredicate) -> string`
+- `bundles/bundle-rantamuta/lib/inline-tags/cache.js`
+  - `getCompiledTemplate(surfaceRef, sourceText)` / `putCompiledTemplate(surfaceRef, sourceText, compiled)`
+- `bundles/bundle-rantamuta/test/inline-tags/parseInlineTags.spec.js`
+- `bundles/bundle-rantamuta/test/inline-tags/renderInlineTags.spec.js`
+- `bundles/bundle-rantamuta/test/inline-tags/cache.spec.js`
+
+Notes:
+
+- Exact file names may be adjusted to existing repo conventions discovered in checklist item 1, but function responsibilities and command-phase boundaries must remain equivalent.
+- Hook-in point is description render assembly only; no inline-tag evaluation in command mutation phases.
 
 ## Commit Plan (Optional but Recommended)
 

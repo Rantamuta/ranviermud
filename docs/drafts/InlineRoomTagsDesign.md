@@ -269,6 +269,30 @@ This gives fast author feedback before runtime playtesting.
 5. Enable in example content and smoke test.
 This staged approach limits compatibility risk while preserving author-facing syntax.
 
+### 11.1) Command architecture hook-in boundary
+
+Inline-tag evaluation must hook into **render-time description assembly only**.
+
+Implementation mapping for phase 1 should target bundle runtime modules, for example:
+
+- `bundles/bundle-rantamuta/lib/inline-tags/parseInlineTags.js`
+- `bundles/bundle-rantamuta/lib/inline-tags/renderInlineTags.js`
+- `bundles/bundle-rantamuta/lib/inline-tags/cache.js`
+
+Integration points:
+
+- apply to perceivable description render entry points (room/item/NPC/look/read surfaces),
+- execute after command-side mutation decisions are complete,
+- execute before final formatting/ANSI pipeline pass.
+
+Non-integration points (must not run inline-tag evaluation):
+
+- Capture
+- Plan
+- Commit
+- Bubble
+
+This preserves the normative phase boundary where predicate evaluation is a rendering concern and not gameplay authority (`docs/normative/CommandArchitecture.md`, `docs/normative/PredicateStateRendering.md`).
 
 ---
 
