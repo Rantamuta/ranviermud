@@ -93,9 +93,9 @@ Rationale: one escape mechanism avoids mode switching for authors and works in p
 
 ## 4) Compiled representation and render contract
 
-### Compile once
+### Compile on first render (JIT)
 
-At area load (or bundle validation), parse each room description into a compact compiled tree:
+At first render of a room description, parse the template into a compact compiled tree and cache it for subsequent renders:
 
 - `TextNode { value }`
 - `TagNode { condition, thenNodes, elseNodes, sourceRange }`
@@ -111,6 +111,18 @@ Cache compiled AST by room reference + source hash:
 
 - key: `<area>:<roomId>:sha1(description)`
 - value: compiled AST + diagnostics (if any)
+
+JIT motivation:
+
+- Large procedural worlds may include many rooms that are never visited.
+- Eager compile-at-load wastes CPU and memory churn for cold content.
+- JIT compilation keeps startup and generation costs lower while preserving fast repeated renders for hot rooms.
+- First view of a room may pay a small one-time compile cost; subsequent renders are cached.
+
+Validation note:
+
+- Bundle/area validation tools should still be able to parse all descriptions for author feedback.
+- Runtime render path compiles lazily and reuses compiled results.
 
 ### Evaluate many
 
@@ -199,8 +211,8 @@ Rationale: deterministic and unsurprising; avoids hidden formatting side effects
 
 ### Failure mode
 
-- **Area/bundle load**: hard fail on syntax errors in descriptions (default).
-- Runtime should not parse; it only evaluates previously compiled templates.
+- **Validation path (`util/validate-bundles.js`)**: hard fail on syntax errors in descriptions (default).
+- Runtime compiles lazily on first render and should cache the compiled result for subsequent evaluations.
 
 ### Diagnostic shape
 
@@ -300,3 +312,49 @@ This approach is reasonable and does **not** need to become a large templating s
 - Keep formatting pipeline order fixed: resolve tags first, then ANSI/web formatting.
 
 Net: with these constraints, this is a practical maintenance-grade feature, not an architectural risk.
+
+---
+
+## 13) Open questions before implementation
+
+The following decisions should be finalized before coding begins.
+
+### A) Runtime strategy and caching
+
+1. **Should we support optional eager compile-on-load for known hot rooms?**
+   - Proposed direction: yes, via an explicit room-level opt-in flag/bit.
+2. **What is the exact room-level opt-in name and location?**
+   - Examples to decide: room metadata field, bitflag, or area-level override.
+3. **What cache policy should runtime use for JIT-compiled templates?**
+   - Decide LRU vs unbounded map, and whether TTL is required.
+4. **What cache capacity defaults are acceptable for large procedural worlds?**
+   - Decide default max entries and operator-tunable config key.
+5. **When a room description changes at runtime, what is invalidation behavior?**
+   - Decide whether hash-key replacement alone is enough or if explicit purge hooks are required.
+
+### B) Validation and failure policy
+
+6. **Do unknown identifiers remain warnings by default, or become hard errors in strict mode only?**
+   - Confirm default policy for builder ergonomics vs safety.
+7. **For JIT runtime parse failures, should behavior be fail-closed (empty output + logged error) or hard exception?**
+   - Need explicit player-facing fallback behavior.
+8. **Should `util/validate-bundles.js` expose a strict mode that upgrades unknown tags to errors?**
+   - If yes, define exact CLI flag and exit behavior.
+
+### C) Resolver contract
+
+9. **What are the canonical resolver namespaces for v1?**
+   - Confirm which identifiers are supported out of the box (`flag`, `stat`, others?)
+10. **How should numeric coercion behave for resolver outputs?**
+    - Decide: strict number-only vs controlled coercion (for example numeric strings).
+11. **How should per-template diagnostic rate-limiting be keyed?**
+    - Decide key shape to avoid noisy logs while preserving debuggability.
+
+### D) Rollout and observability
+
+12. **Should inline tags ship behind `features.inlineRoomTags` initially, and for how long?**
+    - Confirm rollout gate and default value timeline.
+13. **What minimal metrics should we emit to validate JIT behavior in production?**
+    - Suggested counters: compile count, cache hit/miss, compile latency, parse errors.
+14. **What is rollback behavior if runtime JIT causes instability?**
+    - Confirm immediate disable path (feature flag) and expected operational playbook.
