@@ -27,7 +27,7 @@ Add an opt-in exit metadata flag (`metadata.showInExits: false`) that hides exit
 - [x] Add a user-visible changelog entry in `CHANGELOG.md`.
   - Acceptance criteria: entry describes new `metadata.showInExits` behavior and scope.
   - Validation: ensure entry follows existing changelog format and release section conventions.
-- [ ] Complete required validation and archive the checklist.
+- [x] Complete required validation and archive the checklist.
   - Acceptance criteria: `npm test` and `npm run ci:local` pass; checklist is moved to `docs/archive/implementations/` with all items checked.
   - Validation: command output pass and file moved from drafts to archive.
 
