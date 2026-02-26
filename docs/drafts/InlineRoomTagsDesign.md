@@ -4,7 +4,7 @@
 
 Draft proposal for maintenance-mode implementation in `ranviermud`.
 
-This document preserves a constrained author contract (`[predicate:then|else]`) while making the behavior deterministic, parseable, cacheable, and testable. It explicitly supports nested tags, since compiled parsing already builds a tree representation.
+This document preserves the existing author contract (`[cond:then|else]` and `[sense>n:text]`) while making the behavior deterministic, parseable, cacheable, and testable. It explicitly supports nested tags, since compiled parsing already builds a tree representation.
 
 ---
 
