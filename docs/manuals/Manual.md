@@ -785,11 +785,11 @@ Bundle loading is filesystem-driven and convention-driven:
 
 ### 6.2 How bundles are installed and enabled in `ranviermud`
 
-Rantamuta’s tooling treats bundles as **git submodules**:
+By default, Rantamuta’s tooling treats bundles as **git submodules**:
 
-* `util/install-bundle.js` adds a bundle as `git submodule add … bundles/<name>` and runs `npm install --no-audit` inside the bundle if it has a `package.json`. ([GitHub][3])
+* `util/install-bundle.js` normally adds a bundle as `git submodule add … bundles/<name>` and runs `npm install --no-audit` inside the bundle if it has a `package.json`. If `bundles/` is git-ignored in the local clone, it falls back to `git clone` (local-only, non-submodule mode). ([GitHub][3])
 * `util/remove-bundle.js` deinitializes and removes the submodule and its `.git/modules` entry. ([GitHub][19])
-* `util/update-bundle-url.js` rewrites the submodule URL in `.gitmodules` and runs `git submodule sync` and `git submodule update --remote`. ([GitHub][20])
+* `util/update-bundle-url.js` rewrites the submodule URL in `.gitmodules` and runs `git submodule sync` and `git submodule update --init --recursive --remote`. ([GitHub][20])
 
 `util/init-bundles.js` is a higher-level helper that:
 
