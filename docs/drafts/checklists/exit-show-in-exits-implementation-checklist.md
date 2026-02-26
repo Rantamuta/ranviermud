@@ -15,16 +15,16 @@ Add an opt-in exit metadata flag (`metadata.showInExits: false`) that hides exit
 - No forest data-generation changes in this checklist.
 
 ## Checklist
-- [ ] Add room-view tests for `metadata.showInExits` filtering semantics in `bundles/bundle-rantamuta/tests/room.view.baseline.test.js`.
+- [x] Add room-view tests for `metadata.showInExits` filtering semantics in `bundles/bundle-rantamuta/tests/room.view.baseline.test.js`.
   - Acceptance criteria: test coverage includes (a) hidden when `false`, (b) visible by default when absent, (c) visible for invalid/non-boolean values.
   - Validation: run `npm --prefix bundles/bundle-rantamuta test -- tests/room.view.baseline.test.js` and observe failure before implementation.
-- [ ] Implement room-view exit filtering in `bundles/bundle-rantamuta/lib/helpers/room-view-helper.js`.
+- [x] Implement room-view exit filtering in `bundles/bundle-rantamuta/lib/helpers/room-view-helper.js`.
   - Acceptance criteria: `Exits:` rendering omits exits where `exit.metadata.showInExits === false`; all other exits unchanged.
   - Validation: run `npm --prefix bundles/bundle-rantamuta test -- tests/room.view.baseline.test.js` and observe pass.
-- [ ] Document the new exit metadata flag in `docs/manuals/DesignerManual.md`.
+- [x] Document the new exit metadata flag in `docs/manuals/DesignerManual.md`.
   - Acceptance criteria: manual includes concise example and explicitly states scope is `Exits:` rendering only.
   - Validation: inspect rendered markdown section for consistency and key naming.
-- [ ] Add a user-visible changelog entry in `CHANGELOG.md`.
+- [x] Add a user-visible changelog entry in `CHANGELOG.md`.
   - Acceptance criteria: entry describes new `metadata.showInExits` behavior and scope.
   - Validation: ensure entry follows existing changelog format and release section conventions.
 - [ ] Complete required validation and archive the checklist.
