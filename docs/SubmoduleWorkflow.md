@@ -85,7 +85,7 @@ These settings affect *visibility*, not history. They do not stop Git from recor
 
 Submodule commit data continues to be committed exactly as before. The gitlink entry in the superproject still updates when you stage it. Merges still compare SHAs. Conflicts still occur when branches disagree on the pointer.
 
-These configs do not change repository semantics. They only reduce how often Git reminds you that the pointer moved.
+These configs do not change repository semantics. They only reduce how often Git reminds you that the pointer moved
 
 ## Safety and implications
 
