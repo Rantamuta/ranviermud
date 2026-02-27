@@ -14,8 +14,10 @@ This directory contains behavior contracts that are normative for this repositor
   - Defines the phase model (`Receive Input` through `Render/Dispatch`), including deterministic input canonicalization before parse.
 - `EntityResolution.md`
   - Defines read-only entity binding, deterministic scope/disambiguation behavior, and resolver failure ownership.
+- `checklist.md`
+  - Defines the checklist-authoring phase of the two-step workflow.
 - `implementation.md`
-  - Defines the required two-phase implementation workflow (checklist authoring gate, test-first execution, and dual-repository commit ordering).
+  - Defines checklist execution (setup, behavior-slice test-first loop, and repo-specific validation/commit order).
 - `PredicateStateRendering.md`
   - Defines predicates as the authoritative, render-only mechanism for state-dependent room description rendering (`descriptionVariants` / `descriptionFragments`).
 - `TypecheckPolicy.md`

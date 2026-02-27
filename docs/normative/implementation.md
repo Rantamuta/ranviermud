@@ -1,6 +1,8 @@
-# Implementation Process
+# Checklist implementation
 
-This document defines the normative process for implementing approved tasks in this repository.
+Companion goal: execute approved checklists with minimal drift, using test-first behavior slices plus repo-critical validation and commit order.
+
+You have a checklist and have been tasked with following it. These are those instructions.
 
 ## Status
 
@@ -8,15 +10,13 @@ This document defines the normative process for implementing approved tasks in t
 - Scope: Task implementation workflow and commit protocol
 - Binding: yes
 
-## Purpose
-
-- Convert implementation intent into a deterministic, reviewable process.
-- Reduce repeated ad hoc instructions from maintainers.
-- Ensure checklist items can be executed without hidden context.
-
 ## Applicability
 
-This process applies when a maintainer explicitly requests implementation through this document (for example: "implement this per `docs/normative/implementation.md`").
+This process applies when a maintainer explicitly requests implementation through this document (for example: "implement this per `docs/normative/implementation.md`" or "... per `norms/implementation`" for short).
+
+Expected directive form:
+
+- "Execute the approved checklist per `docs/normative/implementation.md`."
 
 Related policies:
 
@@ -24,125 +24,53 @@ Related policies:
 - `docs/ADR_POLICY.md` (decision-record requirements)
 - `docs/CHANGELOG_POLICY.md` (user-visible change logging)
 
-## Required Two-Command Flow
+## Setup
 
-### Command 1: Checklist Authoring (No Implementation)
+If checklist execution is behavior-changing, run `npm test` and ensure that everything runs green. If tests fail, stop and ask for instructions, unless those failures are already known and explicitly accepted for this implementation.
 
-Expected directive form:
+If checklist execution is docs-only or information-gathering, skip this setup test run.
 
-- "Create the implementation checklist per `docs/normative/implementation.md` and stop for review."
+Check git status in both working trees:
 
-Rules:
+- repository root
+- `bundles/bundle-rantamuta`
 
-- MUST produce a checklist file under `docs/drafts/checklists/`.
-- MUST make each item executable without interpretation.
-- MUST include file scope, acceptance criteria, and validation commands per item.
-- MUST stop after checklist authoring and wait for explicit approval.
-- MUST NOT implement behavior changes during this phase.
+If either working tree is dirty with files unrelated to this implementation, stop and ask what to do. The instruction may be to continue with the dirty tree. If files are related to this implementation and you are instructed to continue, fold them into the first relevant commit.
 
-### Command 2: Execute Approved Checklist
+If working trees are dirty and you are instructed to continue, do not stage or commit unrelated changes. Only stage files required for the checklist item being implemented.
 
-Expected directive form:
+Check out a new git branch with a name that reflects the goal of the implementation, in the form `<verb>-<noun>` or possibly `<verb>-<adjective>-<noun>`.
 
-- "Execute the approved checklist per `docs/normative/implementation.md`."
+## Loop
 
-Rules:
+Stop with any questions, or if implementing the task requires expanding beyond the scope of what was agreed in the checklist.
 
-- MUST execute checklist items in order.
-- MUST follow preflight, TDD, commit, and verification rules in this document.
+- Choose the first unchecked item of the checklist.
+- If the first unchecked item depends on another unchecked item, complete the prerequisite item first.
+- Group dependent checklist items into a single behavior slice when they implement one coherent behavior change.
+  - A behavior slice MUST remain within checklist scope and MUST list which items it satisfies.
+- If the behavior slice involves a behavioral or code change, then:
+  - Write a unit/integration test that assumes the behavior slice has been changed. This test is expected to fail.
+  - One failing test commit MAY cover multiple dependent checklist items in that slice.
+  - Commit that failing test change with the message `Test <slice summary>`, edited for clarity and length. The message must be no more than 50 characters. If longer explanation is needed, you may add a git body.
+- If an item is mechanical only (for example type plumbing, constant/table wiring, rename-only, or internal refactor with no direct behavior contract), you may implement it within the current behavior slice without adding a dedicated failing test for that single item.
+- If the item is docs-only or non-code, skip the failing-test step for that item.
+- Implement the selected behavior slice as written in the checklist.
+- Run tests after implementation.
+  - You may run a targeted test command for the touched scope first.
+  - Run full `npm test` at the end of the behavior slice iteration or at the next natural checkpoint.
+- If a test does not pass, avoid changing the test, particularly if it is a regression elsewhere.
+  - Continue implementing the behavior slice until tests run green.
+  - If it is necessary to change the test, print an acknowledgement and continue.
+- Check off each completed checklist item with `[x]`.
+- Commit all behavior-slice implementation changes with an imperative message `<slice summary>` edited for clarity and length less than 50 characters. You may add a git body.
+- For each checkpoint commit (test commit and implementation commit), use dual-repository ordering:
+  - Commit in `bundles/bundle-rantamuta` first if it has changes.
+  - Commit in repository root second if it has changes.
+  - If a repository is clean at that checkpoint, do not create a commit in that repository.
+- Continue with the loop until all items are completed.
 
-## Preflight (Before Item 1)
-
-- MUST confirm clean working trees in both:
-  - repository root
-  - `bundles/bundle-rantamuta`
-- If either tree is dirty, MUST stop and request maintainer direction.
-- MUST create and switch to a descriptive branch name focused on clarity.
-- Branch naming SHOULD use `<imperative>-<noun>` (example: `implement-clock`).
-- A third clarifying word MAY be used (example: `fix-clock-bug`).
-
-## Checklist Format (Reviewable By Default)
-
-Checklist authoring MUST optimize for maintainer review speed and clarity.
-
-Checklist documents MUST include:
-
-- Goal
-- Scope
-- Non-goals
-- Checklist (ordered, imperative, checkboxes)
-- Verification
-- Approval gate
-
-Checklist items MUST be concise and execution-oriented:
-
-- one action per checkbox item
-- observable done-state
-- file/path references only where needed for clarity
-- avoid large narrative blocks and deep sub-bullets
-
-If an item can be interpreted in two valid ways, it is invalid until rewritten.
-
-Commit subjects MAY be listed in a short `Commit plan` section.
-Execution still MUST follow commit rules in this document even when subjects are not pre-written.
-
-## Test-First Execution Rules
-
-Default: tests are required for code-changing items.
-
-Test omission is allowed only when:
-
-1. Coverage is clearly already implemented (bias toward adding tests instead of deep coverage archaeology).
-2. The checklist item does not change code (for example documentation or information gathering).
-
-If tests are required:
-
-- MUST design tests assuming the item is already complete.
-- MUST run tests and confirm the new/updated test fails before implementation.
-- MUST commit failing test(s) first.
-
-Test commit subject rules:
-
-- MUST begin with `Test `.
-- MUST map to checklist item intent.
-- MUST be clear and under 50 characters.
-
-Implementation rules:
-
-- MUST implement until tests are green.
-- MUST NOT weaken or bypass constraints by rewriting tests.
-- If a test changes after initial failure, change is allowed only when the test is incorrect.
-- MUST record why the prior test was incorrect when such edits occur.
-
-After implementation, MUST check off the corresponding checklist item and commit implementation changes with an imperative subject derived from checklist intent.
-
-Checklist check-off and implementation commits are checkpoint-coupled:
-
-- When an item reaches done-state, the same checkpoint MUST include:
-  - the checklist check-off update, and
-  - the implementation change commit(s) for that item.
-- Deferring checklist check-off to a later unrelated checkpoint is not allowed.
-
-## Dual-Repository Commit Ordering
-
-This repository has two git scopes:
-
-1. `bundles/bundle-rantamuta`
-2. repository root (tracks submodule pointer plus root files)
-
-Commit protocol for each checkpoint (test commit and implementation commit):
-
-1. Commit in `bundles/bundle-rantamuta` first if it has changes.
-2. Commit in repository root second if it has changes.
-
-Additional rules:
-
-- Root commit SHOULD include all changed root files for that checkpoint.
-- For item-completion checkpoints with `bundles/bundle-rantamuta` changes, the root checkpoint commit MUST include the checklist check-off update for that same item (alongside the submodule pointer update).
-- If either repository is clean at a checkpoint, no commit is required in that repository.
-- A commit MUST NOT be created for a clean tree.
-
-## Final Validation
+## Final validation
 
 After all checklist items are complete:
 
@@ -156,8 +84,6 @@ After all checklist items are complete:
 - MUST move the completed checklist file from `docs/drafts/checklists/` to `docs/archive/implementations/`.
 - MUST report results and stop when requested scope is complete.
 
-## Failure and Stop Conditions
+## Pull request
 
-- If preflight conditions are not met, stop.
-- If checklist ambiguity blocks deterministic execution, stop and request clarification.
-- If a required behavior change is discovered outside approved checklist scope, stop and request approval.
+If the task requires a PR or the maintainer requests one, create a new PR targeting the parent branch using `gh pr create --base <target branch>`. Add a descriptive title, and use this template to write the PR body: "Previously, (bad thing happened). This PR (fixes that by doing what). We expect (describe good thing)."
