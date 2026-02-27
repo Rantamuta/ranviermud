@@ -1,360 +1,229 @@
-# Inline Entity Tags in Room Descriptions (Design Proposal)
+# Inline Predicate Tags in Description Text (Phase 1 Plan)
 
 ## Status
 
-Draft proposal for maintenance-mode implementation in `ranviermud`.
+Draft implementation plan for maintenance-mode delivery in `ranviermud`.
 
-This document preserves the existing author contract (`[cond:then|else]` and `[sense>n:text]`) while making the behavior deterministic, parseable, cacheable, and testable. It explicitly supports nested tags, since compiled parsing already builds a tree representation.
+Purpose: define a checklist-ready Phase 1 that is implementable with current runtime architecture and low drift against normative contracts.
 
 ---
 
-## 1) Author-facing syntax contract
+## 1) Locked decisions for Phase 1
+
+1. Syntax is predicate-only in Phase 1:
+   - `[predicate:then]`
+   - `[predicate:then|else]`
+2. Nested tags are supported in Phase 1.
+3. Escaping uses backslash for delimiters:
+   - `\[` `\]` `\:` `\|` `\\`
+4. Condition evaluation uses existing predicate runtime contract:
+   - `runtime.evaluate(name, renderContext) => boolean`
+5. Formatting order is fixed:
+   - resolve inline tags first
+   - run existing formatting pipeline after resolution
+6. Rendering remains read-only and deterministic.
+7. Runtime compilation is JIT with LRU AST cache (default capacity `10000`).
+8. Phase 1 does not add eager compile, strict validation mode, or new config surface.
+
+---
+
+## 2) Author-facing syntax contract (Phase 1)
 
 ### Supported forms
 
-- Boolean conditional with optional else:
-  - `[flag:then]`
-  - `[flag:then|else]`
-- Numeric comparator:
-  - `[stat>10:text]`
-  - `[stat>=10:text]`
-  - `[stat<10:text]`
-  - `[stat<=10:text]`
-  - `[stat==10:text]`
-  - `[stat!=10:text]`
+- `[predicate:then]`
+- `[predicate:then|else]`
 
-### Compatibility notes
+### Behavior notes
 
-- Whitespace is allowed around operators and after `:`.
-  - `[hear>10:You hear...]` and `[hear > 10: You hear...]` are equivalent.
 - Else branch is optional.
-  - If omitted and condition is false, output is empty string.
-- Nested tags are **supported in v1**.
-  - Example: `[isNight:[isRaining:dark and wet|dark and still]|bright]`
+  - If omitted and condition is false, rendered output is empty string.
+- Nested tags are valid in both `then` and `else` branches.
+  - Example: `[is_night:[is_raining:dark and wet|dark and still]|bright]`
+- Whitespace in branch text is preserved exactly; renderer does not auto-trim.
+
+### Deferred forms (not in Phase 1)
+
+- Numeric comparators such as `[stat>10:text]`.
+- Any expression language beyond a single predicate identifier.
 
 ---
 
-## 2) Formal grammar (v1)
-
-EBNF-like grammar over a single room description string:
+## 3) Grammar (Phase 1)
 
 ```ebnf
 Document        := Segment*
 Segment         := Text | Tag
-Tag             := '[' Condition ':' Branch ('|' Branch)? ']'
-
-Condition       := Identifier Comparator Number
-                 | Identifier
-
-Comparator      := '>=' | '<=' | '==' | '!=' | '>' | '<'
+Tag             := '[' Predicate ':' Branch ('|' Branch)? ']'
+Predicate       := Identifier
 Identifier      := [A-Za-z_][A-Za-z0-9_]*
-Number          := '-'? [0-9]+ ('.' [0-9]+)?
-
 Branch          := BranchSegment*
 BranchSegment   := Text | Tag
-
 Text            := TextChar+
 TextChar        := EscapedChar | any codepoint except unescaped '['
 EscapedChar     := '\\' ('[' | ']' | ':' | '|' | '\\')
 ```
 
-Parsing rules:
+Parser requirements:
 
-Implementation note:
-
-- A simple regex can still be used as a fast pre-check for non-nested tags, but full parsing must be depth-aware to correctly support nesting and escaped delimiters.
-- Recommended implementation is a **forward-only single-pass scanner** with bracket-depth counting and a tiny stack for current branch state (`then`/`else`).
-- No parser generator, no backtracking, no expression engine.
-
-
-1. `[` starts a tag unless escaped as `\[`.
-2. `]` closes the current tag unless escaped as `\]`.
-3. `|` splits then/else only at the current tag depth (depth 1 for the currently parsed tag) and only when unescaped.
-4. `:` splits condition/body only for the currently parsed tag (depth 1) and only when unescaped.
-5. Unescaped `[` inside a branch begins a nested tag; the parser tracks depth until the matching `]`.
+- Depth-aware parsing for nested tags.
+- Single-pass scanner with explicit depth tracking.
+- No parser generator, no backtracking, no expression evaluator.
+- `:` and `|` split only at current tag depth and only when unescaped.
 
 ---
 
-## 3) Escaping rules
+## 4) Evaluation contract
 
-Use backslash escaping consistently in text and branch bodies:
-
-- `\[` literal `[`
-- `\]` literal `]`
-- `\:` literal `:`
-- `\|` literal `|`
-- `\\` literal `\`
-
-Unknown escapes (for example `\x`) are treated as literal `\x` for author friendliness.
-
-Rationale: one escape mechanism avoids mode switching for authors and works in prose + tag bodies.
-
----
-
-## 4) Compiled representation and render contract
-
-### Compile on first render (JIT)
-
-At first render of a room description, parse the template into a compact compiled tree and cache it for subsequent renders:
-
-- `TextNode { value }`
-- `TagNode { condition, thenNodes, elseNodes, sourceRange }`
-
-Where:
-
-- `condition` is either:
-  - `{ kind: 'flag', name }`
-  - `{ kind: 'compare', name, op, rhs }`
-- `thenNodes` and `elseNodes` are arrays of `TextNode | TagNode` (nested tags supported).
-
-Cache compiled AST by room reference + source hash:
-
-- key: `<area>:<roomId>:sha1(description)`
-- value: compiled AST + diagnostics (if any)
-
-JIT motivation:
-
-- Large procedural worlds may include many rooms that are never visited.
-- Eager compile-at-load wastes CPU and memory churn for cold content.
-- JIT compilation keeps startup and generation costs lower while preserving fast repeated renders for hot rooms.
-- First view of a room may pay a small one-time compile cost; subsequent renders are cached.
-
-Validation note:
-
-- Bundle/area validation tools should still be able to parse all descriptions for author feedback.
-- Runtime render path compiles lazily and reuses compiled results.
-
-### Evaluate many
-
-Render algorithm:
-
-1. Walk AST in order.
-2. `TextNode`: append raw text.
-3. `TagNode`: evaluate condition against resolver interface; recursively render then/else branch nodes.
-4. Join to raw resolved prose.
-5. Pass output into existing formatting pipeline.
-
-Determinism requirement:
-
-- Rendering must be pure relative to `(compiledTemplate, context, resolver implementation)`.
-- No hidden global mutable state.
-
----
-
-## 5) Resolver interface and safety contract
-
-Condition names are resolved through explicit whitelisted resolvers only:
+Evaluation of a tag condition must call:
 
 ```js
-resolveFlag(name, ctx) -> boolean | undefined
-resolveStat(name, ctx) -> number | undefined
+runtime.evaluate(predicateName, renderContext)
 ```
 
-Evaluation semantics:
+Semantics align with `docs/normative/PredicateStateRendering.md`:
 
-- Bare identifier (`[isSwitch:...]`) uses `resolveFlag`.
-- Comparator condition (`[hear>10:...]`) uses `resolveStat`.
-- Unknown identifier:
-  - During validation: warning (or error in strict mode).
-  - During runtime: evaluates `false`.
-- Type mismatch (`resolveStat` returns non-number): evaluates `false` and logs debug diagnostic once per template.
+- `true` => render `then`
+- `false` => render `else` if present, else empty string
+- unknown predicate => false
+- thrown predicate => false
+- non-boolean predicate return => false
 
-Security properties:
-
-- No expression evaluation.
-- No function calls in template.
-- No arbitrary code execution.
+No inline-tag code may bypass predicate runtime or evaluate arbitrary expressions.
 
 ---
 
-## 6) Formatting pipeline integration
+## 5) Render integration boundaries
 
-Choose **Option A**:
+Phase boundary is fixed:
 
-1. Evaluate inline tags first (to plain resolved text).
-2. Run normal markup/ANSI translation based on client capabilities.
+- Inline tag resolution is render-time description assembly only.
+- No evaluation during Capture/Plan/Commit/Bubble/lifecycle hooks.
 
-Why Option A:
+Phase 1 integration points in current codebase:
 
-- Keeps this feature independent from renderer-specific markup concerns.
-- Avoids mixing two grammars in one parser.
-- Preserves current “render text then format for client” architecture used in MUD pipelines.
+- `bundles/bundle-rantamuta/lib/helpers/room-view-helper.js`
+  - room base description
+  - `metadata.descriptionVariants[].text`
+  - `metadata.descriptionFragments[].text`
+  - room item `roomDesc`
+  - room NPC `roomDesc`
+- `bundles/bundle-rantamuta/commands/look.js`
+  - direct target `description`
 
-Constraint:
-
-- Inline parser must treat ANSI-style tokens as ordinary text unless they include unescaped bracket syntax.
-- Nested inline tags are resolved before ANSI translation so final rendered prose still flows through one formatter pass.
-
----
-
-## 7) Whitespace/punctuation policy (v1)
-
-Use explicit author control, no automatic whitespace mutation.
-
-Rules:
-
-- Renderer concatenates exactly what branches produce.
-- Empty false branch yields empty string only.
-- No auto-trim, no smart space collapse, no punctuation rewriting.
-
-Authoring guidance:
-
-- Include spaces/punctuation inside branches where needed:
-  - `turned [isSwitch:on|off].`
-  - `[isSwitch: There is light.|]`
-
-Rationale: deterministic and unsurprising; avoids hidden formatting side effects.
+Phase 1 does not require adding new entity-resolution scope sources.
 
 ---
 
-## 8) Error handling and diagnostics
+## 6) Compilation and cache policy
 
-### Failure mode
+### Compile model
 
-- **Validation path (`util/validate-bundles.js`)**: hard fail on syntax errors in descriptions (default).
-- Runtime compiles lazily on first render and should cache the compiled result for subsequent evaluations.
+- Compile template text to AST on first render of a unique source string.
+- Reuse cached AST for subsequent renders.
 
-### Diagnostic shape
+### Node shape
 
-Each parse error reports:
+- `TextNode { value }`
+- `TagNode { predicate, thenNodes, elseNodes }`
 
-- room reference (`area:roomId`)
-- line and column
-- absolute index
-- short code (`E_TAG_UNTERMINATED`, `E_MISSING_COLON`, etc.)
-- readable message
-- source snippet with caret
+### Cache key and policy
 
-Example:
+- Key: `<surfaceRef>:sha1(sourceText)`
+- Policy: LRU
+- Default capacity: `10000`
 
-```
-limbo:white rooms.yml:12:34 E_MISSING_COLON
-[isSwitch on|off]
-         ^ expected ':' after condition
-```
+`surfaceRef` shape for Phase 1:
 
----
+- `<entityRef>|<surface>`
+- Examples:
+  - `test:lantern|room.description`
+  - `test:lantern|variant:0`
+  - `test:lantern|fragment:2`
+  - `item:lantern|look.description`
 
-## 9) Validation tooling plan
+Runtime/cache ownership for Phase 1:
 
-Add validation to bundle/area load path and `util/validate-bundles.js`:
+- Default to module-singleton runtime/cache ownership.
+- Allow optional injected runtime/cache from world/context for future migration without interface break.
 
-- Parse every room `description`.
-- Emit diagnostics with room/file location mapping.
-- Exit non-zero on syntax errors.
-- Optional `--warn-unknown-tags` for unresolved identifiers.
+### Invalidation
 
-This gives fast author feedback before runtime playtesting.
+- Source-hash keying is sufficient for Phase 1.
+- If source text changes, a new key is produced; old entry ages out via LRU.
 
 ---
 
-## 10) Test matrix (minimum)
+## 7) Error handling and diagnostics
 
-1. Boolean true/false with and without else.
-2. Numeric comparators for each operator.
-3. Whitespace variants around condition and `:`.
-4. Adjacent tags with no separators.
-5. Escaped delimiters in prose and in branches.
-6. Unknown identifiers (validation warning + runtime false).
-7. Type mismatch on numeric resolver.
-8. Nested tag rendering:
-   - nested true/false branches
-   - nested tags in else branches
-   - nested tags adjacent to text and punctuation
-9. Malformed tags:
-   - unterminated tag
-   - missing `:`
-   - invalid comparator
-   - malformed nested close/open balance
-10. Deterministic output snapshot for same input/context.
-11. Formatting integration:
-    - resolved string still parses through ANSI pipeline
-    - stripping/translation behavior unchanged except conditional inclusion
+### Runtime parse failures
+
+- Fail-open for player stability:
+  - return original source text unchanged
+  - log warning diagnostic
+
+### Runtime diagnostics
+
+- Parser emits short error codes (`E_TAG_UNTERMINATED`, `E_MISSING_COLON`, etc.).
+- Warning diagnostics should include at least:
+  - `surfaceRef`
+  - diagnostic code
+- Route warnings to engine logger from GameState/world when available; fallback to Ranvier `Logger` only when world logger is unavailable.
+
+### Validation path (Phase 1)
+
+- No strict-mode expansion in Phase 1.
+- Dedicated validator integration for inline-tag syntax is deferred to immediate follow-up.
 
 ---
 
-## 11) Rollout plan (maintenance-safe)
+## 8) Whitespace and formatting policy
 
-1. Implement parser + evaluator in isolated module.
-2. Add unit tests for parser/evaluator first.
-3. Integrate into room description render path behind config flag:
-   - `features.inlineRoomTags` default `false` for first release.
-4. Add bundle validation checks.
-5. Enable in example content and smoke test.
-6. After confidence window, default flag to `true` (optional follow-up).
-
-This staged approach limits compatibility risk while preserving author-facing syntax.
-
+- Renderer concatenates exactly what text/tag branches produce.
+- No automatic whitespace collapse.
+- No punctuation rewriting.
+- Resolved output is passed through existing formatter unchanged in order.
 
 ---
 
-## 12) Engineering judgment and pushback
+## 9) Phase 1 scope for checklist authoring
 
-This approach is reasonable and does **not** need to become a large templating subsystem if we keep strict boundaries.
+### In scope
 
-### Where this is simple
+- Parser module for predicate-only inline tags with nesting/escaping.
+- Evaluator/renderer module that walks AST and calls `runtime.evaluate`.
+- LRU cache module with default capacity `10000`.
+- Integration in room-view helper and direct-look target rendering.
+- Unit/integration tests for parser, evaluator, cache, and integration paths.
 
-- Author syntax stays inline in prose (`[...]`).
-- Parsing can be done with one forward scan and depth counting.
-- Rendering is simple tree walk + string concatenation + existing formatter.
+### Out of scope
 
-### Where this becomes messy (and should be rejected)
-
-- If conditions become arbitrary expressions (for example `a && (b || c)`).
-- If inline templates can call arbitrary functions or execute script.
-- If whitespace rewriting becomes heuristic and implicit.
-
-### Guardrails to keep complexity contained
-
-- Keep condition language small: boolean identifier or numeric comparison only.
-- Keep resolver interface explicit and whitelisted.
-- Keep parser deterministic and linear-time with clear diagnostics.
-- Keep formatting pipeline order fixed: resolve tags first, then ANSI/web formatting.
-
-Net: with these constraints, this is a practical maintenance-grade feature, not an architectural risk.
+- Numeric comparator syntax.
+- Strict validator mode and unknown-tag strictness flags.
+- Eager compile-on-load.
+- New feature flags/config keys.
+- Metrics instrumentation and dashboarding.
+- Entity-resolution expansion for new look scopes.
 
 ---
 
-## 13) Open questions before implementation
+## 10) Checklist-ready acceptance baseline
 
-The following decisions should be finalized before coding begins.
+A Phase 1 implementation is complete when all are true:
 
-### A) Runtime strategy and caching
+1. Predicate-only inline tags render correctly in covered surfaces.
+2. Nested tags and escaping behave per grammar.
+3. Rendering is read-only and deterministic for same input/context.
+4. Predicate runtime remains the sole condition authority.
+5. JIT compile + LRU cache are active with default capacity `10000`.
+6. Runtime parse failures do not break rendering and are diagnosable.
+7. `npm test` and `npm run ci:local` pass for behavior-changing work.
 
-1. **Should we support optional eager compile-on-load for known hot rooms?**
-   - Proposed direction: yes, via an explicit room-level opt-in flag/bit.
-2. **What is the exact room-level opt-in name and location?**
-   - Examples to decide: room metadata field, bitflag, or area-level override.
-3. **What cache policy should runtime use for JIT-compiled templates?**
-   - Decide LRU vs unbounded map, and whether TTL is required.
-4. **What cache capacity defaults are acceptable for large procedural worlds?**
-   - Decide default max entries and operator-tunable config key.
-5. **When a room description changes at runtime, what is invalidation behavior?**
-   - Decide whether hash-key replacement alone is enough or if explicit purge hooks are required.
+---
 
-### B) Validation and failure policy
+## 11) Immediate follow-up plan (post Phase 1)
 
-6. **Do unknown identifiers remain warnings by default, or become hard errors in strict mode only?**
-   - Confirm default policy for builder ergonomics vs safety.
-7. **For JIT runtime parse failures, should behavior be fail-closed (empty output + logged error) or hard exception?**
-   - Need explicit player-facing fallback behavior.
-8. **Should `util/validate-bundles.js` expose a strict mode that upgrades unknown tags to errors?**
-   - If yes, define exact CLI flag and exit behavior.
-
-### C) Resolver contract
-
-9. **What are the canonical resolver namespaces for v1?**
-   - Confirm which identifiers are supported out of the box (`flag`, `stat`, others?)
-10. **How should numeric coercion behave for resolver outputs?**
-    - Decide: strict number-only vs controlled coercion (for example numeric strings).
-11. **How should per-template diagnostic rate-limiting be keyed?**
-    - Decide key shape to avoid noisy logs while preserving debuggability.
-
-### D) Rollout and observability
-
-12. **Should inline tags ship behind `features.inlineRoomTags` initially, and for how long?**
-    - Confirm rollout gate and default value timeline.
-13. **What minimal metrics should we emit to validate JIT behavior in production?**
-    - Suggested counters: compile count, cache hit/miss, compile latency, parse errors.
-14. **What is rollback behavior if runtime JIT causes instability?**
-    - Confirm immediate disable path (feature flag) and expected operational playbook.
+1. Add validator integration for inline-tag syntax in `util/validate-bundles.js`.
+2. Decide and implement strict-mode behavior for unknown identifiers.
+3. Evaluate optional eager compile controls for hot content.
+4. Reassess comparator syntax only after Phase 1 stability window.

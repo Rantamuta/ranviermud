@@ -4,6 +4,30 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Inline predicate tags in room-view and direct look descriptions
+
+Summary:
+
+- Added predicate-only inline tag runtime support for `[predicate:then]` and `[predicate:then|else]` description text.
+- Integrated inline tag resolution into room-view base/variant/fragment text, item/NPC `roomDesc`, and direct-look target `description`.
+- Added fail-open runtime behavior for parse failures so unresolved malformed tags return original source text while logging warning diagnostics.
+Why:
+- Description authors need deterministic, read-only inline conditional text without introducing command-phase behavior coupling.
+Impact:
+- Room and direct-look descriptive text can now render predicate-controlled wording inline.
+- Malformed inline tags do not break render output; original authored text is preserved with warning diagnostics.
+Migration/Action:
+- Optional: authors may begin using inline predicate tags in supported description surfaces.
+References:
+- `bundles/bundle-rantamuta/lib/inline-tags/parse-inline-tags.js`
+- `bundles/bundle-rantamuta/lib/inline-tags/render-inline-tags.js`
+- `bundles/bundle-rantamuta/lib/inline-tags/inline-tag-cache.js`
+- `bundles/bundle-rantamuta/lib/inline-tags/resolve-inline-tags.js`
+- `bundles/bundle-rantamuta/lib/helpers/room-view-helper.js`
+- `bundles/bundle-rantamuta/commands/look.js`
+- `bundles/bundle-rantamuta/tests/inline.tags.runtime.test.js`
+Timestamp: 2026.02.27 12:05
+
 ### Predicate rendering scope expanded to item and PC descriptions
 
 Summary:
