@@ -1540,6 +1540,35 @@ Practical tip:
 - The lens decides what the player sees.
 - The hand (commands + mutation logic) is what changes the world.
 
+## Mutations
+
+Mutations do not refer to weird body parts or super-powers. They refer to changes made to "game state". Everything that can be changed in the game is part of its state. If a character flips a switch in a room and the light goes on, that is a change in the common game state. Consider how that might work: the character types "flip switch" and a flag is set in the room "isSwitch: on". The change of that flag from "off" to "on" is a _mutation._  Mutations are a bit dangerous. Even careful, thoughful code can be made unstable by unexpected mutations from other careful, thoughtful code.
+
+- Mutations change shared state that many systems read, not just the command that triggered it.
+- A small flag write can affect later descriptions, predicates, and command results in places that are not obvious.
+- If two features touch the same state, behavior can become order-dependent ("it works only if you did X first").
+- Partial or hidden writes make bugs hard to reproduce and harder to debug.
+- If a mutation needs two operations and only one is performed accidentally, something could be deleted, or doubled, or just fail.
+
+To prevent this as much as possible, we give you specific "mutation operations" (or "mutator ops") and we take care of the details, to make sure the state changes happen as safely as possible. Here are all the things you can do in item scripts, and if you need more, just let your admin know.
+
+### Changing Room Flags
+
+```js
+{
+  type: 'setRoomFlag',
+  roomRef: 'myarea:observatory',
+  key: 'buttonPushed',
+  value: true
+}
+```
+
+What this does:
+
+- Writes to `room.metadata.flags.buttonPushed`.
+- Lets predicates read that state using `q.roomFlag('myarea:observatory', 'buttonPushed')`.
+- Keeps state mutation in command/mutator flow and keeps predicates side-effect free.
+
 ## Scenario Runner
 
 The scenario-runner is a script you can use from the command line to run through a sequence of commands in your MUD. Even better, you can run it during automated testing and find out if some recent change broke something else.
