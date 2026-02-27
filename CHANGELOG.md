@@ -4,6 +4,26 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Exit metadata showInExits room-view filtering
+
+Summary:
+
+- Added support for `exits[].metadata.showInExits: false` to hide specific exits from room-view `Exits:` output.
+- Added room-view baseline coverage for hidden exits, default-visible exits, and invalid/non-boolean flag values.
+- Updated designer documentation with an exit authoring example using `showInExits` plus a `go` veto message.
+Why:
+- Content authors need to hide blocked or gated exits from room-view listings while preserving movement policy hooks.
+Impact:
+- Room-view exit listing now omits exits only when `metadata.showInExits` is explicitly boolean `false`.
+- Exit resolution and movement policy behavior (`go`, permissions, capture hooks) are unchanged.
+Migration/Action:
+- Optional: set `metadata.showInExits: false` on exits you want hidden from `Exits: ...`.
+References:
+- `bundles/bundle-rantamuta/lib/helpers/room-view-helper.js`
+- `bundles/bundle-rantamuta/tests/room.view.baseline.test.js`
+- `docs/manuals/DesignerManual.md`
+Timestamp: 2026.02.26 18:54
+
 ### Tomo player-metadata parity via command commit path
 
 Summary:
