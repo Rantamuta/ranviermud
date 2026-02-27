@@ -41,6 +41,8 @@ If working trees are dirty and you are instructed to continue, do not stage or c
 
 Check out a new git branch with a name that reflects the goal of the implementation, in the form `<verb>-<noun>` or possibly `<verb>-<adjective>-<noun>`.
 
+If the working tree is dirty at this stage, `git add . && git commit -m "Init <implementation>"` where implementation is suitably descriptive.
+
 ## Loop
 
 Stop with any questions, or if implementing the task requires expanding beyond the scope of what was agreed in the checklist.
@@ -58,16 +60,13 @@ Stop with any questions, or if implementing the task requires expanding beyond t
 - Implement the selected behavior slice as written in the checklist.
 - Run tests after implementation.
   - You may run a targeted test command for the touched scope first.
-  - Run full `npm test` at the end of the behavior slice iteration or at the next natural checkpoint.
+  - Run full `npm test` at the end of the behavior slice iteration.
 - If a test does not pass, avoid changing the test, particularly if it is a regression elsewhere.
   - Continue implementing the behavior slice until tests run green.
   - If it is necessary to change the test, print an acknowledgement and continue.
 - Check off each completed checklist item with `[x]`.
 - Commit all behavior-slice implementation changes with an imperative message `<slice summary>` edited for clarity and length less than 50 characters. You may add a git body.
-- For each checkpoint commit (test commit and implementation commit), use dual-repository ordering:
-  - Commit in `bundles/bundle-rantamuta` first if it has changes.
-  - Commit in repository root second if it has changes.
-  - If a repository is clean at that checkpoint, do not create a commit in that repository.
+- Complete slice cadence before starting the next slice: test commit, implementation, passing tests, implementation commit.
 - Continue with the loop until all items are completed.
 
 ## Final validation
