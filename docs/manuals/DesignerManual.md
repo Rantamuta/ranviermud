@@ -1263,6 +1263,22 @@ exits:
           go: "You cannot go that way. The portcullis is closed."
 ```
 
+Hide an exit from the room-view `Exits:` line (without disabling movement):
+
+```yml
+exits:
+  - direction: south
+    roomId: forest:lakeShore
+    metadata:
+      showInExits: false
+      permissions:
+        verbs:
+          go: "You need a boat to go onto the lake."
+```
+
+`showInExits: false` only affects room-view exit listing.
+It does not affect `go` target resolution or permission checks.
+
 ## Area-Specific Verb Behavior
 
 Keep command files generic.  
