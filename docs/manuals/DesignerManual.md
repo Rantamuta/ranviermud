@@ -1619,7 +1619,7 @@ Mutation instruction list (current):
 2. `noop`
 3. `transferItem`
 4. `movePlayer`
-5. `doorMutation`
+5. `changeDoor`
 
 Designer-facing scripted mutation:
 
@@ -1684,11 +1684,11 @@ What this does:
 - Moves a player actor between rooms through the command/mutator commit flow.
 - Commonly used by directional movement commands after gate checks pass.
 
-### `doorMutation`
+### `changeDoor`
 
 ```js
 {
-  type: 'doorMutation',
+  type: 'changeDoor',
   mutation: 'open',
   direction: 'north'
 }
