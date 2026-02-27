@@ -1316,6 +1316,67 @@ Use these metadata fields on the room:
   - `when: <predicateName>` to show text when predicate is true.
   - `whenNot: <predicateName>` to show text when that predicate is not true.
 
+## Describing Things Inline
+
+Sometimes you do not want to replace a whole room, item or PC description. You only want to swap a few words inside one sentence.
+
+Inline tags are for that. Think of them as tiny "if/else" switches inside text:
+
+> "The old reading room smells of wax and dust, and the carved runes on the desk glow [is_lantern_lit:bright|dark] beneath your hands."
+
+- `[is_lantern_lit:bright]`
+- `[is_lantern_lit:bright|dark]`
+
+How to read those:
+
+- First form: show `bright` only when the predicate is true.
+- Second form: show `bright` when true, otherwise show `dark`.
+
+Use inline tags when the sentence stays mostly the same and only one phrase changes.  
+Use `descriptionVariants` / `descriptionFragments` when whole lines or sections should appear/disappear.
+
+### Examples
+
+- `The brazier burns [is_brazier_lit:hot and gold|cold and black].`
+  - When `is_brazier_lit` is true, this reads: _"The brazier burns hot and gold."_
+  - When `is_brazier_lit` is _false_, this reads: _"The brazier burns cold and black."_
+- `A mural shows a [is_mural_restored:whole sun|broken circle].`
+  - When `is_mural_restored` is true, this reads: _"A mural shows a whole sun."_
+  - When `is_mural_restored` is _false_, this reads: _"A mural shows a broken circle."_
+- `The gate stands [is_gate_open:open|sealed shut].`
+  - When `is_gate_open` is true, this reads: _"The gate stands open."_
+  - When `is_gate_open` is _false_, this reads: _"The gate stands sealed shut."_
+- `The bell gives [is_bell_harmonic:a clear, singing note|a dull, cracked thud].`
+  - When `is_bell_harmonic` is true, this reads: _"The bell gives a clear, singing note."_
+  - When `is_bell_harmonic` is _false_, this reads: _"The bell gives a dull, cracked thud."_
+- `The reliquary is [is_reliquary_sealed:sealed with red wax|hanging open].`
+  - When `is_reliquary_sealed` is true, this reads: _"The reliquary is sealed with red wax."_
+  - When `is_reliquary_sealed` is _false_, this reads: _"The reliquary is hanging open."_
+
+You can also stack small cues in one line:
+
+- `The chamber feels [is_storm_over_region:charged|still], and the mirror looks [is_observatory_moonlit:awake|dormant].`
+  - When both predicates are true, this reads: _"The chamber feels charged, and the mirror looks awake."_
+  - When `is_storm_over_region` is true and `is_observatory_moonlit` is false, this reads: _"The chamber feels charged, and the mirror looks dormant."_
+  - When `is_storm_over_region` is false and `is_observatory_moonlit` is true, this reads: _"The chamber feels still, and the mirror looks awake."_
+  - When both predicates are false, this reads: _"The chamber feels still, and the mirror looks dormant."_
+
+And you can use a true-only tag for optional flavor:
+
+- "Dust drifts in the light. [does_player_have_lantern:Your lantern catches silver writing along the wall.]"
+  - When `does_player_have_lantern` is true, this reads: _"Dust drifts in the light. Your lantern catches silver writing along the wall."_
+  - When `does_player_have_lantern` is _false_, this reads: _"Dust drifts in the light."_
+
+Practical writing tip:
+
+- Keep inline tags short and local.
+- If one sentence starts needing many tags, it might be clearer to move that logic into `descriptionVariants` or `descriptionFragments`.
+
+Good rule of thumb:
+
+- Inline tags = word/phrase-level variation.
+- Variants/fragments = line/paragraph-level variation.
+
 ## Predicates
 
 Predicates are the "if checks" behind `when:` lines.
