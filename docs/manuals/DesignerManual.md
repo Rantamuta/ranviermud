@@ -1611,9 +1611,19 @@ Mutations do not refer to weird body parts or super-powers. They refer to change
 - Partial or hidden writes make bugs hard to reproduce and harder to debug.
 - If a mutation needs two operations and only one is performed accidentally, something could be deleted, or doubled, or just fail.
 
-To prevent this as much as possible, we give you specific "mutation operations" (or "mutator ops") and we take care of the details, to make sure the state changes happen as safely as possible. Here are all the things you can do in item scripts, and if you need more, just let your admin know.
+To prevent this as much as possible, we give you specific "mutation operations" (or "mutator ops") and we take care of the details, to make sure the state changes happen as safely as possible.
 
-### Changing Room Flags
+Mutation instruction list (current):
+
+1. `setRoomFlag`
+2. `noop`
+3. `transferItem`
+4. `movePlayer`
+5. `doorMutation`
+
+Designer-facing scripted mutation:
+
+### `setRoomFlag`
 
 ```js
 {
@@ -1629,6 +1639,73 @@ What this does:
 - Writes to `room.metadata.flags.buttonPushed`.
 - Lets predicates read that state using `q.roomFlag('myarea:observatory', 'buttonPushed')`.
 - Keeps state mutation in command/mutator flow and keeps predicates side-effect free.
+
+Runtime mutator instructions (command/movement systems):
+
+### `noop`
+
+```js
+{ type: 'noop' }
+```
+
+What this does:
+
+- Applies no world-state changes.
+- Keeps a successful plan shape when a command should succeed without mutation.
+
+### `transferItem`
+
+```js
+{
+  type: 'transferItem',
+  item: someItem,
+  from: sourceEntity,
+  to: destinationEntity
+}
+```
+
+What this does:
+
+- Moves an item between supported containers/entities.
+- Uses mutator safety checks to prevent invalid or cyclic containment operations.
+
+### `movePlayer`
+
+```js
+{
+  type: 'movePlayer',
+  actor: player,
+  toRoomRef: 'myarea:targetRoom'
+}
+```
+
+What this does:
+
+- Moves a player actor between rooms through the command/mutator commit flow.
+- Commonly used by directional movement commands after gate checks pass.
+
+### `doorMutation`
+
+```js
+{
+  type: 'doorMutation',
+  mutation: 'open',
+  direction: 'north'
+}
+```
+
+Supported `mutation` values:
+
+- `open`
+- `close`
+- `unlock`
+- `unlockAndOpen`
+- `closeAndLock`
+
+What this does:
+
+- Applies canonical door state changes through the Virtual Door mutation service.
+- Keeps paired directional state synchronized through one logical mutator operation.
 
 ## Scenario Runner
 
