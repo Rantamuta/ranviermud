@@ -1456,49 +1456,63 @@ Each method asks one specific true/false question.
    Example idea: "Is the whole region currently in storm mode?"
    Example: `q.areaFlag('myarea', 'stormActive')`
 
-3. `q.roomHasItem(roomRef, itemRef)`
+3. `q.getRoomMetadata(roomRef, key)`
+   Example idea: "What is the current room metadata value for a puzzle key?"
+   Example: `q.getRoomMetadata('myarea:observatory', 'puzzleState.phase')`
+
+4. `q.getAreaMetadata(areaRef, key)`
+   Example idea: "What is the current area metadata value for arc progression?"
+   Example: `q.getAreaMetadata('myarea', 'storyArc.chapter')`
+
+5. `q.roomHasItem(roomRef, itemRef)`
    Example idea: "Does the altar room still contain the ceremonial dagger?"
    Example: `q.roomHasItem('myarea:altar_room', 'myarea:ceremonialDagger')`
 
-4. `q.currentContainerHasItem(itemRef)`
+6. `q.currentContainerHasItem(itemRef)`
    Example idea: "Does the container this description belongs to currently hold a black pearl?"
    Example: `q.currentContainerHasItem('myarea:blackPearl')`
 
-5. `q.roomContainerHasItem(roomRef, containerRef, itemRef)`
+7. `q.roomContainerHasItem(roomRef, containerRef, itemRef)`
    Example idea: "Is the wax seal placed in the reliquary in the nave?"
    Example: `q.roomContainerHasItem('myarea:nave', 'myarea:reliquary', 'myarea:waxSeal')`
 
-6. `q.actorHasItem(itemRef)`
+8. `q.actorHasItem(itemRef)`
    Example idea: "Is the player carrying a lantern, so they notice faint wall writing?"
    Example: `q.actorHasItem('myarea:lantern')`
 
-7. `q.actorHasEffect(effectId)`
+9. `q.actorHasEffect(effectId)`
    Example idea: "Is the player under a blessing effect, so the shrine feels warmer?"
    Example: `q.actorHasEffect('blessed')`
 
-8. `q.actorQuestActive(questRef)`
+10. `q.actorQuestActive(questRef)`
    Example idea: "Is the bell trial currently in progress?"
    Example: `q.actorQuestActive('myarea:bellTrial')`
 
-9. `q.actorQuestCompleted(questRef)`
+11. `q.actorQuestCompleted(questRef)`
    Example idea: "Has the player already completed the crypt rite?"
    Example: `q.actorQuestCompleted('myarea:cryptRite')`
 
-10. `q.isDoorClosed(direction)`
+12. `q.isDoorClosed(direction)`
    Example idea: "Is the north door currently closed from this room?"
    Example: `q.isDoorClosed('north')`
 
-11. `q.isDoorLocked(direction)`
+13. `q.isDoorLocked(direction)`
    Example idea: "Is the north door currently locked from this room?"
    Example: `q.isDoorLocked('north')`
 
-12. `q.isDoorClosedBetween(roomARef, roomBRef)`
+14. `q.isDoorClosedBetween(roomARef, roomBRef)`
    Example idea: "Is the archive passage closed even if the viewer is elsewhere?"
    Example: `q.isDoorClosedBetween('myarea:archive_south', 'myarea:archive_north')`
 
-13. `q.isDoorLockedBetween(roomARef, roomBRef)`
+15. `q.isDoorLockedBetween(roomARef, roomBRef)`
    Example idea: "Is the vault passage still locked regardless of viewer room?"
    Example: `q.isDoorLockedBetween('myarea:vault_foyer', 'myarea:vault_inner')`
+
+Metadata query notes:
+
+- Metadata query keys use dot-separated camelCase segments (for example `storyArc.chapterOne`).
+- `q.getRoomMetadata(...)` / `q.getAreaMetadata(...)` return `undefined` when a path is missing.
+- Stored metadata values `null`, `false`, and `0` are returned as-is and are not treated as missing.
 
 One combined example:
 
@@ -1616,10 +1630,11 @@ To prevent this as much as possible, we give you specific "mutation operations" 
 Mutation instruction list (current):
 
 1. `setRoomFlag`
-2. `noop`
-3. `transferItem`
-4. `movePlayer`
-5. `changeDoor`
+2. `setAreaMetadata`
+3. `noop`
+4. `transferItem`
+5. `movePlayer`
+6. `changeDoor`
 
 Designer-facing scripted mutation:
 
@@ -1639,6 +1654,29 @@ What this does:
 - Writes to `room.metadata.flags.buttonPushed`.
 - Lets predicates read that state using `q.roomFlag('myarea:observatory', 'buttonPushed')`.
 - Keeps state mutation in command/mutator flow and keeps predicates side-effect free.
+
+### `setAreaMetadata`
+
+```js
+{
+  type: 'setAreaMetadata',
+  actor: player,
+  key: 'storyArc.chapterOne',
+  value: 2
+}
+```
+
+What this does:
+
+- Writes to `area.metadata.values` using a dot-separated key path.
+- Uses current-area-only targeting from actor context (`actor.room.area`).
+- Does not accept authored `areaRef` targeting in this operation.
+- Rejects subtree-conflict writes (for example existing `storyArc.chapterOne` object and attempted set of `storyArc`).
+
+Caution:
+
+- `setAreaMetadata` resolves area at commit-time from actor context.
+- Operation order matters. If one operation moves the actor and a later operation sets area metadata, the write applies to the actor's area at that point in commit order.
 
 Runtime mutator instructions (command/movement systems):
 
