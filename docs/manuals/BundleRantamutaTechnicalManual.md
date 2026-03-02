@@ -706,7 +706,7 @@ Behavior contract:
    - `WORLDMETA_COERCE_METADATA_ROOT`
    - `WORLDMETA_COERCE_VALUES_ROOT`
 6. Subtree conflicts are rejected (cannot overwrite non-empty object subtree leaf with scalar/object write at ancestor path).
-7. World set undo uses re-resolve-safe restoration semantics and does not auto-prune parent/root objects.
+7. World set undo restores prior root shape by pruning empty containers created by that operation.
 
 ## Change guidance for maintainers
 
