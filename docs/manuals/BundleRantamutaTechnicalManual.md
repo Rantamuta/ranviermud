@@ -687,6 +687,27 @@ Behavior contract:
 5. Rollback restores deleted values using mutation undo closures.
 6. World delete missing-root no-op must not create world metadata root.
 
+## Metadata set instruction semantics (setAreaMetadata / setWorldMetadata)
+
+Mutator-owned metadata set ops:
+
+1. `setAreaMetadata`
+2. `setWorldMetadata`
+
+Behavior contract:
+
+1. Set ops execute only in commit/mutator phase; render and predicate phases remain read-only.
+2. Keys are parsed as dot-paths and validated by metadata mutator segment rules.
+3. Values must be JSON-safe; `undefined` is rejected and `null` is stored as-is.
+4. Missing roots are created on write.
+   - Area: `area.metadata.values`
+   - World: `state.metadata.values`
+5. For world writes, existing non-object root values are coerced to object roots with warning-level logs:
+   - `WORLDMETA_COERCE_METADATA_ROOT`
+   - `WORLDMETA_COERCE_VALUES_ROOT`
+6. Subtree conflicts are rejected (cannot overwrite non-empty object subtree leaf with scalar/object write at ancestor path).
+7. World set undo uses re-resolve-safe restoration semantics and does not auto-prune parent/root objects.
+
 ## Change guidance for maintainers
 
 When adding new behavior, preserve these guardrails:
