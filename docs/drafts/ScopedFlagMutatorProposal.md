@@ -28,7 +28,7 @@ This keeps area content authored in `areas/**` while keeping mutation mechanics 
 
 Current runtime already supports:
 
-- area-scoped predicate reads (currently `q.areaFlag(areaRef, key)`; target rename: `q.getAreaMetadata(areaRef, key)`)
+- area-scoped predicate reads via `q.getAreaMetadata(areaRef, key)`
 - write: `setRoomFlag` in mutator commit flow
 
 Current runtime does not support:
@@ -203,8 +203,7 @@ At the end of this proposal scope, schedule a separate compatibility/migration t
 
 - rename `setRoomFlag` to `setRoomMetadata`
 - remove `roomRef` from authored room-scope mutation ops (current-room only)
-- keep `q.areaFlag(...)` and `q.roomFlag(...)` unchanged in this scope; defer compatibility/rename/delegation work for those helpers
-- rename metadata query helpers to:
+- metadata query helper family is:
   - `q.getRoomMetadata(...)`
   - `q.getAreaMetadata(...)`
 
@@ -213,6 +212,4 @@ At the end of this proposal scope, schedule a separate compatibility/migration t
 For D1 flags/values alignment work:
 
 - `metadata.values` is the canonical namespace for metadata values.
-- `metadata.flags` remains legacy compatibility storage during the transition period.
-- Legacy boolean helpers (`q.roomFlag(...)`, `q.areaFlag(...)`) remain available during transition.
 - Key naming is convention-driven (camelCase recommended), not validator-enforced by the D1 alignment task.

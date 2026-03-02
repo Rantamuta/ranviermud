@@ -1448,63 +1448,55 @@ module.exports = {
 Inside a predicate, `q` is your read-only "question toolbox."  
 Each method asks one specific true/false question.
 
-1. `q.roomFlag(roomRef, key)`
-   Example idea: "Is the observatory marked as moonlit?"
-   Example: `q.roomFlag('myarea:observatory', 'moonlit')`
-
-2. `q.areaFlag(areaRef, key)`
-   Example idea: "Is the whole region currently in storm mode?"
-   Example: `q.areaFlag('myarea', 'stormActive')`
-
-3. `q.getRoomMetadata(roomRef, key)`
+1. `q.getRoomMetadata(roomRef, key)`
    Example idea: "What is the current room metadata value for a puzzle key?"
    Example: `q.getRoomMetadata('myarea:observatory', 'puzzleState.phase')`
 
-4. `q.getAreaMetadata(areaRef, key)`
+2. `q.getAreaMetadata(areaRef, key)`
    Example idea: "What is the current area metadata value for arc progression?"
    Example: `q.getAreaMetadata('myarea', 'storyArc.chapter')`
 
-5. `q.roomHasItem(roomRef, itemRef)`
+3. `q.roomHasItem(roomRef, itemRef)`
    Example idea: "Does the altar room still contain the ceremonial dagger?"
    Example: `q.roomHasItem('myarea:altar_room', 'myarea:ceremonialDagger')`
 
-6. `q.currentContainerHasItem(itemRef)`
+4. `q.currentContainerHasItem(itemRef)`
    Example idea: "Does the container this description belongs to currently hold a black pearl?"
    Example: `q.currentContainerHasItem('myarea:blackPearl')`
 
-7. `q.roomContainerHasItem(roomRef, containerRef, itemRef)`
+5. `q.roomContainerHasItem(roomRef, containerRef, itemRef)`
    Example idea: "Is the wax seal placed in the reliquary in the nave?"
    Example: `q.roomContainerHasItem('myarea:nave', 'myarea:reliquary', 'myarea:waxSeal')`
 
-8. `q.actorHasItem(itemRef)`
+6. `q.actorHasItem(itemRef)`
    Example idea: "Is the player carrying a lantern, so they notice faint wall writing?"
    Example: `q.actorHasItem('myarea:lantern')`
 
-9. `q.actorHasEffect(effectId)`
+7. `q.actorHasEffect(effectId)`
    Example idea: "Is the player under a blessing effect, so the shrine feels warmer?"
    Example: `q.actorHasEffect('blessed')`
 
-10. `q.actorQuestActive(questRef)`
+8. `q.actorQuestActive(questRef)`
    Example idea: "Is the bell trial currently in progress?"
    Example: `q.actorQuestActive('myarea:bellTrial')`
 
-11. `q.actorQuestCompleted(questRef)`
+9. `q.actorQuestCompleted(questRef)`
    Example idea: "Has the player already completed the crypt rite?"
    Example: `q.actorQuestCompleted('myarea:cryptRite')`
 
-12. `q.isDoorClosed(direction)`
+10. `q.isDoorClosed(direction)`
    Example idea: "Is the north door currently closed from this room?"
    Example: `q.isDoorClosed('north')`
 
-13. `q.isDoorLocked(direction)`
+11. `q.isDoorLocked(direction)`
    Example idea: "Is the north door currently locked from this room?"
    Example: `q.isDoorLocked('north')`
 
-14. `q.isDoorClosedBetween(roomARef, roomBRef)`
+12. `q.isDoorClosedBetween(roomARef, roomBRef)`
    Example idea: "Is the archive passage closed even if the viewer is elsewhere?"
    Example: `q.isDoorClosedBetween('myarea:archive_south', 'myarea:archive_north')`
 
-15. `q.isDoorLockedBetween(roomARef, roomBRef)`
+13. `q.isDoorLockedBetween(roomARef, roomBRef)`
    Example idea: "Is the vault passage still locked regardless of viewer room?"
    Example: `q.isDoorLockedBetween('myarea:vault_foyer', 'myarea:vault_inner')`
 
@@ -1513,8 +1505,8 @@ Metadata query notes:
 - Metadata query keys use dot-separated camelCase segments (for example `storyArc.chapterOne`).
 - `q.getRoomMetadata(...)` / `q.getAreaMetadata(...)` return `undefined` when a path is missing.
 - Stored metadata values `null`, `false`, and `0` are returned as-is and are not treated as missing.
-- `q.roomFlag(...)` / `q.areaFlag(...)` are legacy-named boolean helpers retained for compatibility.
-- Compatibility behavior: boolean helpers check `metadata.values` first, then fallback to legacy `metadata.flags`.
+- Boolean predicates should read via `q.getRoomMetadata(...) === true` or `q.getAreaMetadata(...) === true`.
+- Metadata reads are case-insensitive for key-path segments; authored key casing is preserved on write.
 - Metadata key style is convention-driven (`camelCase` recommended for new authored metadata keys).
 
 One combined example:
@@ -1522,10 +1514,10 @@ One combined example:
 ```js
 module.exports = {
   is_observatory_moonlit: ({ q }) =>
-    q.roomFlag('myarea:observatory', 'moonlit'),
+    q.getRoomMetadata('myarea:observatory', 'moonlit') === true,
 
   is_storm_over_region: ({ q }) =>
-    q.areaFlag('myarea', 'stormActive'),
+    q.getAreaMetadata('myarea', 'stormActive') === true,
 
   is_dagger_still_on_altar: ({ q }) =>
     q.roomHasItem('myarea:altar_room', 'myarea:ceremonialDagger'),
@@ -1654,8 +1646,8 @@ Designer-facing scripted mutation:
 
 What this does:
 
-- Writes compatibility boolean state to both `room.metadata.values.buttonPushed` and `room.metadata.flags.buttonPushed`.
-- Lets predicates read that state using both `q.roomFlag('myarea:observatory', 'buttonPushed')` and `q.getRoomMetadata('myarea:observatory', 'buttonPushed')`.
+- Writes boolean state to `room.metadata.values.buttonPushed`.
+- Lets predicates read that state using `q.getRoomMetadata('myarea:observatory', 'buttonPushed') === true`.
 - Keeps state mutation in command/mutator flow and keeps predicates side-effect free.
 
 ### `setAreaMetadata`
