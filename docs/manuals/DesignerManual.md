@@ -1513,6 +1513,9 @@ Metadata query notes:
 - Metadata query keys use dot-separated camelCase segments (for example `storyArc.chapterOne`).
 - `q.getRoomMetadata(...)` / `q.getAreaMetadata(...)` return `undefined` when a path is missing.
 - Stored metadata values `null`, `false`, and `0` are returned as-is and are not treated as missing.
+- `q.roomFlag(...)` / `q.areaFlag(...)` are legacy-named boolean helpers retained for compatibility.
+- Compatibility behavior: boolean helpers check `metadata.values` first, then fallback to legacy `metadata.flags`.
+- Metadata key style is convention-driven (`camelCase` recommended for new authored metadata keys).
 
 One combined example:
 
@@ -1651,8 +1654,8 @@ Designer-facing scripted mutation:
 
 What this does:
 
-- Writes to `room.metadata.flags.buttonPushed`.
-- Lets predicates read that state using `q.roomFlag('myarea:observatory', 'buttonPushed')`.
+- Writes compatibility boolean state to both `room.metadata.values.buttonPushed` and `room.metadata.flags.buttonPushed`.
+- Lets predicates read that state using both `q.roomFlag('myarea:observatory', 'buttonPushed')` and `q.getRoomMetadata('myarea:observatory', 'buttonPushed')`.
 - Keeps state mutation in command/mutator flow and keeps predicates side-effect free.
 
 ### `setAreaMetadata`
