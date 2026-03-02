@@ -499,16 +499,18 @@ Predicate execution:
 1. `evaluateRenderPredicate(...)` delegates to `PredicateRuntime.evaluate(...)` (world runtime if provided, helper default otherwise).
 2. Runtime resolution is area-local through `areas/<area>/predicates.js`.
 3. Predicates receive restricted input `({ actor, q, context })`, where `actor` is a normalized read-only view.
-4. `q` is a read-only facade (`roomFlag`, `areaFlag`, `roomHasItem`, `currentContainerHasItem`, `roomContainerHasItem`, `actorHasItem`, `actorHasEffect`, `actorQuestActive`, `actorQuestCompleted`, `isDoorClosed`, `isDoorLocked`, `isDoorClosedBetween`, `isDoorLockedBetween`).
+4. `q` is a read-only facade (`getRoomMetadata`, `getAreaMetadata`, `roomHasItem`, `currentContainerHasItem`, `roomContainerHasItem`, `actorHasItem`, `actorHasEffect`, `actorQuestActive`, `actorQuestCompleted`, `isDoorClosed`, `isDoorLocked`, `isDoorClosedBetween`, `isDoorLockedBetween`).
 5. Predicate exceptions are swallowed and treated as `false` (fail-closed).
 6. `room.renderPredicates` fallback is intentionally not used.
 
 `q` query facade methods (current):
 
-1. `q.roomFlag(roomRef, key) -> boolean`
-   Returns `true` only when the resolved room has `metadata.flags[key] === true`.
-2. `q.areaFlag(areaRef, key) -> boolean`
-   Returns `true` only when the resolved area has `metadata.flags[key] === true`.
+1. `q.getRoomMetadata(roomRef, key) -> *`
+   Reads the resolved room `metadata.values` key-path value using case-insensitive segment matching.
+   Returns `undefined` for missing paths.
+2. `q.getAreaMetadata(areaRef, key) -> *`
+   Reads the resolved area `metadata.values` key-path value using case-insensitive segment matching.
+   Returns `undefined` for missing paths.
 3. `q.roomHasItem(roomRef, itemRef) -> boolean`
    Returns `true` when any top-level item in that room matches `itemRef`.
 4. `q.currentContainerHasItem(itemRef) -> boolean`

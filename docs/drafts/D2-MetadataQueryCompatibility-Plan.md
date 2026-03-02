@@ -106,3 +106,7 @@ Convert this plan into an implementation checklist with:
 - Result: No blocking contradictions remain between the D2 plan and checklist scope after QC/integration updates.
 - Result: Collision policy is explicit and deterministic for D2 (`warn + return last matched value`).
 - Result: Discovery pass found no case-collision groups in scanned runtime/content/test key literals and authored metadata paths.
+- Result: Post-implementation audit removed active runtime/content use of `q.roomFlag(...)`, `q.areaFlag(...)`, and authored `metadata.flags` storage in area YAML.
+- Deferred-by-design references remain only where they are explanatory checks or migration records:
+  - negative assertions in active tests that verify `q.roomFlag`/`q.areaFlag` are absent and `metadata.flags` is no longer written/read,
+  - D2 planning/checklist draft docs that describe migration scope and completed removals.
