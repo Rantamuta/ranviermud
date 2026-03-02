@@ -207,3 +207,12 @@ At the end of this proposal scope, schedule a separate compatibility/migration t
 - rename metadata query helpers to:
   - `q.getRoomMetadata(...)`
   - `q.getAreaMetadata(...)`
+
+## D1 Alignment Target State (Follow-up Policy)
+
+For D1 flags/values alignment work:
+
+- `metadata.values` is the canonical namespace for metadata values.
+- `metadata.flags` remains legacy compatibility storage during the transition period.
+- Legacy boolean helpers (`q.roomFlag(...)`, `q.areaFlag(...)`) remain available during transition.
+- Key naming is convention-driven (camelCase recommended), not validator-enforced by the D1 alignment task.
