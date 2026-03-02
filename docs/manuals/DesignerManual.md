@@ -1695,7 +1695,7 @@ What this does:
 - Rejects `undefined`; allows `null` as a storable value.
 - Requires JSON-safe values.
 - Rejects subtree-conflict writes (for example existing `globalState.season.current` object and attempted set of `globalState.season`).
-- Does not auto-prune empty parent/root objects during undo.
+- Undo removes empty parent/root containers created by this operation to restore pre-op world metadata shape.
 
 ### `deleteRoomMetadata`
 
