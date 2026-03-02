@@ -115,6 +115,17 @@ D3 decision:
 - No blockers remain after locking the above decisions.
 - D3 implementation can proceed under `docs/normative/implementation.md` with test-first slices.
 
+## Implementation Notes
+
+- Implemented D3 delete ops:
+  - `deleteRoomMetadata` (explicit `roomRef` authority)
+  - `deleteAreaMetadata` (actor-context area authority)
+  - `deleteWorldMetadata` (world-scope metadata service)
+- World delete uses non-creating root lookup to preserve missing-root no-op semantics.
+- Default behavior is leaf-only delete; non-leaf delete requires `force: true`.
+- Undo snapshots use JSON-safe deep snapshots through mutator rollback closures.
+- No auto-pruning of empty parent/root objects is performed.
+
 ## Proposed Next Step
 
 Convert this plan into an implementation checklist with:

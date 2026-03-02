@@ -1626,10 +1626,13 @@ Mutation instruction list (current):
 
 1. `setRoomFlag`
 2. `setAreaMetadata`
-3. `noop`
-4. `transferItem`
-5. `movePlayer`
-6. `changeDoor`
+3. `deleteRoomMetadata`
+4. `deleteAreaMetadata`
+5. `deleteWorldMetadata`
+6. `noop`
+7. `transferItem`
+8. `movePlayer`
+9. `changeDoor`
 
 Designer-facing scripted mutation:
 
@@ -1672,6 +1675,61 @@ Caution:
 
 - `setAreaMetadata` resolves area at commit-time from actor context.
 - Operation order matters. If one operation moves the actor and a later operation sets area metadata, the write applies to the actor's area at that point in commit order.
+
+### `deleteRoomMetadata`
+
+```js
+{
+  type: 'deleteRoomMetadata',
+  roomRef: 'myarea:observatory',
+  key: 'storyArc.chapterOne'
+}
+```
+
+What this does:
+
+- Deletes a key-path from `room.metadata.values` on the resolved room.
+- Uses explicit room targeting with `roomRef`.
+- Missing key-path is idempotent no-op (no warning, no error).
+- By default only leaf values can be deleted.
+- Deleting an object/array path requires `force: true`.
+- Deletes do not automatically prune empty parent objects.
+
+### `deleteAreaMetadata`
+
+```js
+{
+  type: 'deleteAreaMetadata',
+  actor: player,
+  key: 'storyArc.chapterOne'
+}
+```
+
+What this does:
+
+- Deletes a key-path from current-area `area.metadata.values` resolved from `actor.room.area`.
+- Missing key-path is idempotent no-op (no warning, no error).
+- By default only leaf values can be deleted.
+- Deleting an object/array path requires `force: true`.
+- Deletes do not automatically prune empty parent objects.
+
+### `deleteWorldMetadata`
+
+```js
+{
+  type: 'deleteWorldMetadata',
+  key: 'globalState.season'
+}
+```
+
+What this does:
+
+- Deletes a key-path from world metadata state.
+- If world metadata root/path is missing, the operation is idempotent no-op.
+- Missing-root no-op does not create world metadata root.
+- By default only leaf values can be deleted.
+- Deleting an object/array path requires `force: true`.
+- Deletes do not automatically prune empty parent objects.
 
 Runtime mutator instructions (command/movement systems):
 

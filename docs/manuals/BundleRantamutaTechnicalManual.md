@@ -670,6 +670,23 @@ Bubble/reaction surfaces:
 1. command-level `metadata.reactions` only
 2. contributions are render-only (`render.messages`) and cannot enqueue mutations
 
+## Metadata delete instruction semantics (D3)
+
+Mutator-owned metadata delete ops:
+
+1. `deleteRoomMetadata`
+2. `deleteAreaMetadata`
+3. `deleteWorldMetadata`
+
+Behavior contract:
+
+1. All deletes execute only in commit/mutator phase; render and predicate phases remain read-only.
+2. Missing path delete is idempotent no-op with no warning and no thrown error.
+3. Default delete is leaf-only; non-leaf/object/array delete throws unless `force: true`.
+4. Deletes do not auto-prune empty parent/root objects.
+5. Rollback restores deleted values using mutation undo closures.
+6. World delete missing-root no-op must not create world metadata root.
+
 ## Change guidance for maintainers
 
 When adding new behavior, preserve these guardrails:
