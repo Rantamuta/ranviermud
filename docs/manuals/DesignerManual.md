@@ -1626,13 +1626,14 @@ Mutation instruction list (current):
 
 1. `setRoomFlag`
 2. `setAreaMetadata`
-3. `deleteRoomMetadata`
-4. `deleteAreaMetadata`
-5. `deleteWorldMetadata`
-6. `noop`
-7. `transferItem`
-8. `movePlayer`
-9. `changeDoor`
+3. `setWorldMetadata`
+4. `deleteRoomMetadata`
+5. `deleteAreaMetadata`
+6. `deleteWorldMetadata`
+7. `noop`
+8. `transferItem`
+9. `movePlayer`
+10. `changeDoor`
 
 Designer-facing scripted mutation:
 
@@ -1675,6 +1676,26 @@ Caution:
 
 - `setAreaMetadata` resolves area at commit-time from actor context.
 - Operation order matters. If one operation moves the actor and a later operation sets area metadata, the write applies to the actor's area at that point in commit order.
+
+### `setWorldMetadata`
+
+```js
+{
+  type: 'setWorldMetadata',
+  key: 'globalState.season',
+  value: 'winter'
+}
+```
+
+What this does:
+
+- Writes to world `metadata.values` using a dot-separated key path.
+- Creates missing world roots (`state.metadata`, `state.metadata.values`) on write.
+- If existing world roots are non-object values, coerces them to objects with warning-level logs.
+- Rejects `undefined`; allows `null` as a storable value.
+- Requires JSON-safe values.
+- Rejects subtree-conflict writes (for example existing `globalState.season.current` object and attempted set of `globalState.season`).
+- Does not auto-prune empty parent/root objects during undo.
 
 ### `deleteRoomMetadata`
 
