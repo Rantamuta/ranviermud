@@ -5,6 +5,9 @@
 - Status: `draft-v1`
 - Scope: Framework-level mutation ops for area/world metadata
 - Binding: no
+- D3 sequencing note:
+  - Implemented in D3: `deleteRoomMetadata`, `deleteAreaMetadata`, `deleteWorldMetadata`.
+  - Deferred beyond D3: `setWorldMetadata` and `q.getWorldMetadata(...)`.
 - Driver: Undying Village implementation needs cross-room and world-scope metadata without mixing content logic into runtime internals.
 - Related:
   - `docs/normative/CommandArchitecture.md`
