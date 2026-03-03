@@ -16,7 +16,7 @@
 - [x] [facade-read] Ensure invalid/unparseable `key` input for `getWorldMetadata(key)` returns `undefined` (no throw), aligned with existing metadata query readers (depends on previous item).
 - [x] [facade-read] Ensure `getWorldMetadata(key)` does not read or fallback to `metadata.flags` (depends on previous item).
 - [x] [diagnostics] Add world-specific metadata key-collision warning handling for `getWorldMetadata(key)` aligned with existing room/area warn-once + last-match behavior in `bundles/bundle-rantamuta/lib/helpers/predicate-runtime.js` (depends on previous item).
-  - Use warning code format: `PREDICATE_QUERY_METADATA_KEY_COLLISION:getWorldMetadata:world:<lowercased-path-label>`.
+  - Use warning code format: `KEY_COLLISION:getWorldMetadata:world:<lowercased-path-label>`.
 - [x] [docs] Update query list/examples in `docs/manuals/DesignerManual.md` to include `q.getWorldMetadata(key)` semantics (depends on diagnostics item).
 - [x] [docs] Update query facade section in `docs/manuals/BundleRantamutaTechnicalManual.md` to include `q.getWorldMetadata(key)` semantics (depends on diagnostics item).
 - [x] [docs-normative] Update `docs/normative/PredicateStateRendering.md` allowed `q` method list to include `q.getWorldMetadata(key)` (depends on docs items).

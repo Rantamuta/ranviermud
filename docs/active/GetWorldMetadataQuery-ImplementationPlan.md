@@ -38,7 +38,7 @@ Expose world metadata read access through predicate query facade without adding 
    - if `world.metadata` is missing/non-object, return `undefined`,
    - if `world.metadata.values` is missing/non-object, return `undefined`.
 5. Collision diagnostics use a stable world-specific warning code aligned with existing room/area query warnings:
-   - `PREDICATE_QUERY_METADATA_KEY_COLLISION:getWorldMetadata:world:<lowercased-path-label>`
+   - `KEY_COLLISION:getWorldMetadata:world:<lowercased-path-label>`
 
 ## Implementation Scope
 
