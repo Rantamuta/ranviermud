@@ -499,45 +499,50 @@ Predicate execution:
 1. `evaluateRenderPredicate(...)` delegates to `PredicateRuntime.evaluate(...)` (world runtime if provided, helper default otherwise).
 2. Runtime resolution is area-local through `areas/<area>/predicates.js`.
 3. Predicates receive restricted input `({ actor, q, context })`, where `actor` is a normalized read-only view.
-4. `q` is a read-only facade (`roomFlag`, `areaFlag`, `roomHasItem`, `currentContainerHasItem`, `roomContainerHasItem`, `actorHasItem`, `actorHasEffect`, `actorQuestActive`, `actorQuestCompleted`, `isDoorClosed`, `isDoorLocked`, `isDoorClosedBetween`, `isDoorLockedBetween`).
+4. `q` is a read-only facade (`getRoomMetadata`, `getAreaMetadata`, `getWorldMetadata`, `roomHasItem`, `currentContainerHasItem`, `roomContainerHasItem`, `actorHasItem`, `actorHasEffect`, `actorQuestActive`, `actorQuestCompleted`, `isDoorClosed`, `isDoorLocked`, `isDoorClosedBetween`, `isDoorLockedBetween`).
 5. Predicate exceptions are swallowed and treated as `false` (fail-closed).
 6. `room.renderPredicates` fallback is intentionally not used.
 
 `q` query facade methods (current):
 
-1. `q.roomFlag(roomRef, key) -> boolean`
-   Returns `true` only when the resolved room has `metadata.flags[key] === true`.
-2. `q.areaFlag(areaRef, key) -> boolean`
-   Returns `true` only when the resolved area has `metadata.flags[key] === true`.
-3. `q.roomHasItem(roomRef, itemRef) -> boolean`
+1. `q.getRoomMetadata(roomRef, key) -> *`
+   Reads the resolved room `metadata.values` key-path value using case-insensitive segment matching.
+   Returns `undefined` for missing paths.
+2. `q.getAreaMetadata(areaRef, key) -> *`
+   Reads the resolved area `metadata.values` key-path value using case-insensitive segment matching.
+   Returns `undefined` for missing paths.
+3. `q.getWorldMetadata(key) -> *`
+   Reads `world.metadata.values` key-path value using case-insensitive segment matching.
+   Returns `undefined` for missing paths, invalid keys, or missing world metadata roots.
+4. `q.roomHasItem(roomRef, itemRef) -> boolean`
    Returns `true` when any top-level item in that room matches `itemRef`.
-4. `q.currentContainerHasItem(itemRef) -> boolean`
+5. `q.currentContainerHasItem(itemRef) -> boolean`
    Returns `true` when the current rendered container contains `itemRef`.
    Uses `renderContext.currentContainer` when provided; otherwise falls back to `renderContext.entity` when that entity has an inventory.
-5. `q.roomContainerHasItem(roomRef, containerRef, itemRef) -> boolean`
+6. `q.roomContainerHasItem(roomRef, containerRef, itemRef) -> boolean`
    Returns `true` when any matching top-level container in the room contains `itemRef`.
-6. `q.actorHasItem(itemRef) -> boolean`
+7. `q.actorHasItem(itemRef) -> boolean`
    Returns `true` when the actor inventory contains `itemRef`.
    Returns `false` when actor context is missing.
-7. `q.actorHasEffect(effectId) -> boolean`
+8. `q.actorHasEffect(effectId) -> boolean`
    Returns `true` when the actor has an effect matching `effectId`.
    Returns `false` when actor context is missing.
-8. `q.actorQuestActive(questRef) -> boolean`
+9. `q.actorQuestActive(questRef) -> boolean`
    Returns `true` when `questRef` is present in actor active quests.
    Returns `false` when actor context is missing.
-9. `q.actorQuestCompleted(questRef) -> boolean`
+10. `q.actorQuestCompleted(questRef) -> boolean`
    Returns `true` when `questRef` is present in actor completed quests.
    Returns `false` when actor context is missing.
-10. `q.isDoorClosed(direction) -> boolean`
+11. `q.isDoorClosed(direction) -> boolean`
    Returns `true` when the current room's directional edge resolves to a closed door state.
    For virtualized pairs, reads effective virtual-door state.
-11. `q.isDoorLocked(direction) -> boolean`
+12. `q.isDoorLocked(direction) -> boolean`
    Returns `true` when the current room's directional edge resolves to a locked door state.
    For virtualized pairs, reads effective virtual-door state.
-12. `q.isDoorClosedBetween(roomARef, roomBRef) -> boolean`
+13. `q.isDoorClosedBetween(roomARef, roomBRef) -> boolean`
    Returns `true` when the resolved pair/edge is effectively closed.
    Does not require actor presence.
-13. `q.isDoorLockedBetween(roomARef, roomBRef) -> boolean`
+14. `q.isDoorLockedBetween(roomARef, roomBRef) -> boolean`
    Returns `true` when the resolved pair/edge is effectively locked.
    Does not require actor presence.
 
@@ -667,6 +672,52 @@ Bubble/reaction surfaces:
 
 1. command-level `metadata.reactions` only
 2. contributions are render-only (`render.messages`) and cannot enqueue mutations
+
+## Metadata delete instruction semantics (D3)
+
+Mutator-owned metadata delete ops:
+
+1. `deleteRoomMetadata`
+2. `deleteAreaMetadata`
+3. `deleteWorldMetadata`
+
+Behavior contract:
+
+1. All deletes execute only in commit/mutator phase; render and predicate phases remain read-only.
+2. Room and area deletes resolve targets from actor context only.
+   - Room: `actor.room`
+   - Area: `actor.room.area`
+3. Missing path delete is idempotent no-op with no warning and no thrown error.
+4. Default delete is leaf-only; non-leaf/object/array delete throws unless `force: true`.
+5. Deletes do not auto-prune empty parent/root objects.
+6. Rollback restores deleted values using mutation undo closures.
+7. World delete missing-root no-op must not create world metadata root.
+
+## Metadata set instruction semantics (setRoomMetadata / setAreaMetadata / setWorldMetadata)
+
+Mutator-owned metadata set ops:
+
+1. `setRoomMetadata`
+2. `setAreaMetadata`
+3. `setWorldMetadata`
+
+Behavior contract:
+
+1. Set ops execute only in commit/mutator phase; render and predicate phases remain read-only.
+2. Keys are parsed as dot-paths and validated by metadata mutator segment rules.
+3. Values must be JSON-safe; `undefined` is rejected and `null` is stored as-is.
+4. Missing roots are created on write.
+   - Room: `room.metadata.values`
+   - Area: `area.metadata.values`
+   - World: `state.metadata.values`
+5. Room and area writes resolve targets from actor context only.
+   - Room: `actor.room`
+   - Area: `actor.room.area`
+6. For world writes, existing non-object root values are coerced to object roots with warning-level logs:
+   - `WORLDMETA_COERCE_METADATA_ROOT`
+   - `WORLDMETA_COERCE_VALUES_ROOT`
+7. Subtree conflicts are rejected (cannot overwrite non-empty object subtree leaf with scalar/object write at ancestor path).
+8. World set undo restores prior root shape by pruning empty containers created by that operation.
 
 ## Change guidance for maintainers
 

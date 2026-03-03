@@ -1445,70 +1445,89 @@ module.exports = {
 
 ### `q` Query Methods (Designer Reference)
 
-Inside a predicate, `q` is your read-only "question toolbox."  
-Each method asks one specific true/false question.
+Inside a predicate, `q` is your read-only query toolbox.  
+Most methods are true/false predicate helpers, and the metadata getters are value readers you can compare in your own boolean logic.
 
-1. `q.roomFlag(roomRef, key)`
-   Example idea: "Is the observatory marked as moonlit?"
-   Example: `q.roomFlag('myarea:observatory', 'moonlit')`
+- Value readers: `q.getRoomMetadata(...)`, `q.getAreaMetadata(...)`, `q.getWorldMetadata(...)`
+- Boolean helpers: all other `q.*` methods in this list
 
-2. `q.areaFlag(areaRef, key)`
-   Example idea: "Is the whole region currently in storm mode?"
-   Example: `q.areaFlag('myarea', 'stormActive')`
+1. `q.getRoomMetadata(roomRef, key)`
+   Example idea: "What is the current room metadata value for a puzzle key?"
+   Example: `q.getRoomMetadata('myarea:observatory', 'puzzleState.phase')`
 
-3. `q.roomHasItem(roomRef, itemRef)`
+2. `q.getAreaMetadata(areaRef, key)`
+   Example idea: "What is the current area metadata value for arc progression?"
+   Example: `q.getAreaMetadata('myarea', 'storyArc.chapter')`
+
+3. `q.getWorldMetadata(key)`
+   Example idea: "What is the current world metadata value for global progression?"
+   Example: `q.getWorldMetadata('globalState.chapter')`
+
+4. `q.roomHasItem(roomRef, itemRef)`
    Example idea: "Does the altar room still contain the ceremonial dagger?"
    Example: `q.roomHasItem('myarea:altar_room', 'myarea:ceremonialDagger')`
 
-4. `q.currentContainerHasItem(itemRef)`
+5. `q.currentContainerHasItem(itemRef)`
    Example idea: "Does the container this description belongs to currently hold a black pearl?"
    Example: `q.currentContainerHasItem('myarea:blackPearl')`
 
-5. `q.roomContainerHasItem(roomRef, containerRef, itemRef)`
+6. `q.roomContainerHasItem(roomRef, containerRef, itemRef)`
    Example idea: "Is the wax seal placed in the reliquary in the nave?"
    Example: `q.roomContainerHasItem('myarea:nave', 'myarea:reliquary', 'myarea:waxSeal')`
 
-6. `q.actorHasItem(itemRef)`
+7. `q.actorHasItem(itemRef)`
    Example idea: "Is the player carrying a lantern, so they notice faint wall writing?"
    Example: `q.actorHasItem('myarea:lantern')`
 
-7. `q.actorHasEffect(effectId)`
+8. `q.actorHasEffect(effectId)`
    Example idea: "Is the player under a blessing effect, so the shrine feels warmer?"
    Example: `q.actorHasEffect('blessed')`
 
-8. `q.actorQuestActive(questRef)`
+9. `q.actorQuestActive(questRef)`
    Example idea: "Is the bell trial currently in progress?"
    Example: `q.actorQuestActive('myarea:bellTrial')`
 
-9. `q.actorQuestCompleted(questRef)`
+10. `q.actorQuestCompleted(questRef)`
    Example idea: "Has the player already completed the crypt rite?"
    Example: `q.actorQuestCompleted('myarea:cryptRite')`
 
-10. `q.isDoorClosed(direction)`
+11. `q.isDoorClosed(direction)`
    Example idea: "Is the north door currently closed from this room?"
    Example: `q.isDoorClosed('north')`
 
-11. `q.isDoorLocked(direction)`
+12. `q.isDoorLocked(direction)`
    Example idea: "Is the north door currently locked from this room?"
    Example: `q.isDoorLocked('north')`
 
-12. `q.isDoorClosedBetween(roomARef, roomBRef)`
+13. `q.isDoorClosedBetween(roomARef, roomBRef)`
    Example idea: "Is the archive passage closed even if the viewer is elsewhere?"
    Example: `q.isDoorClosedBetween('myarea:archive_south', 'myarea:archive_north')`
 
-13. `q.isDoorLockedBetween(roomARef, roomBRef)`
+14. `q.isDoorLockedBetween(roomARef, roomBRef)`
    Example idea: "Is the vault passage still locked regardless of viewer room?"
    Example: `q.isDoorLockedBetween('myarea:vault_foyer', 'myarea:vault_inner')`
+
+Metadata query notes:
+
+- Metadata query keys use dot-separated camelCase segments (for example `storyArc.chapterOne`).
+- `q.getRoomMetadata(...)` / `q.getAreaMetadata(...)` / `q.getWorldMetadata(...)` return `undefined` when a path is missing or the key is invalid.
+- Stored metadata values `null`, `false`, and `0` are returned as-is and are not treated as missing.
+- Boolean predicates should read via `q.getRoomMetadata(...) === true`, `q.getAreaMetadata(...) === true`, or `q.getWorldMetadata(...) === true`.
+- Metadata reads are case-insensitive for key-path segments; authored key casing is preserved on write.
+- Metadata key style is convention-driven (`camelCase` recommended for new authored metadata keys).
 
 One combined example:
 
 ```js
 module.exports = {
   is_observatory_moonlit: ({ q }) =>
-    q.roomFlag('myarea:observatory', 'moonlit'),
+    q.getRoomMetadata('myarea:observatory', 'moonlit') === true,
 
   is_storm_over_region: ({ q }) =>
-    q.areaFlag('myarea', 'stormActive'),
+    q.getAreaMetadata('myarea', 'stormActive') === true,
+
+  is_global_omens_active: ({ q }) =>
+    q.getWorldMetadata('globalState.omensActive') === true,
 
   is_dagger_still_on_altar: ({ q }) =>
     q.roomHasItem('myarea:altar_room', 'myarea:ceremonialDagger'),
@@ -1615,20 +1634,25 @@ To prevent this as much as possible, we give you specific "mutation operations" 
 
 Mutation instruction list (current):
 
-1. `setRoomFlag`
-2. `noop`
-3. `transferItem`
-4. `movePlayer`
-5. `changeDoor`
+1. `setRoomMetadata`
+2. `setAreaMetadata`
+3. `setWorldMetadata`
+4. `deleteRoomMetadata`
+5. `deleteAreaMetadata`
+6. `deleteWorldMetadata`
+7. `noop`
+8. `transferItem`
+9. `movePlayer`
+10. `changeDoor`
 
 Designer-facing scripted mutation:
 
-### `setRoomFlag`
+### `setRoomMetadata`
 
 ```js
 {
-  type: 'setRoomFlag',
-  roomRef: 'myarea:observatory',
+  type: 'setRoomMetadata',
+  actor: player,
   key: 'buttonPushed',
   value: true
 }
@@ -1636,9 +1660,109 @@ Designer-facing scripted mutation:
 
 What this does:
 
-- Writes to `room.metadata.flags.buttonPushed`.
-- Lets predicates read that state using `q.roomFlag('myarea:observatory', 'buttonPushed')`.
+- Writes JSON-safe state to `room.metadata.values` using a dot-separated key path.
+- Resolves the target room from actor context (`actor.room`), not authored `roomRef`.
+- Rejects `undefined`; allows `null` as a normal stored value.
+- Lets predicates read that state using `q.getRoomMetadata('myarea:observatory', 'buttonPushed') === true`.
 - Keeps state mutation in command/mutator flow and keeps predicates side-effect free.
+
+### `setAreaMetadata`
+
+```js
+{
+  type: 'setAreaMetadata',
+  actor: player,
+  key: 'storyArc.chapterOne',
+  value: 2
+}
+```
+
+What this does:
+
+- Writes to `area.metadata.values` using a dot-separated key path.
+- Uses current-area-only targeting from actor context (`actor.room.area`).
+- Does not accept authored `areaRef` targeting in this operation.
+- Rejects subtree-conflict writes (for example existing `storyArc.chapterOne` object and attempted set of `storyArc`).
+
+Caution:
+
+- `setAreaMetadata` resolves area at commit-time from actor context.
+- Operation order matters. If one operation moves the actor and a later operation sets area metadata, the write applies to the actor's area at that point in commit order.
+
+### `setWorldMetadata`
+
+```js
+{
+  type: 'setWorldMetadata',
+  key: 'globalState.season',
+  value: 'winter'
+}
+```
+
+What this does:
+
+- Writes to world `metadata.values` using a dot-separated key path.
+- Creates missing world roots (`state.metadata`, `state.metadata.values`) on write.
+- If existing world roots are non-object values, coerces them to objects with warning-level logs.
+- Rejects `undefined`; allows `null` as a storable value.
+- Requires JSON-safe values.
+- Rejects subtree-conflict writes (for example existing `globalState.season.current` object and attempted set of `globalState.season`).
+- Undo removes empty parent/root containers created by this operation to restore pre-op world metadata shape.
+
+### `deleteRoomMetadata`
+
+```js
+{
+  type: 'deleteRoomMetadata',
+  actor: player,
+  key: 'storyArc.chapterOne'
+}
+```
+
+What this does:
+
+- Deletes a key-path from `room.metadata.values` on the actor's current room.
+- Uses current-room targeting from actor context (`actor.room`).
+- Missing key-path is idempotent no-op (no warning, no error).
+- By default only leaf values can be deleted.
+- Deleting an object/array path requires `force: true`.
+- Deletes do not automatically prune empty parent objects.
+
+### `deleteAreaMetadata`
+
+```js
+{
+  type: 'deleteAreaMetadata',
+  actor: player,
+  key: 'storyArc.chapterOne'
+}
+```
+
+What this does:
+
+- Deletes a key-path from current-area `area.metadata.values` resolved from `actor.room.area`.
+- Missing key-path is idempotent no-op (no warning, no error).
+- By default only leaf values can be deleted.
+- Deleting an object/array path requires `force: true`.
+- Deletes do not automatically prune empty parent objects.
+
+### `deleteWorldMetadata`
+
+```js
+{
+  type: 'deleteWorldMetadata',
+  key: 'globalState.season'
+}
+```
+
+What this does:
+
+- Deletes a key-path from world metadata state.
+- If world metadata root/path is missing, the operation is idempotent no-op.
+- Missing-root no-op does not create world metadata root.
+- By default only leaf values can be deleted.
+- Deleting an object/array path requires `force: true`.
+- Deletes do not automatically prune empty parent objects.
 
 Runtime mutator instructions (command/movement systems):
 

@@ -141,8 +141,9 @@ The actor view is read-only.
 
 Allowed v1 query methods:
 
-- `q.roomFlag(roomRef, key)`
-- `q.areaFlag(areaRef, key)`
+- `q.getRoomMetadata(roomRef, key)`
+- `q.getAreaMetadata(areaRef, key)`
+- `q.getWorldMetadata(key)`
 - `q.roomHasItem(roomRef, itemRef)`
 - `q.currentContainerHasItem(itemRef)`
 - `q.roomContainerHasItem(roomRef, containerRef, itemRef)`
