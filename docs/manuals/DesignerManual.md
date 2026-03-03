@@ -1445,8 +1445,11 @@ module.exports = {
 
 ### `q` Query Methods (Designer Reference)
 
-Inside a predicate, `q` is your read-only "question toolbox."  
-Each method asks one specific true/false question.
+Inside a predicate, `q` is your read-only query toolbox.  
+Most methods are true/false predicate helpers, and the metadata getters are value readers you can compare in your own boolean logic.
+
+- Value readers: `q.getRoomMetadata(...)`, `q.getAreaMetadata(...)`, `q.getWorldMetadata(...)`
+- Boolean helpers: all other `q.*` methods in this list
 
 1. `q.getRoomMetadata(roomRef, key)`
    Example idea: "What is the current room metadata value for a puzzle key?"
