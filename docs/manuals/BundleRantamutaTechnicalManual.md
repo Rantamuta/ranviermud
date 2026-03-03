@@ -684,18 +684,22 @@ Mutator-owned metadata delete ops:
 Behavior contract:
 
 1. All deletes execute only in commit/mutator phase; render and predicate phases remain read-only.
-2. Missing path delete is idempotent no-op with no warning and no thrown error.
-3. Default delete is leaf-only; non-leaf/object/array delete throws unless `force: true`.
-4. Deletes do not auto-prune empty parent/root objects.
-5. Rollback restores deleted values using mutation undo closures.
-6. World delete missing-root no-op must not create world metadata root.
+2. Room and area deletes resolve targets from actor context only.
+   - Room: `actor.room`
+   - Area: `actor.room.area`
+3. Missing path delete is idempotent no-op with no warning and no thrown error.
+4. Default delete is leaf-only; non-leaf/object/array delete throws unless `force: true`.
+5. Deletes do not auto-prune empty parent/root objects.
+6. Rollback restores deleted values using mutation undo closures.
+7. World delete missing-root no-op must not create world metadata root.
 
-## Metadata set instruction semantics (setAreaMetadata / setWorldMetadata)
+## Metadata set instruction semantics (setRoomMetadata / setAreaMetadata / setWorldMetadata)
 
 Mutator-owned metadata set ops:
 
-1. `setAreaMetadata`
-2. `setWorldMetadata`
+1. `setRoomMetadata`
+2. `setAreaMetadata`
+3. `setWorldMetadata`
 
 Behavior contract:
 
@@ -703,13 +707,17 @@ Behavior contract:
 2. Keys are parsed as dot-paths and validated by metadata mutator segment rules.
 3. Values must be JSON-safe; `undefined` is rejected and `null` is stored as-is.
 4. Missing roots are created on write.
+   - Room: `room.metadata.values`
    - Area: `area.metadata.values`
    - World: `state.metadata.values`
-5. For world writes, existing non-object root values are coerced to object roots with warning-level logs:
+5. Room and area writes resolve targets from actor context only.
+   - Room: `actor.room`
+   - Area: `actor.room.area`
+6. For world writes, existing non-object root values are coerced to object roots with warning-level logs:
    - `WORLDMETA_COERCE_METADATA_ROOT`
    - `WORLDMETA_COERCE_VALUES_ROOT`
-6. Subtree conflicts are rejected (cannot overwrite non-empty object subtree leaf with scalar/object write at ancestor path).
-7. World set undo restores prior root shape by pruning empty containers created by that operation.
+7. Subtree conflicts are rejected (cannot overwrite non-empty object subtree leaf with scalar/object write at ancestor path).
+8. World set undo restores prior root shape by pruning empty containers created by that operation.
 
 ## Change guidance for maintainers
 

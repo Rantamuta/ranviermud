@@ -2104,31 +2104,32 @@ Purpose:
 * Support rollback when a later mutation in the same plan fails.
 * Keep predicates/query helpers read-only by moving writes into the mutation phase.
 
-##### `bundle-rantamuta` mutation op: `setRoomFlag`
+##### `bundle-rantamuta` mutation op: `setRoomMetadata`
 
-`bundle-rantamuta` command plans support a room-flag mutation instruction for deterministic room-state toggles used by predicates and description rendering.
+`bundle-rantamuta` command plans support a room metadata mutation instruction for deterministic room-state updates used by predicates and description rendering.
 
 Instruction shape:
 
 ```js
 {
-  type: 'setRoomFlag',
-  roomRef: 'area:roomId',
-  key: 'flagName',
-  value: true
+  type: 'setRoomMetadata',
+  actor: player,
+  key: 'stateKey',
+  value: 'jsonSafeValue'
 }
 ```
 
 Behavior:
 
-* Resolves `roomRef` through `RoomManager`.
-* Writes boolean `value` to `room.metadata.flags[key]`.
+* Resolves target room from `actor.room`.
+* Writes JSON-safe `value` to `room.metadata.values` key-path.
+* Rejects `undefined` values; allows `null`.
 * Returns an inverse operation for rollback if a later mutation in the same plan fails.
 * Is intended for command/script mutation phase, not predicate execution.
 
 Read path pairing:
 
-* Predicates should read these values with `q.roomFlag(roomRef, key)`.
+* Predicates should read these values with `q.getRoomMetadata(roomRef, key)`.
 * Predicates remain read-only and must never mutate world state directly.
 
 #### 6.3.9 Server Events

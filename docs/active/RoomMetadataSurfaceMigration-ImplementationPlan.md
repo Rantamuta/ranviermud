@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `draft-v1`
+- Status: `completed-v1`
 - Type: implementation plan (not checklist)
 - Scope: migrate room metadata mutator surface from `setRoomFlag` + `roomRef` targeting to metadata-native room operations scoped to current actor room
 
@@ -15,18 +15,24 @@ Complete deferred room-scope API cleanup:
 
 ## Source Context
 
-- [`ScopedFlagMutatorProposal.md`](./ScopedFlagMutatorProposal.md) (Deferred Follow-up Task)
+- [`ScopedFlagMutatorProposal.md`](./ScopedFlagMutatorProposal.md)
 - `docs/archive/implementations/D2-MetadataQueryCompatibility-Plan.md`
 - `docs/archive/implementations/D3-DeleteMetadataOps-Plan.md`
 - `docs/normative/CommandArchitecture.md`
 - `docs/normative/EntityResolution.md`
 
-## Current State (Observed)
+## Pre-Migration Baseline (Archived Context)
 
 - `setRoomFlag` still exists in mutator runtime and docs.
 - `setRoomFlag` currently requires `roomRef` and boolean-only value.
 - Room authored content still uses `setRoomFlag` (for example `bundles/bundle-rantamuta/areas/test/items.yml`).
 - `deleteRoomMetadata` currently requires `roomRef` (D3 locked for minimal change).
+
+## Implementation Outcome
+
+1. `setRoomMetadata` is the active room metadata write op.
+2. Room metadata mutator ops (`setRoomMetadata`, `deleteRoomMetadata`) resolve room from actor context and do not use authored `roomRef`.
+3. Active content/manual references were migrated away from `setRoomFlag`.
 
 ## Locked Migration Target
 
