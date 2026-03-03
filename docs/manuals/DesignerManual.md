@@ -1631,7 +1631,7 @@ To prevent this as much as possible, we give you specific "mutation operations" 
 
 Mutation instruction list (current):
 
-1. `setRoomFlag`
+1. `setRoomMetadata`
 2. `setAreaMetadata`
 3. `setWorldMetadata`
 4. `deleteRoomMetadata`
@@ -1644,12 +1644,12 @@ Mutation instruction list (current):
 
 Designer-facing scripted mutation:
 
-### `setRoomFlag`
+### `setRoomMetadata`
 
 ```js
 {
-  type: 'setRoomFlag',
-  roomRef: 'myarea:observatory',
+  type: 'setRoomMetadata',
+  actor: player,
   key: 'buttonPushed',
   value: true
 }
@@ -1657,7 +1657,9 @@ Designer-facing scripted mutation:
 
 What this does:
 
-- Writes boolean state to `room.metadata.values.buttonPushed`.
+- Writes JSON-safe state to `room.metadata.values` using a dot-separated key path.
+- Resolves the target room from actor context (`actor.room`), not authored `roomRef`.
+- Rejects `undefined`; allows `null` as a normal stored value.
 - Lets predicates read that state using `q.getRoomMetadata('myarea:observatory', 'buttonPushed') === true`.
 - Keeps state mutation in command/mutator flow and keeps predicates side-effect free.
 
@@ -1709,15 +1711,15 @@ What this does:
 ```js
 {
   type: 'deleteRoomMetadata',
-  roomRef: 'myarea:observatory',
+  actor: player,
   key: 'storyArc.chapterOne'
 }
 ```
 
 What this does:
 
-- Deletes a key-path from `room.metadata.values` on the resolved room.
-- Uses explicit room targeting with `roomRef`.
+- Deletes a key-path from `room.metadata.values` on the actor's current room.
+- Uses current-room targeting from actor context (`actor.room`).
 - Missing key-path is idempotent no-op (no warning, no error).
 - By default only leaf values can be deleted.
 - Deleting an object/array path requires `force: true`.

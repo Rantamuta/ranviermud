@@ -7,7 +7,7 @@
 - Binding: no
 - D3 sequencing note:
   - Implemented in D3: `deleteRoomMetadata`, `deleteAreaMetadata`, `deleteWorldMetadata`.
-  - Deferred beyond D3: `setWorldMetadata` and `q.getWorldMetadata(...)`.
+  - Implemented after D3: `setWorldMetadata` and `q.getWorldMetadata(...)`.
 - Driver: Undying Village implementation needs cross-room and world-scope metadata without mixing content logic into runtime internals.
 - Related:
   - `docs/normative/CommandArchitecture.md`
@@ -32,7 +32,7 @@ This keeps area content authored in `areas/**` while keeping mutation mechanics 
 Current runtime already supports:
 
 - area-scoped predicate reads via `q.getAreaMetadata(areaRef, key)`
-- write: `setRoomFlag` in mutator commit flow
+- write: `setRoomMetadata` in mutator commit flow
 
 Current runtime does not support:
 
@@ -200,15 +200,16 @@ Content touch points:
 - Proposal is documented outside lore docs.
 - Runtime/content domain separation is explicit.
 
-## Deferred Follow-up Task
+## Completed Follow-up
 
-At the end of this proposal scope, schedule a separate compatibility/migration task to align existing room metadata surfaces:
+Room metadata surface migration is complete:
 
-- rename `setRoomFlag` to `setRoomMetadata`
-- remove `roomRef` from authored room-scope mutation ops (current-room only)
-- metadata query helper family is:
+- `setRoomFlag` replaced by `setRoomMetadata`
+- authored room-scope metadata ops no longer accept `roomRef`; target is current room via actor context
+- metadata query helper family uses:
   - `q.getRoomMetadata(...)`
   - `q.getAreaMetadata(...)`
+  - `q.getWorldMetadata(...)`
 
 ## D1 Alignment Target State (Follow-up Policy)
 
