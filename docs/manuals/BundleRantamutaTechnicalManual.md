@@ -499,7 +499,7 @@ Predicate execution:
 1. `evaluateRenderPredicate(...)` delegates to `PredicateRuntime.evaluate(...)` (world runtime if provided, helper default otherwise).
 2. Runtime resolution is area-local through `areas/<area>/predicates.js`.
 3. Predicates receive restricted input `({ actor, q, context })`, where `actor` is a normalized read-only view.
-4. `q` is a read-only facade (`getRoomMetadata`, `getAreaMetadata`, `roomHasItem`, `currentContainerHasItem`, `roomContainerHasItem`, `actorHasItem`, `actorHasEffect`, `actorQuestActive`, `actorQuestCompleted`, `isDoorClosed`, `isDoorLocked`, `isDoorClosedBetween`, `isDoorLockedBetween`).
+4. `q` is a read-only facade (`getRoomMetadata`, `getAreaMetadata`, `getWorldMetadata`, `roomHasItem`, `currentContainerHasItem`, `roomContainerHasItem`, `actorHasItem`, `actorHasEffect`, `actorQuestActive`, `actorQuestCompleted`, `isDoorClosed`, `isDoorLocked`, `isDoorClosedBetween`, `isDoorLockedBetween`).
 5. Predicate exceptions are swallowed and treated as `false` (fail-closed).
 6. `room.renderPredicates` fallback is intentionally not used.
 
@@ -511,35 +511,38 @@ Predicate execution:
 2. `q.getAreaMetadata(areaRef, key) -> *`
    Reads the resolved area `metadata.values` key-path value using case-insensitive segment matching.
    Returns `undefined` for missing paths.
-3. `q.roomHasItem(roomRef, itemRef) -> boolean`
+3. `q.getWorldMetadata(key) -> *`
+   Reads `world.metadata.values` key-path value using case-insensitive segment matching.
+   Returns `undefined` for missing paths, invalid keys, or missing world metadata roots.
+4. `q.roomHasItem(roomRef, itemRef) -> boolean`
    Returns `true` when any top-level item in that room matches `itemRef`.
-4. `q.currentContainerHasItem(itemRef) -> boolean`
+5. `q.currentContainerHasItem(itemRef) -> boolean`
    Returns `true` when the current rendered container contains `itemRef`.
    Uses `renderContext.currentContainer` when provided; otherwise falls back to `renderContext.entity` when that entity has an inventory.
-5. `q.roomContainerHasItem(roomRef, containerRef, itemRef) -> boolean`
+6. `q.roomContainerHasItem(roomRef, containerRef, itemRef) -> boolean`
    Returns `true` when any matching top-level container in the room contains `itemRef`.
-6. `q.actorHasItem(itemRef) -> boolean`
+7. `q.actorHasItem(itemRef) -> boolean`
    Returns `true` when the actor inventory contains `itemRef`.
    Returns `false` when actor context is missing.
-7. `q.actorHasEffect(effectId) -> boolean`
+8. `q.actorHasEffect(effectId) -> boolean`
    Returns `true` when the actor has an effect matching `effectId`.
    Returns `false` when actor context is missing.
-8. `q.actorQuestActive(questRef) -> boolean`
+9. `q.actorQuestActive(questRef) -> boolean`
    Returns `true` when `questRef` is present in actor active quests.
    Returns `false` when actor context is missing.
-9. `q.actorQuestCompleted(questRef) -> boolean`
+10. `q.actorQuestCompleted(questRef) -> boolean`
    Returns `true` when `questRef` is present in actor completed quests.
    Returns `false` when actor context is missing.
-10. `q.isDoorClosed(direction) -> boolean`
+11. `q.isDoorClosed(direction) -> boolean`
    Returns `true` when the current room's directional edge resolves to a closed door state.
    For virtualized pairs, reads effective virtual-door state.
-11. `q.isDoorLocked(direction) -> boolean`
+12. `q.isDoorLocked(direction) -> boolean`
    Returns `true` when the current room's directional edge resolves to a locked door state.
    For virtualized pairs, reads effective virtual-door state.
-12. `q.isDoorClosedBetween(roomARef, roomBRef) -> boolean`
+13. `q.isDoorClosedBetween(roomARef, roomBRef) -> boolean`
    Returns `true` when the resolved pair/edge is effectively closed.
    Does not require actor presence.
-13. `q.isDoorLockedBetween(roomARef, roomBRef) -> boolean`
+14. `q.isDoorLockedBetween(roomARef, roomBRef) -> boolean`
    Returns `true` when the resolved pair/edge is effectively locked.
    Does not require actor presence.
 

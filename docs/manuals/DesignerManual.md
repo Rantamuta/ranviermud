@@ -1456,56 +1456,60 @@ Each method asks one specific true/false question.
    Example idea: "What is the current area metadata value for arc progression?"
    Example: `q.getAreaMetadata('myarea', 'storyArc.chapter')`
 
-3. `q.roomHasItem(roomRef, itemRef)`
+3. `q.getWorldMetadata(key)`
+   Example idea: "What is the current world metadata value for global progression?"
+   Example: `q.getWorldMetadata('globalState.chapter')`
+
+4. `q.roomHasItem(roomRef, itemRef)`
    Example idea: "Does the altar room still contain the ceremonial dagger?"
    Example: `q.roomHasItem('myarea:altar_room', 'myarea:ceremonialDagger')`
 
-4. `q.currentContainerHasItem(itemRef)`
+5. `q.currentContainerHasItem(itemRef)`
    Example idea: "Does the container this description belongs to currently hold a black pearl?"
    Example: `q.currentContainerHasItem('myarea:blackPearl')`
 
-5. `q.roomContainerHasItem(roomRef, containerRef, itemRef)`
+6. `q.roomContainerHasItem(roomRef, containerRef, itemRef)`
    Example idea: "Is the wax seal placed in the reliquary in the nave?"
    Example: `q.roomContainerHasItem('myarea:nave', 'myarea:reliquary', 'myarea:waxSeal')`
 
-6. `q.actorHasItem(itemRef)`
+7. `q.actorHasItem(itemRef)`
    Example idea: "Is the player carrying a lantern, so they notice faint wall writing?"
    Example: `q.actorHasItem('myarea:lantern')`
 
-7. `q.actorHasEffect(effectId)`
+8. `q.actorHasEffect(effectId)`
    Example idea: "Is the player under a blessing effect, so the shrine feels warmer?"
    Example: `q.actorHasEffect('blessed')`
 
-8. `q.actorQuestActive(questRef)`
+9. `q.actorQuestActive(questRef)`
    Example idea: "Is the bell trial currently in progress?"
    Example: `q.actorQuestActive('myarea:bellTrial')`
 
-9. `q.actorQuestCompleted(questRef)`
+10. `q.actorQuestCompleted(questRef)`
    Example idea: "Has the player already completed the crypt rite?"
    Example: `q.actorQuestCompleted('myarea:cryptRite')`
 
-10. `q.isDoorClosed(direction)`
+11. `q.isDoorClosed(direction)`
    Example idea: "Is the north door currently closed from this room?"
    Example: `q.isDoorClosed('north')`
 
-11. `q.isDoorLocked(direction)`
+12. `q.isDoorLocked(direction)`
    Example idea: "Is the north door currently locked from this room?"
    Example: `q.isDoorLocked('north')`
 
-12. `q.isDoorClosedBetween(roomARef, roomBRef)`
+13. `q.isDoorClosedBetween(roomARef, roomBRef)`
    Example idea: "Is the archive passage closed even if the viewer is elsewhere?"
    Example: `q.isDoorClosedBetween('myarea:archive_south', 'myarea:archive_north')`
 
-13. `q.isDoorLockedBetween(roomARef, roomBRef)`
+14. `q.isDoorLockedBetween(roomARef, roomBRef)`
    Example idea: "Is the vault passage still locked regardless of viewer room?"
    Example: `q.isDoorLockedBetween('myarea:vault_foyer', 'myarea:vault_inner')`
 
 Metadata query notes:
 
 - Metadata query keys use dot-separated camelCase segments (for example `storyArc.chapterOne`).
-- `q.getRoomMetadata(...)` / `q.getAreaMetadata(...)` return `undefined` when a path is missing.
+- `q.getRoomMetadata(...)` / `q.getAreaMetadata(...)` / `q.getWorldMetadata(...)` return `undefined` when a path is missing or the key is invalid.
 - Stored metadata values `null`, `false`, and `0` are returned as-is and are not treated as missing.
-- Boolean predicates should read via `q.getRoomMetadata(...) === true` or `q.getAreaMetadata(...) === true`.
+- Boolean predicates should read via `q.getRoomMetadata(...) === true`, `q.getAreaMetadata(...) === true`, or `q.getWorldMetadata(...) === true`.
 - Metadata reads are case-insensitive for key-path segments; authored key casing is preserved on write.
 - Metadata key style is convention-driven (`camelCase` recommended for new authored metadata keys).
 
@@ -1518,6 +1522,9 @@ module.exports = {
 
   is_storm_over_region: ({ q }) =>
     q.getAreaMetadata('myarea', 'stormActive') === true,
+
+  is_global_omens_active: ({ q }) =>
+    q.getWorldMetadata('globalState.omensActive') === true,
 
   is_dagger_still_on_altar: ({ q }) =>
     q.roomHasItem('myarea:altar_room', 'myarea:ceremonialDagger'),
