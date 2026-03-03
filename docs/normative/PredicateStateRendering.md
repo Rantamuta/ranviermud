@@ -143,6 +143,7 @@ Allowed v1 query methods:
 
 - `q.getRoomMetadata(roomRef, key)`
 - `q.getAreaMetadata(areaRef, key)`
+- `q.getWorldMetadata(key)`
 - `q.roomHasItem(roomRef, itemRef)`
 - `q.currentContainerHasItem(itemRef)`
 - `q.roomContainerHasItem(roomRef, containerRef, itemRef)`
