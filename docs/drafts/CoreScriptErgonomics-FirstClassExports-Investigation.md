@@ -76,9 +76,9 @@ The existing ecosystem expects `listeners`. Any ergonomic layer must not break l
 
 ## 6) Candidate implementation options
 
-## Option 1 (recommended): Additive script normalizer in core
+### Option 1 (recommended): Additive script normalizer in core
 
-### What changes
+#### What changes
 
 Implement a shared normalizer in `Rantamuta/core` (example: `src/ScriptExportNormalizer.js`) used by:
 
