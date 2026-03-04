@@ -26,7 +26,7 @@ Implication: root function exports are **not** currently auto-normalized into li
 
 ## 3) Notable existing signal in core
 
-The dependency already contains a proposal document `docs/proposals/FIRST_CLASS_SCRIPT_EXPORTS.md` that aligns closely with the desired direction:
+The `Rantamuta/core` repository contains a proposal document at `docs/proposals/FIRST_CLASS_SCRIPT_EXPORTS.md` (see [Rantamuta/core on GitHub](https://github.com/Rantamuta/core)) that aligns closely with the desired direction:
 
 - additive root exports support,
 - backward compatibility with `listeners`,
@@ -113,43 +113,43 @@ Then existing attach paths consume normalized `listeners` unchanged.
 
 Codify precedence (for example: legacy `listeners[event]` first, then root `event`) and test it.
 
-## Option 2: Transform scripts at bundle/content layer only
+### Option 2: Transform scripts at bundle/content layer only
 
-### What changes
+#### What changes
 
 Preprocess authored scripts in bundle tooling and emit legacy `listeners` format.
 
-### Pros
+#### Pros
 
 - no engine change required.
 
-### Cons
+#### Cons
 
 - introduces non-obvious build magic,
 - splits authoring contract from runtime contract,
 - harder debugging and portability.
 
-### Recommendation
+#### Recommendation
 
 Do not prefer this unless core changes are temporarily blocked.
 
-## Option 3: Replace listener system with direct hook binding
+### Option 3: Replace listener system with direct hook binding
 
-### What changes
+#### What changes
 
 Rework attach/runtime internals to bypass `listeners` maps.
 
-### Pros
+#### Pros
 
 - can produce a cleaner end-state.
 
-### Cons
+#### Cons
 
 - high risk and broad architectural drift,
 - larger compatibility surface and regression potential,
 - contradicts “small reversible changes” posture.
 
-### Recommendation
+#### Recommendation
 
 Not recommended for initial rollout.
 
@@ -157,14 +157,15 @@ Not recommended for initial rollout.
 
 For first release, keep scope intentionally narrow:
 
-1. Support root **event handlers** only (stable):
-   - `spawn`, `ready`, `updateTick`, `playerEnter`, `playerLeave`, `npcEnter`, `npcLeave`, `enterRoom`, `save`, `saved`.
-2. Keep command hooks recognized as **reserved/provisional** metadata unless command architecture explicitly adopts invocation semantics.
-3. Unknown function-valued root keys are treated as helper exports and ignored by listener registration.
-4. Malformed reserved keys:
+1. Support root **event handlers** only (stable) for entity scripts (`item`, `room`, `npc`, `area`):
+   - `spawn`, `ready`, `updateTick`, `playerEnter`, `playerLeave`, `npcEnter`, `npcLeave`, `enterRoom`.
+2. Reserve `save` and `saved` as player lifecycle events for player-event scripts (e.g., those loaded via `loadPlayerEvents(...)`); they are **not** treated as root handlers on entity scripts in this first release.
+3. Keep command hooks recognized as **reserved/provisional** metadata unless command architecture explicitly adopts invocation semantics.
+4. Unknown function-valued root keys are treated as helper exports and ignored by listener registration.
+5. Malformed reserved keys:
    - strict mode: throw,
    - non-strict mode: warn and ignore.
-5. Mixed-mode precedence deterministic and documented.
+6. Mixed-mode precedence deterministic and documented.
 
 ## 8) Migration strategy for designers
 
@@ -204,7 +205,7 @@ module.exports = {
 
 ## 9) Validation plan across repositories
 
-## Core (`Rantamuta/core`)
+### Core (`Rantamuta/core`)
 
 - unit tests for normalizer behavior,
 - loader tests for entity/player/behavior/server event paths,
@@ -212,7 +213,7 @@ module.exports = {
 - strict vs non-strict malformed reserved key handling,
 - regression test proving legacy scripts still work unchanged.
 
-## Wrapper (`ranviermud`)
+### Wrapper (`ranviermud`)
 
 - update `ranvier` dependency SHA only after core tests pass,
 - run `npm test` and `npm run ci:local`,
