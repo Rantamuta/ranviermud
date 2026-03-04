@@ -1,6 +1,6 @@
 # Core Script Ergonomics Investigation: First-Class Root Exports
 
-Status: Draft investigation  
+Status: `draft-v1`  
 Audience: Maintainers of `Rantamuta/core` and `ranviermud` integration  
 Scope: Feasibility and rollout options for allowing item/room/npc/area scripts to declare handlers at module root instead of requiring `listeners` + `spawn`-time wiring
 
