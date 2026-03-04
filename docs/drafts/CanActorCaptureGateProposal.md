@@ -60,7 +60,7 @@ canActor(actor, verbId, context) => policyOutcome
 
 `canActor` executes in Capture only.
 
-It MUST NOT be callable from Plan, Bubble, Commit, or Render.
+It MUST NOT be callable from Plan, React, Commit, or Render.
 
 ## Proposed Capture Precedence (if adopted)
 
@@ -110,12 +110,15 @@ This keeps compatibility with current failure-message mapping and telemetry cate
 ## Risks
 
 1. Dual-policy drift
+
 - If both `canActor` and metadata are used inconsistently, outcomes can become confusing.
 
-2. Surface-area growth
+1. Surface-area growth
+
 - Another hook adds cognitive load and test burden.
 
-3. Misuse risk
+1. Misuse risk
+
 - If implementers treat `canActor` as a Plan substitute, phase discipline erodes.
 
 ## Risk Mitigations

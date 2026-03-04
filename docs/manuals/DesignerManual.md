@@ -292,7 +292,7 @@ Planned reaction hooks (architecture direction; not implemented in the current `
 - `reactDirect(actor, verbId, context)`
 - `reactIndirect(actor, verbId, relationTokenCanonical, context)`
 
-Current runtime: use command-level `metadata.reactions` handlers in command modules for Bubble-phase render contributions.
+Current runtime: use command-level `metadata.reactions` handlers in command modules for React-phase render contributions.
 Treat `reactDirect`/`reactIndirect` as planning targets, not active runtime hooks, until the dispatcher is updated.
 
 What these are for:
@@ -338,7 +338,7 @@ this.reactDirect = (actor, verbId, context) => {
 };
 ```
 
-If you need area/room/player messaging now, return Bubble render contributions from command metadata reactions and let the dispatcher deliver them. Do not emit output directly from policy/planning hooks.
+If you need area/room/player messaging now, return React render contributions from command metadata reactions and let the dispatcher deliver them. Do not emit output directly from policy/planning hooks.
 
 ## Behaviors
 
@@ -1290,7 +1290,7 @@ Useful pattern:
 2. In the entity script `spawn`, attach `canDirect` / `canIndirect` for veto logic.
 3. In the same script, attach `planDirect` / `planIndirect` for context-sensitive result planning.
 4. Planned: attach `reactDirect` / `reactIndirect` for post-success flavor output once runtime support lands.
-5. Today: use command-level `metadata.reactions` for Bubble-phase flavor output.
+5. Today: use command-level `metadata.reactions` for React-phase flavor output.
 
 You must attach the script within `spawn` in order to have access to `this`, which has access to all metadata and other properties set in the `.yml` file.
 

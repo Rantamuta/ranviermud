@@ -2104,32 +2104,31 @@ Purpose:
 * Support rollback when a later mutation in the same plan fails.
 * Keep predicates/query helpers read-only by moving writes into the mutation phase.
 
-##### `bundle-rantamuta` mutation op: `setRoomMetadata`
+##### `bundle-rantamuta` mutation op: `setRoomFlag`
 
-`bundle-rantamuta` command plans support a room metadata mutation instruction for deterministic room-state updates used by predicates and description rendering.
+`bundle-rantamuta` command plans support a room-flag mutation instruction for deterministic room-state toggles used by predicates and description rendering.
 
 Instruction shape:
 
 ```js
 {
-  type: 'setRoomMetadata',
-  actor: player,
-  key: 'stateKey',
-  value: 'jsonSafeValue'
+  type: 'setRoomFlag',
+  roomRef: 'area:roomId',
+  key: 'flagName',
+  value: true
 }
 ```
 
 Behavior:
 
-* Resolves target room from `actor.room`.
-* Writes JSON-safe `value` to `room.metadata.values` key-path.
-* Rejects `undefined` values; allows `null`.
+* Resolves `roomRef` through `RoomManager`.
+* Writes boolean `value` to `room.metadata.flags[key]`.
 * Returns an inverse operation for rollback if a later mutation in the same plan fails.
 * Is intended for command/script mutation phase, not predicate execution.
 
 Read path pairing:
 
-* Predicates should read these values with `q.getRoomMetadata(roomRef, key)`.
+* Predicates should read these values with `q.roomFlag(roomRef, key)`.
 * Predicates remain read-only and must never mutate world state directly.
 
 #### 6.3.9 Server Events
@@ -2208,7 +2207,7 @@ Read path pairing:
 6. Re-attaching the same manager to same emitter duplicates active handlers because each `bind` creates a new function.
 7. `detach` is broad and removes all listeners for an event name, including listeners not owned by this manager.  
    References: `src/EventManager.js:57`, `src/EventManager.js:73`, `docs/NOTES.md:80`.
-8. Startup/shutdown emits are synchronous; thrown listener errors bubble to caller (no guard in `GameServer`).
+8. Startup/shutdown emits are synchronous; thrown listener errors propogate to caller (no guard in `GameServer`).
 
 ##### 8. Empirical probe results I ran locally
 

@@ -31,7 +31,7 @@ Predicates are not available in:
 * Capture
 * Plan
 * Commit
-* Bubble
+* React
 * lifecycle hooks (`spawn`, `ready`, `updateTick`, etc.)
 
 No script-level `predicateEvaluate(...)` API is provided in v1.

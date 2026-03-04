@@ -83,7 +83,7 @@ Discovery note identifying current files/functions for:
 
 - Player dispatch entrypoint + phase orchestration:
   - `bundles/bundle-rantamuta/lib/session/command-dispatch.js`
-  - `handleCommand(...)`, `runCaptureChecks(...)`, `collectTargetPlanContributions(...)`, `collectBubbleContributions(...)`, `renderSuccess(...)`
+  - `handleCommand(...)`, `runCaptureChecks(...)`, `collectTargetPlanContributions(...)`, `collectReactContributions(...)`, `renderSuccess(...)`
 - Parse/canonicalization path used by players:
   - `bundles/bundle-rantamuta/lib/parse-input.js` (`parseInput(...)`)
   - `bundles/bundle-rantamuta/lib/input-canonicalizer.js` (`canonicalizeInput(...)`)
@@ -129,7 +129,7 @@ Allow NPC callers to provide `text` or `structured` intents while still feeding 
 
 ### Objective
 
-Ensure NPC commands execute through the same Resolution, Capture, Plan, Bubble, Commit, Render/Dispatch flow as players.
+Ensure NPC commands execute through the same Resolution, Capture, Plan, React, Commit, Render/Dispatch flow as players.
 
 ### Deliverables
 
@@ -141,7 +141,7 @@ Ensure NPC commands execute through the same Resolution, Capture, Plan, Bubble, 
 ### Acceptance Criteria
 
 - Entity Resolution implementation is shared (not duplicated).
-- Plan/Bubble/Commit/Render code paths are shared (not duplicated).
+- Plan/React/Commit/Render code paths are shared (not duplicated).
 - Player dispatch remains behavior-preserving.
 
 ---
