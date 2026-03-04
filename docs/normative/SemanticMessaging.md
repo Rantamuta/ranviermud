@@ -420,7 +420,7 @@ Queue ordering:
 
 1. command success `render.messages`
 2. target contribution `render.messages`
-3. bubble contribution `render.messages`
+3. reaction contribution `render.messages`
 
 Within each contribution list, declaration order is preserved.
 

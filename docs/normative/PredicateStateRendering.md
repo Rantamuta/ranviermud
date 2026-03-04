@@ -36,7 +36,7 @@ This is the normative method for stateful room/item/PC description rendering.
 
 Out of scope in v1:
 
-- Capture/Plan/Commit/Bubble policy or mutation logic
+- Capture/Plan/Commit/React policy or mutation logic
 - lifecycle script hooks (`spawn`, `ready`, `updateTick`)
 - descriptions beyond room/item/PC surfaces
 
@@ -49,7 +49,7 @@ Predicates must not be evaluated in:
 - Capture
 - Plan
 - Commit
-- Bubble
+- React
 - lifecycle hooks
 
 Rationale:

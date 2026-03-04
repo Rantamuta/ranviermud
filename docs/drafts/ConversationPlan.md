@@ -123,7 +123,7 @@ MenuOption fields:
 - `utterance` (public text said by actor when selected)
 - `intentId` (authoritative token)
 - `nextStateId` (optional, if transition is static)
-- `effects` (optional, for quest flags or variables, implemented as mutations in bubble/commit)
+- `effects` (optional, for quest flags or variables, implemented as mutations in react/commit)
 
 IntentDef fields (minimum):
 
@@ -309,7 +309,7 @@ This section is binding for implementation placement.
 
   - `talk` sets engagement and prepares initial post-commit semantic events
   - `say` constructs post-commit semantic events and includes `deliveries.target` when in selector mode
-- Phase 4 Bubble:
+- Phase 4 React:
 
   - may add reaction events, but must not veto
 - Phase 5 Commit:

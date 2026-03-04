@@ -82,7 +82,7 @@ Execution phases are:
 1. Resolution
 2. Capture
 3. Plan
-4. Bubble
+4. React
 5. Commit
 6. Render/Dispatch
 
@@ -224,9 +224,9 @@ Plan must not mutate world state.
 
 NPC-only commands are valid, but must follow the same plan/commit/render contract.
 
-## 4) Bubble (reaction phase)
+## 4) React (reaction phase)
 
-Bubble remains render-only.
+React remains render-only.
 
 Rules:
 

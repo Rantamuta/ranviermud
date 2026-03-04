@@ -76,7 +76,7 @@ This plan stays within phase boundaries:
 1. Receive Input: unchanged.
 2. Entity Resolution: adds matching strategy fallback only.
 3. Capture: unchanged.
-4. Plan/Bubble/Commit/Render: unchanged.
+4. Plan/React/Commit/Render: unchanged.
 
 No mutation or output is introduced in resolver.
 

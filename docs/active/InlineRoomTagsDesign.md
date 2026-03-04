@@ -98,7 +98,7 @@ No inline-tag code may bypass predicate runtime or evaluate arbitrary expression
 Phase boundary is fixed:
 
 - Inline tag resolution is render-time description assembly only.
-- No evaluation during Capture/Plan/Commit/Bubble/lifecycle hooks.
+- No evaluation during Capture/Plan/Commit/React/lifecycle hooks.
 
 Phase 1 integration points in current codebase:
 

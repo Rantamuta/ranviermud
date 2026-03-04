@@ -257,9 +257,9 @@ Command must return envelope:
 
 World mutation is not performed directly in command files.
 
-### Phase 4: Bubble (reaction)
+### Phase 4: React
 
-Bubble contributions are accumulated from:
+React contributions are accumulated from:
 
 1. command-level `metadata.reactions`,
 2. each reaction function result in declaration order.
@@ -277,11 +277,11 @@ Contribution shape accepted:
 2. this is the unified interface for lines and instructions.
 3. runtime does **not** auto-normalize legacy `render.lines` / `render.instructions`; those shapes are treated as invalid payloads and ignored.
 
-Bubble does not veto.
+React does not veto.
 
 Important runtime guard:
 
-1. bubble `operations` are forbidden,
+1. react `operations` are forbidden,
 2. dispatcher logs a contract error and ignores forbidden content,
 3. command continues on the success path.
 
@@ -328,7 +328,7 @@ Invariant enforcement in mutator:
 
 1. Failure messages resolved by dispatcher (`command.metadata.errorMessages` then defaults).
 2. Success render queue executes only after successful commit.
-3. Queue order is deterministic: command success messages, then target-plan contributions, then bubble contributions.
+3. Queue order is deterministic: command success messages, then target-plan contributions, then react contributions.
 4. Lines/instructions are both represented as `render.messages` entries and executed in queue order (best-effort, no rollback impact).
 5. Prompt is emitted at end when player/socket is still active.
 
@@ -351,7 +351,7 @@ Queue merge and execution order:
 
 1. command success `render.messages` entries first,
 2. target-plan contribution messages second (`planDirect` / `planIndirect`),
-3. bubble contribution messages third (`metadata.reactions` order),
+3. react contribution messages third (`metadata.reactions` order),
 4. execute after successful commit.
 
 `semanticEvent` runtime behavior (current implementation):
@@ -610,7 +610,7 @@ exits:
 Bundle tests:
 
 1. `tests/command.dispatch.test.js`:
-   - end-to-end phase behavior, veto ordering, bubble behavior, trace semantics.
+   - end-to-end phase behavior, veto ordering, react behavior, trace semantics.
 2. `tests/entity.resolution.test.js`:
    - forms, scopes, relation normalization, nested traversal, ambiguity behavior.
 3. `tests/mutator.test.js`:
@@ -668,7 +668,7 @@ Target-plan surfaces:
 2. `indirectTarget.planIndirect(actor, verbId, relationTokenCanonical, context)`
 3. may contribute plan operations and/or `render.messages` before commit
 
-Bubble/reaction surfaces:
+React/reaction surfaces:
 
 1. command-level `metadata.reactions` only
 2. contributions are render-only (`render.messages`) and cannot enqueue mutations

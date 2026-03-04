@@ -33,7 +33,7 @@ Current render merge order is additive:
 
 1. command success `render.messages`
 2. plan contribution `render.messages`
-3. bubble contribution `render.messages`
+3. react contribution `render.messages`
 
 This is correct for most hooks, but facade-style authored content needs a principled way to replace generic success lines, not append to them.
 
@@ -47,7 +47,7 @@ This is correct for most hooks, but facade-style authored content needs a princi
 ## Non-Goals
 
 1. No per-message selective suppression in v1 (all-or-none only).
-2. No Bubble-phase control over base command success rendering.
+2. No React-phase control over base command success rendering.
 3. No changes to commit/mutation ordering or rollback behavior.
 
 ## Locked Decisions
@@ -72,13 +72,13 @@ Given a successful command result and successful commit:
 3. Compute Plan-render presence from extracted Plan `render.messages` after standard validation/parsing.
 4. Render queue composition:
    - If `replaceSuccessRequested === false`:
-     - keep current behavior (command success + Plan + Bubble).
+     - keep current behavior (command success + Plan + React).
    - If `replaceSuccessRequested === true` and Plan-render presence is non-empty:
      - suppress command success `render.messages`
-     - render Plan + Bubble only.
+     - render Plan + React only.
    - If `replaceSuccessRequested === true` and Plan-render presence is empty:
      - log warning code `RENDER_POLICY_REPLACE_EMPTY`
-     - fall back to current behavior (command success + Plan + Bubble).
+     - fall back to current behavior (command success + Plan + React).
 
 ## Payload Shape (proposed)
 
@@ -111,13 +111,13 @@ Notes:
    - existing content without `renderPolicy.replaceSuccess` is unchanged.
 3. Phase boundaries:
    - Capture unchanged
-   - Plan/Bubble contracts unchanged except this additional Plan render policy signal
+   - Plan/React contracts unchanged except this additional Plan render policy signal
    - Commit unchanged
    - Render/Dispatch queue assembly rule extended.
 
 ## Classification
 
-This proposal defines a Render/Dispatch assembly rule controlled by a Plan-contributed policy bit. It does not add a new phase, mutation type, veto surface, or Bubble authority.
+This proposal defines a Render/Dispatch assembly rule controlled by a Plan-contributed policy bit. It does not add a new phase, mutation type, veto surface, or React authority.
 
 ## Example (facade door)
 
@@ -162,7 +162,7 @@ Add/adjust tests in `bundles/bundle-rantamuta/tests/command.dispatch.test.js`:
 4. Replacement requested with explicit empty string message:
    - no fallback
    - base command success render suppressed.
-5. Bubble cannot request replacement (ignored if present in Bubble payload).
+5. React cannot request replacement (ignored if present in React payload).
 
 ## Suggested Normative Patch Points
 
