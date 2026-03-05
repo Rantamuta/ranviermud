@@ -187,3 +187,16 @@ Behavior checks:
 2. Migrate all timing callsites in ritual/stillness/conversation systems to shared helper.
 3. Add optional lint/check rule to flag ad hoc `* 1000 / tickFrequency` math in bundle code.
 
+## Implementation Notes (2026-03-05)
+
+- No behavioral deviations from this plan were required for the helper slice.
+- Implemented helper API:
+  - `getTickFrequencyMs(state, cadence = 'entity')`
+  - `secondsToTicks(state, seconds, cadence = 'entity')`
+  - `ticksToSeconds(state, ticks, cadence = 'entity')`
+- Validation behavior implemented:
+  - unsupported cadence throws `TypeError`,
+  - non-finite/non-number inputs throw `TypeError`,
+  - negative duration/tick inputs throw `RangeError`,
+  - invalid/non-positive tick-frequency config values fall back to `100ms`.
+- Broad consumer migration remains intentionally deferred.

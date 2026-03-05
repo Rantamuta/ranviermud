@@ -7,17 +7,17 @@ This slice intentionally does not wire every future consumer yet; it establishes
 
 ## Checklist
 
-- [ ] [helper] Add `bundles/bundle-rantamuta/lib/helpers/time-to-tick.js` with `getTickFrequencyMs(state, cadence = 'entity')`.
+- [x] [helper] Add `bundles/bundle-rantamuta/lib/helpers/time-to-tick.js` with `getTickFrequencyMs(state, cadence = 'entity')`.
   - Read `entityTickFrequency` and `playerTickFrequency` via `state.Config.get(...)` with runtime defaults.
-- [ ] [helper] Implement `secondsToTicks(state, seconds, cadence = 'entity')` in `time-to-tick.js`.
+- [x] [helper] Implement `secondsToTicks(state, seconds, cadence = 'entity')` in `time-to-tick.js`.
   - Use ceil conversion and explicit input validation for non-finite/negative values.
-- [ ] [helper] Implement `ticksToSeconds(state, ticks, cadence = 'entity')` in `time-to-tick.js`.
+- [x] [helper] Implement `ticksToSeconds(state, ticks, cadence = 'entity')` in `time-to-tick.js`.
   - Keep this as a diagnostic/inverse helper with explicit input validation.
-- [ ] [tests] Add focused unit coverage in `bundles/bundle-rantamuta/tests/time.to.tick.helper.test.js`.
+- [x] [tests] Add focused unit coverage in `bundles/bundle-rantamuta/tests/time.to.tick.helper.test.js`.
   - Cover cadence selection, defaults, conversion rounding policy, and validation errors.
-- [ ] [docs] Update `docs/active/TimeToTickConversion-ImplementationPlan.md` to record any implementation-level deviations discovered during coding.
-- [ ] [defer] Leave broad consumer migration (ritual/stillness/conversation callsites) deferred to follow-up slices after helper contract is stable.
-- [ ] [checklist] Mark checklist items complete as each behavior slice lands.
+- [x] [docs] Update `docs/active/TimeToTickConversion-ImplementationPlan.md` to record any implementation-level deviations discovered during coding.
+- [x] [defer] Leave broad consumer migration (ritual/stillness/conversation callsites) deferred to follow-up slices after helper contract is stable.
+- [x] [checklist] Mark checklist items complete as each behavior slice lands.
 
 ## Behavior Slices
 
