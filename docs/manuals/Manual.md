@@ -2104,7 +2104,7 @@ Purpose:
 * Support rollback when a later mutation in the same plan fails.
 * Keep predicates/query helpers read-only by moving writes into the mutation phase.
 
-##### `bundle-rantamuta` mutation op: `setRoomFlag`
+##### `bundle-rantamuta` mutation op: `setRoomMetadata`
 
 `bundle-rantamuta` command plans support a room-flag mutation instruction for deterministic room-state toggles used by predicates and description rendering.
 
@@ -2112,7 +2112,7 @@ Instruction shape:
 
 ```js
 {
-  type: 'setRoomFlag',
+  type: 'setRoomMetadata',
   roomRef: 'area:roomId',
   key: 'flagName',
   value: true
