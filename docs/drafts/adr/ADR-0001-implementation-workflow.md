@@ -17,8 +17,6 @@ Adopt a normative implementation workflow in `docs/normative/implementation.md` 
 1. Phase A: author an unambiguous implementation checklist and stop for approval.
 2. Phase B: execute the approved checklist in strict order with test-first discipline and commit hygiene.
 
-Add a reusable checklist scaffold in `docs/templates/implementation-checklist.md`.
-
 ## Consequences
 
 Positive:
@@ -41,4 +39,3 @@ Tradeoffs:
 ## Related
 
 - `docs/normative/implementation.md`
-- `docs/templates/implementation-checklist.md`

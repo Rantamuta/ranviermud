@@ -24,7 +24,7 @@ Define a combat system that:
   - Entity Resolution
   - Capture (veto only)
   - Target (planner only)
-  - Bubble (messaging only, no mutation)
+  - React (messaging only, no mutation)
   - Commit (mutator only)
   - Render/Dispatch
 - Ensures **all world state mutation** (HP, effects, inventory, position, battle state) occurs only via mutator operations in Commit.
@@ -42,7 +42,7 @@ Combat actions must run through the existing command pipeline defined in `Comman
 ### 2.2 No mutation outside Commit
 
 - Battle scheduling cannot apply damage, effects, movement, or battle state changes directly.
-- Bubble remains messaging-only and must not append mutation instructions.
+- React remains messaging-only and must not append mutation instructions.
 - All changes are expressed as mutator operations and applied atomically in Commit.
 
 ### 2.3 Determinism
@@ -70,17 +70,17 @@ This system adds **one additional command source** that feeds the existing comma
 
 Both sources produce a standard “command artifact” and then run through:
 
-Receive Input -> Entity Resolution -> Capture -> Target -> Bubble -> Commit -> Render/Dispatch
+Receive Input -> Entity Resolution -> Capture -> Target -> React -> Commit -> Render/Dispatch
 
-### 3.1 Bubble remains messaging-only
+### 3.1 React remains messaging-only
 
-Bubble may add:
+React may add:
 
 - flavor lines
 - audience-specific semantic events
 - combat log events
 
-Bubble may not:
+React may not:
 
 - apply damage
 - apply or remove effects
@@ -322,9 +322,9 @@ Target for `combat.advanceCast`:
 
 All via mutator operations.
 
-### 10.4 Disruption without Bubble mutation
+### 10.4 Disruption without React mutation
 
-Because Bubble cannot mutate, disruption must be handled via one of:
+Because React cannot mutate, disruption must be handled via one of:
 
 **A) Damage applies an effect that later causes a veto** (recommended)
 
@@ -533,4 +533,4 @@ This plan defines combat as:
 - a spellcasting system that uses multi-step progress with disruption modeled via effects and Capture veto
 - a hard invariant that all state changes occur only through mutator operations in Commit
 
-It is deliberately narrow: it delivers credible combat without compromising the command architecture or turning Bubble into a mutation backdoor.
+It is deliberately narrow: it delivers credible combat without compromising the command architecture or turning React into a mutation backdoor.

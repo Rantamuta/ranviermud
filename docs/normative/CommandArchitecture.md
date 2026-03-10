@@ -35,7 +35,7 @@ Execution phases are:
 1. Entity Resolution
 2. Capture
 3. Plan
-4. Bubble
+4. React
 5. Commit
 6. Render/Dispatch
 
@@ -93,7 +93,7 @@ Rules:
 
 - Hooks may allow or deny.
 - Hooks must not mutate world state.
-- Hooks must not append mutation instructions, render events, or bubble contributions.
+- Hooks must not append mutation instructions, render events, or reaction contributions.
 - First deny wins.
 - If denied, command terminates with failure envelope and does not enter Plan.
 - Capture runs in two steps:
@@ -246,31 +246,31 @@ Layering rule:
   area/item/room IDs for plan contributions.
 - Content-specific contribution behavior belongs in `areas/**` scripts/metadata.
 
-### 4) Bubble (reaction phase)
+### 4) React (reaction phase)
 
-Bubble is command-scoped reaction contribution.
+React is command-scoped reaction contribution.
 
 Rules:
 
-- No veto in bubble.
-- Bubble functions are provided through command metadata `reactions`:
+- No veto in reaction.
+- React functions are provided through command metadata `reactions`:
   - array of functions, or
   - factory function `(context) => function[]`
 - Each reaction function is synchronous and receives phase `context`.
-- Bubble contributions are data-only and may include `render.messages`.
-- Bubble contributions must not include mutation operations.
-- Bubble contributions must not include render-assembly policy keys (for example `renderPolicy.replaceSuccess`).
-- If forbidden bubble keys are returned (for example `operations`), dispatcher logs a contract error, ignores forbidden content, and continues.
+- React contributions are data-only and may include `render.messages`.
+- React contributions must not include mutation operations.
+- React contributions must not include render-assembly policy keys (for example `renderPolicy.replaceSuccess`).
+- If forbidden reaction keys are returned (for example `operations`), dispatcher logs a contract error, ignores forbidden content, and continues.
 - Hooks must not directly mutate world state or emit output.
-- Bubble contributions may be evaluated repeatedly without changing world state.
-- Bubble hooks cannot deny an action that has already passed Capture/Plan.
+- React contributions may be evaluated repeatedly without changing world state.
+- React hooks cannot deny an action that has already passed Capture/Plan.
 - Hooks must be deterministic for identical input/state.
 
-Determinism constraints for bubble hooks:
+Determinism constraints for reaction hooks:
 
-- For identical input and identical world state, bubble outputs must be identical.
-- Bubble hooks may read only provided context and current entity/world state.
-- Bubble hooks must not read external nondeterministic sources (time, random, network, filesystem, process-global mutable state).
+- For identical input and identical world state, reaction outputs must be identical.
+- React hooks may read only provided context and current entity/world state.
+- React hooks must not read external nondeterministic sources (time, random, network, filesystem, process-global mutable state).
 - Any randomness required in future must be supplied through deterministic context input (for example seeded source), not read ad hoc inside hooks.
 
 ### 5) Commit (transaction phase)
@@ -280,7 +280,7 @@ Rules:
 - Commit applies merged operations from:
   - command base plan (`result.plan.operations`)
   - plan contribution operations (`planDirect` / `planIndirect`)
-- Bubble does not contribute mutation operations (attempts are ignored).
+- React does not contribute mutation operations (attempts are ignored).
 - Apply with compensating rollback:
   - mutator applies operations in order
   - if one operation fails, mutator runs recorded undo handlers in reverse order
@@ -302,7 +302,7 @@ Rules:
   2. Merge render queues in fixed order:
      - command success `render.messages` (only when not suppressed by step 1)
      - Plan contribution `render.messages`
-     - Bubble contribution `render.messages`
+     - React contribution `render.messages`
 - `render.messages` supports:
   - line strings (sent to actor)
   - `{ type: 'line', text|message }`
@@ -314,7 +314,7 @@ Rules:
   - instruction failure is logged and counted
   - remaining instructions continue
   - command outcome remains success when commit already succeeded
-- Base-success suppression authority is Plan-only (`planDirect` / `planIndirect`); Bubble cannot suppress command success render.
+- Base-success suppression authority is Plan-only (`planDirect` / `planIndirect`); React cannot suppress command success render.
 
 Non-command render path:
 
@@ -328,7 +328,7 @@ Three hook kinds are used across phases:
 
 - Policy hook (capture): allow/deny only.
 - Plan contribution hook (Plan): data-only contribution, no veto, no direct mutation/output (`planDirect`, `planIndirect`); may contribute render-assembly policy (`renderPolicy.replaceSuccess`).
-- Reaction hook (bubble): data-only render contribution, no veto, no direct mutation/output (command metadata `reactions` functions).
+- React hook (reaction): data-only render contribution, no veto, no direct mutation/output (command metadata `reactions` functions).
 
 Accepted-next naming (not wired in current runtime):
 
@@ -342,7 +342,7 @@ This split prevents veto/mutation ambiguity and keeps behavior predictable.
 - `put.js` lives in Plan.
 - Span-to-entity binding happens in Entity Resolution before Capture.
 - Container/object/player/room/quest/world policy checks run in Capture.
-- Post-plan narrative and quest/world effects accumulate in Bubble.
+- Post-plan narrative and quest/world effects accumulate in React.
 - Mutator executes one merged plan in Commit.
 
 ## Immediate Application To `go`
@@ -355,8 +355,8 @@ This split prevents veto/mutation ambiguity and keeps behavior predictable.
   - fallback `canDirect` denies locked movement with `GO_EXIT_LOCKED` when no matching key is carried
   - fallback `planDirect` contributes movement/door plan operations:
     - no door or already-open door: enqueue `movePlayer`
-    - closed+unlocked door: enqueue `doorMutation/open` then `movePlayer`
-    - locked+matching key: enqueue `doorMutation/unlockAndOpen` then `movePlayer`
+    - closed+unlocked door: enqueue `changeDoor/open` then `movePlayer`
+    - locked+matching key: enqueue `changeDoor/unlockAndOpen` then `movePlayer`
   - when fallback composes door+movement success flavor, movement uses `suppressRoomBroadcast` to prevent duplicate generic leave/arrive lines
 - Authored exit hooks may extend or replace fallback render behavior through normal Plan contribution merge, including `renderPolicy.replaceSuccess` semantics defined above.
 - Mutator commits merged door/movement operations atomically in Commit with rollback support.
@@ -366,9 +366,9 @@ This split prevents veto/mutation ambiguity and keeps behavior predictable.
 
 - `open`, `close`, `lock`, and `unlock` live in Plan and resolve direct door targets before mutation.
 - Command-to-mutation mapping is:
-  - `open` -> `doorMutation/open`
-  - `close` -> `doorMutation/close`
-  - `lock` -> `doorMutation/closeAndLock`
-  - `unlock` -> `doorMutation/unlock`
+  - `open` -> `changeDoor/open`
+  - `close` -> `changeDoor/close`
+  - `lock` -> `changeDoor/closeAndLock`
+  - `unlock` -> `changeDoor/unlock`
 - Key validation remains Plan/Capture ownership; mutator owns only state transition.
 - Opposite-room door lines are emitted via explicit render instructions, not implicit actor-room `others` semantics.

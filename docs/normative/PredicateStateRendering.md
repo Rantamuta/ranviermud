@@ -6,14 +6,14 @@ This document defines the normative contract for state-dependent descriptive ren
 
 - Status: `normative-v1`
 - Binding: Yes
-- Scope: Bundle-layer descriptive rendering for room state
+- Scope: Bundle-layer descriptive rendering for room, item, and PC state
 - Related:
   - [CommandArchitecture.md](CommandArchitecture.md)
   - [EntityResolution.md](EntityResolution.md)
 
 ## Purpose
 
-Define one authoritative, read-only method for rendering state-dependent room description text.
+Define one authoritative, read-only method for rendering state-dependent room, item, and PC description text.
 
 Core rule:
 
@@ -22,18 +22,23 @@ Core rule:
 
 ## Scope
 
-In v1, this contract applies to room-view rendering paths that evaluate `when:` / `whenNot:` predicate gates for:
+In v1, this contract applies to room/item/PC rendering paths that evaluate predicate gates for:
 
 - `metadata.descriptionVariants` (first-match wins)
 - `metadata.descriptionFragments` (all matching fragments append in declaration order)
 
-This is the normative method for stateful room description rendering.
+and inline tag templates in description text:
+
+- `[predicate:then]`
+- `[predicate:then|else]`
+
+This is the normative method for stateful room/item/PC description rendering.
 
 Out of scope in v1:
 
-- Capture/Plan/Commit/Bubble policy or mutation logic
+- Capture/Plan/Commit/React policy or mutation logic
 - lifecycle script hooks (`spawn`, `ready`, `updateTick`)
-- inline description tag syntax standardization
+- descriptions beyond room/item/PC surfaces
 
 ## Phase Boundary
 
@@ -44,7 +49,7 @@ Predicates must not be evaluated in:
 - Capture
 - Plan
 - Commit
-- Bubble
+- React
 - lifecycle hooks
 
 Rationale:
@@ -136,8 +141,9 @@ The actor view is read-only.
 
 Allowed v1 query methods:
 
-- `q.roomFlag(roomRef, key)`
-- `q.areaFlag(areaRef, key)`
+- `q.getRoomMetadata(roomRef, key)`
+- `q.getAreaMetadata(areaRef, key)`
+- `q.getWorldMetadata(key)`
 - `q.roomHasItem(roomRef, itemRef)`
 - `q.currentContainerHasItem(itemRef)`
 - `q.roomContainerHasItem(roomRef, containerRef, itemRef)`
@@ -202,7 +208,7 @@ Load-time registry shape/name/function errors are logged and invalid entries are
 
 ## Rendering Behavior Rules
 
-For room descriptions:
+For room/item/PC descriptions:
 
 1. Evaluate `descriptionVariants` in declaration order.
 2. A variant is eligible when:
@@ -214,4 +220,12 @@ For room descriptions:
 5. Evaluate `descriptionFragments` in declaration order.
 6. Append every eligible fragment using the same `when` / `whenNot` rules.
 
-Evaluation is read-only and must not mutate room/world metadata.
+For inline tag templates in room/item/PC descriptions:
+
+1. Evaluate tags at render-time assembly only.
+2. Condition token resolves through `runtime.evaluate(name, renderContext)`.
+3. Unknown predicates, thrown predicates, and non-boolean returns evaluate as `false`.
+4. `then` branch renders when predicate is `true`; `else` branch (if present) renders when `false`.
+5. Rendering remains read-only and must not mutate room/item/PC/world metadata.
+
+Evaluation is read-only and must not mutate room/item/PC/world metadata.

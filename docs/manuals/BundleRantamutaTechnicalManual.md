@@ -257,9 +257,9 @@ Command must return envelope:
 
 World mutation is not performed directly in command files.
 
-### Phase 4: Bubble (reaction)
+### Phase 4: React
 
-Bubble contributions are accumulated from:
+React contributions are accumulated from:
 
 1. command-level `metadata.reactions`,
 2. each reaction function result in declaration order.
@@ -277,11 +277,11 @@ Contribution shape accepted:
 2. this is the unified interface for lines and instructions.
 3. runtime does **not** auto-normalize legacy `render.lines` / `render.instructions`; those shapes are treated as invalid payloads and ignored.
 
-Bubble does not veto.
+React does not veto.
 
 Important runtime guard:
 
-1. bubble `operations` are forbidden,
+1. react `operations` are forbidden,
 2. dispatcher logs a contract error and ignores forbidden content,
 3. command continues on the success path.
 
@@ -294,11 +294,11 @@ Current instruction types:
 1. `noop`
 2. `transferItem`
 3. `movePlayer`
-4. `doorMutation`
+4. `changeDoor`
 
-`doorMutation` payload:
+`changeDoor` payload:
 
-1. `type: 'doorMutation'`
+1. `type: 'changeDoor'`
 2. `mutation: 'open' | 'close' | 'unlock' | 'unlockAndOpen' | 'closeAndLock'`
 3. target by `direction` and/or `roomRef` (plus `actor` / `fromRoomRef` as needed)
 
@@ -307,8 +307,8 @@ Routing behavior:
 1. mutator routes canonical door mutations through `getVirtualDoorService(state).mutateDoor(...)`,
 2. unresolved targets warn and noop (idempotent no-op semantics preserved),
 3. legacy instruction aliases are still accepted:
-   - `openDoor` -> `doorMutation/open`
-   - `closeAndLockDoor` -> `doorMutation/closeAndLock`
+   - `openDoor` -> `changeDoor/open`
+   - `closeAndLockDoor` -> `changeDoor/closeAndLock`
 
 Atomicity model:
 
@@ -328,7 +328,7 @@ Invariant enforcement in mutator:
 
 1. Failure messages resolved by dispatcher (`command.metadata.errorMessages` then defaults).
 2. Success render queue executes only after successful commit.
-3. Queue order is deterministic: command success messages, then target-plan contributions, then bubble contributions.
+3. Queue order is deterministic: command success messages, then target-plan contributions, then react contributions.
 4. Lines/instructions are both represented as `render.messages` entries and executed in queue order (best-effort, no rollback impact).
 5. Prompt is emitted at end when player/socket is still active.
 
@@ -351,7 +351,7 @@ Queue merge and execution order:
 
 1. command success `render.messages` entries first,
 2. target-plan contribution messages second (`planDirect` / `planIndirect`),
-3. bubble contribution messages third (`metadata.reactions` order),
+3. react contribution messages third (`metadata.reactions` order),
 4. execute after successful commit.
 
 `semanticEvent` runtime behavior (current implementation):
@@ -417,8 +417,8 @@ Examples:
    - command layer returns an empty base success envelope and delegates movement/door behavior to resolved exit hooks
    - fallback exit hook behavior:
      - no door or already-open door: enqueue `movePlayer`
-     - closed+unlocked: enqueue `doorMutation/open` then `movePlayer`
-     - locked+matching key: enqueue `doorMutation/unlockAndOpen` then `movePlayer`
+     - closed+unlocked: enqueue `changeDoor/open` then `movePlayer`
+     - locked+matching key: enqueue `changeDoor/unlockAndOpen` then `movePlayer`
      - locked+no matching key: deny with `GO_EXIT_LOCKED`
    - fallback composed door+movement messaging sets `suppressRoomBroadcast` on movement to avoid duplicate generic leave/arrive lines
    - authored exit `planDirect` can layer additional operations/render and may request `renderPolicy.replaceSuccess` to replace generic fallback success flavor
@@ -427,10 +427,10 @@ Examples:
    - direct scope: `room.exits`, `room.items`
    - indirect scope (when present): `player.inventory`
    - command-to-mutation mapping:
-     - `open` -> `doorMutation/open`
-     - `close` -> `doorMutation/close`
-     - `lock` -> `doorMutation/closeAndLock`
-     - `unlock` -> `doorMutation/unlock`
+     - `open` -> `changeDoor/open`
+     - `close` -> `changeDoor/close`
+     - `lock` -> `changeDoor/closeAndLock`
+     - `unlock` -> `changeDoor/unlock`
 4. `put`:
    - direct and directIndirect
    - direct scope: `player.inventory`
@@ -499,45 +499,50 @@ Predicate execution:
 1. `evaluateRenderPredicate(...)` delegates to `PredicateRuntime.evaluate(...)` (world runtime if provided, helper default otherwise).
 2. Runtime resolution is area-local through `areas/<area>/predicates.js`.
 3. Predicates receive restricted input `({ actor, q, context })`, where `actor` is a normalized read-only view.
-4. `q` is a read-only facade (`roomFlag`, `areaFlag`, `roomHasItem`, `currentContainerHasItem`, `roomContainerHasItem`, `actorHasItem`, `actorHasEffect`, `actorQuestActive`, `actorQuestCompleted`, `isDoorClosed`, `isDoorLocked`, `isDoorClosedBetween`, `isDoorLockedBetween`).
+4. `q` is a read-only facade (`getRoomMetadata`, `getAreaMetadata`, `getWorldMetadata`, `roomHasItem`, `currentContainerHasItem`, `roomContainerHasItem`, `actorHasItem`, `actorHasEffect`, `actorQuestActive`, `actorQuestCompleted`, `isDoorClosed`, `isDoorLocked`, `isDoorClosedBetween`, `isDoorLockedBetween`).
 5. Predicate exceptions are swallowed and treated as `false` (fail-closed).
 6. `room.renderPredicates` fallback is intentionally not used.
 
 `q` query facade methods (current):
 
-1. `q.roomFlag(roomRef, key) -> boolean`
-   Returns `true` only when the resolved room has `metadata.flags[key] === true`.
-2. `q.areaFlag(areaRef, key) -> boolean`
-   Returns `true` only when the resolved area has `metadata.flags[key] === true`.
-3. `q.roomHasItem(roomRef, itemRef) -> boolean`
+1. `q.getRoomMetadata(roomRef, key) -> *`
+   Reads the resolved room `metadata.values` key-path value using case-insensitive segment matching.
+   Returns `undefined` for missing paths.
+2. `q.getAreaMetadata(areaRef, key) -> *`
+   Reads the resolved area `metadata.values` key-path value using case-insensitive segment matching.
+   Returns `undefined` for missing paths.
+3. `q.getWorldMetadata(key) -> *`
+   Reads `world.metadata.values` key-path value using case-insensitive segment matching.
+   Returns `undefined` for missing paths, invalid keys, or missing world metadata roots.
+4. `q.roomHasItem(roomRef, itemRef) -> boolean`
    Returns `true` when any top-level item in that room matches `itemRef`.
-4. `q.currentContainerHasItem(itemRef) -> boolean`
+5. `q.currentContainerHasItem(itemRef) -> boolean`
    Returns `true` when the current rendered container contains `itemRef`.
    Uses `renderContext.currentContainer` when provided; otherwise falls back to `renderContext.entity` when that entity has an inventory.
-5. `q.roomContainerHasItem(roomRef, containerRef, itemRef) -> boolean`
+6. `q.roomContainerHasItem(roomRef, containerRef, itemRef) -> boolean`
    Returns `true` when any matching top-level container in the room contains `itemRef`.
-6. `q.actorHasItem(itemRef) -> boolean`
+7. `q.actorHasItem(itemRef) -> boolean`
    Returns `true` when the actor inventory contains `itemRef`.
    Returns `false` when actor context is missing.
-7. `q.actorHasEffect(effectId) -> boolean`
+8. `q.actorHasEffect(effectId) -> boolean`
    Returns `true` when the actor has an effect matching `effectId`.
    Returns `false` when actor context is missing.
-8. `q.actorQuestActive(questRef) -> boolean`
+9. `q.actorQuestActive(questRef) -> boolean`
    Returns `true` when `questRef` is present in actor active quests.
    Returns `false` when actor context is missing.
-9. `q.actorQuestCompleted(questRef) -> boolean`
+10. `q.actorQuestCompleted(questRef) -> boolean`
    Returns `true` when `questRef` is present in actor completed quests.
    Returns `false` when actor context is missing.
-10. `q.isDoorClosed(direction) -> boolean`
+11. `q.isDoorClosed(direction) -> boolean`
    Returns `true` when the current room's directional edge resolves to a closed door state.
    For virtualized pairs, reads effective virtual-door state.
-11. `q.isDoorLocked(direction) -> boolean`
+12. `q.isDoorLocked(direction) -> boolean`
    Returns `true` when the current room's directional edge resolves to a locked door state.
    For virtualized pairs, reads effective virtual-door state.
-12. `q.isDoorClosedBetween(roomARef, roomBRef) -> boolean`
+13. `q.isDoorClosedBetween(roomARef, roomBRef) -> boolean`
    Returns `true` when the resolved pair/edge is effectively closed.
    Does not require actor presence.
-13. `q.isDoorLockedBetween(roomARef, roomBRef) -> boolean`
+14. `q.isDoorLockedBetween(roomARef, roomBRef) -> boolean`
    Returns `true` when the resolved pair/edge is effectively locked.
    Does not require actor presence.
 
@@ -605,7 +610,7 @@ exits:
 Bundle tests:
 
 1. `tests/command.dispatch.test.js`:
-   - end-to-end phase behavior, veto ordering, bubble behavior, trace semantics.
+   - end-to-end phase behavior, veto ordering, react behavior, trace semantics.
 2. `tests/entity.resolution.test.js`:
    - forms, scopes, relation normalization, nested traversal, ambiguity behavior.
 3. `tests/mutator.test.js`:
@@ -663,10 +668,56 @@ Target-plan surfaces:
 2. `indirectTarget.planIndirect(actor, verbId, relationTokenCanonical, context)`
 3. may contribute plan operations and/or `render.messages` before commit
 
-Bubble/reaction surfaces:
+React/reaction surfaces:
 
 1. command-level `metadata.reactions` only
 2. contributions are render-only (`render.messages`) and cannot enqueue mutations
+
+## Metadata delete instruction semantics (D3)
+
+Mutator-owned metadata delete ops:
+
+1. `deleteRoomMetadata`
+2. `deleteAreaMetadata`
+3. `deleteWorldMetadata`
+
+Behavior contract:
+
+1. All deletes execute only in commit/mutator phase; render and predicate phases remain read-only.
+2. Room and area deletes resolve targets from actor context only.
+   - Room: `actor.room`
+   - Area: `actor.room.area`
+3. Missing path delete is idempotent no-op with no warning and no thrown error.
+4. Default delete is leaf-only; non-leaf/object/array delete throws unless `force: true`.
+5. Deletes do not auto-prune empty parent/root objects.
+6. Rollback restores deleted values using mutation undo closures.
+7. World delete missing-root no-op must not create world metadata root.
+
+## Metadata set instruction semantics (setRoomMetadata / setAreaMetadata / setWorldMetadata)
+
+Mutator-owned metadata set ops:
+
+1. `setRoomMetadata`
+2. `setAreaMetadata`
+3. `setWorldMetadata`
+
+Behavior contract:
+
+1. Set ops execute only in commit/mutator phase; render and predicate phases remain read-only.
+2. Keys are parsed as dot-paths and validated by metadata mutator segment rules.
+3. Values must be JSON-safe; `undefined` is rejected and `null` is stored as-is.
+4. Missing roots are created on write.
+   - Room: `room.metadata.values`
+   - Area: `area.metadata.values`
+   - World: `state.metadata.values`
+5. Room and area writes resolve targets from actor context only.
+   - Room: `actor.room`
+   - Area: `actor.room.area`
+6. For world writes, existing non-object root values are coerced to object roots with warning-level logs:
+   - `WORLDMETA_COERCE_METADATA_ROOT`
+   - `WORLDMETA_COERCE_VALUES_ROOT`
+7. Subtree conflicts are rejected (cannot overwrite non-empty object subtree leaf with scalar/object write at ancestor path).
+8. World set undo restores prior root shape by pruning empty containers created by that operation.
 
 ## Change guidance for maintainers
 

@@ -292,7 +292,7 @@ Planned reaction hooks (architecture direction; not implemented in the current `
 - `reactDirect(actor, verbId, context)`
 - `reactIndirect(actor, verbId, relationTokenCanonical, context)`
 
-Current runtime: use command-level `metadata.reactions` handlers in command modules for Bubble-phase render contributions.
+Current runtime: use command-level `metadata.reactions` handlers in command modules for React-phase render contributions.
 Treat `reactDirect`/`reactIndirect` as planning targets, not active runtime hooks, until the dispatcher is updated.
 
 What these are for:
@@ -338,7 +338,7 @@ this.reactDirect = (actor, verbId, context) => {
 };
 ```
 
-If you need area/room/player messaging now, return Bubble render contributions from command metadata reactions and let the dispatcher deliver them. Do not emit output directly from policy/planning hooks.
+If you need area/room/player messaging now, return React render contributions from command metadata reactions and let the dispatcher deliver them. Do not emit output directly from policy/planning hooks.
 
 ## Behaviors
 
@@ -1263,6 +1263,22 @@ exits:
           go: "You cannot go that way. The portcullis is closed."
 ```
 
+Hide an exit from the room-view `Exits:` line (without disabling movement):
+
+```yml
+exits:
+  - direction: south
+    roomId: forest:lakeShore
+    metadata:
+      showInExits: false
+      permissions:
+        verbs:
+          go: "You need a boat to go onto the lake."
+```
+
+`showInExits: false` only affects room-view exit listing.
+It does not affect `go` target resolution or permission checks.
+
 ## Area-Specific Verb Behavior
 
 Keep command files generic.  
@@ -1274,7 +1290,7 @@ Useful pattern:
 2. In the entity script `spawn`, attach `canDirect` / `canIndirect` for veto logic.
 3. In the same script, attach `planDirect` / `planIndirect` for context-sensitive result planning.
 4. Planned: attach `reactDirect` / `reactIndirect` for post-success flavor output once runtime support lands.
-5. Today: use command-level `metadata.reactions` for Bubble-phase flavor output.
+5. Today: use command-level `metadata.reactions` for React-phase flavor output.
 
 You must attach the script within `spawn` in order to have access to `this`, which has access to all metadata and other properties set in the `.yml` file.
 
@@ -1299,6 +1315,67 @@ Use these metadata fields on the room:
 - Each entry can use:
   - `when: <predicateName>` to show text when predicate is true.
   - `whenNot: <predicateName>` to show text when that predicate is not true.
+
+## Describing Things Inline
+
+Sometimes you do not want to replace a whole room, item or PC description. You only want to swap a few words inside one sentence.
+
+Inline tags are for that. Think of them as tiny "if/else" switches inside text:
+
+> "The old reading room smells of wax and dust, and the carved runes on the desk glow [is_lantern_lit:bright|dark] beneath your hands."
+
+- `[is_lantern_lit:bright]`
+- `[is_lantern_lit:bright|dark]`
+
+How to read those:
+
+- First form: show `bright` only when the predicate is true.
+- Second form: show `bright` when true, otherwise show `dark`.
+
+Use inline tags when the sentence stays mostly the same and only one phrase changes.  
+Use `descriptionVariants` / `descriptionFragments` when whole lines or sections should appear/disappear.
+
+### Examples
+
+- `The brazier burns [is_brazier_lit:hot and gold|cold and black].`
+  - When `is_brazier_lit` is true, this reads: _"The brazier burns hot and gold."_
+  - When `is_brazier_lit` is _false_, this reads: _"The brazier burns cold and black."_
+- `A mural shows a [is_mural_restored:whole sun|broken circle].`
+  - When `is_mural_restored` is true, this reads: _"A mural shows a whole sun."_
+  - When `is_mural_restored` is _false_, this reads: _"A mural shows a broken circle."_
+- `The gate stands [is_gate_open:open|sealed shut].`
+  - When `is_gate_open` is true, this reads: _"The gate stands open."_
+  - When `is_gate_open` is _false_, this reads: _"The gate stands sealed shut."_
+- `The bell gives [is_bell_harmonic:a clear, singing note|a dull, cracked thud].`
+  - When `is_bell_harmonic` is true, this reads: _"The bell gives a clear, singing note."_
+  - When `is_bell_harmonic` is _false_, this reads: _"The bell gives a dull, cracked thud."_
+- `The reliquary is [is_reliquary_sealed:sealed with red wax|hanging open].`
+  - When `is_reliquary_sealed` is true, this reads: _"The reliquary is sealed with red wax."_
+  - When `is_reliquary_sealed` is _false_, this reads: _"The reliquary is hanging open."_
+
+You can also stack small cues in one line:
+
+- `The chamber feels [is_storm_over_region:charged|still], and the mirror looks [is_observatory_moonlit:awake|dormant].`
+  - When both predicates are true, this reads: _"The chamber feels charged, and the mirror looks awake."_
+  - When `is_storm_over_region` is true and `is_observatory_moonlit` is false, this reads: _"The chamber feels charged, and the mirror looks dormant."_
+  - When `is_storm_over_region` is false and `is_observatory_moonlit` is true, this reads: _"The chamber feels still, and the mirror looks awake."_
+  - When both predicates are false, this reads: _"The chamber feels still, and the mirror looks dormant."_
+
+And you can use a true-only tag for optional flavor:
+
+- "Dust drifts in the light. [does_player_have_lantern:Your lantern catches silver writing along the wall.]"
+  - When `does_player_have_lantern` is true, this reads: _"Dust drifts in the light. Your lantern catches silver writing along the wall."_
+  - When `does_player_have_lantern` is _false_, this reads: _"Dust drifts in the light."_
+
+Practical writing tip:
+
+- Keep inline tags short and local.
+- If one sentence starts needing many tags, it might be clearer to move that logic into `descriptionVariants` or `descriptionFragments`.
+
+Good rule of thumb:
+
+- Inline tags = word/phrase-level variation.
+- Variants/fragments = line/paragraph-level variation.
 
 ## Predicates
 
@@ -1368,70 +1445,89 @@ module.exports = {
 
 ### `q` Query Methods (Designer Reference)
 
-Inside a predicate, `q` is your read-only "question toolbox."  
-Each method asks one specific true/false question.
+Inside a predicate, `q` is your read-only query toolbox.  
+Most methods are true/false predicate helpers, and the metadata getters are value readers you can compare in your own boolean logic.
 
-1. `q.roomFlag(roomRef, key)`
-   Example idea: "Is the observatory marked as moonlit?"
-   Example: `q.roomFlag('myarea:observatory', 'moonlit')`
+- Value readers: `q.getRoomMetadata(...)`, `q.getAreaMetadata(...)`, `q.getWorldMetadata(...)`
+- Boolean helpers: all other `q.*` methods in this list
 
-2. `q.areaFlag(areaRef, key)`
-   Example idea: "Is the whole region currently in storm mode?"
-   Example: `q.areaFlag('myarea', 'stormActive')`
+1. `q.getRoomMetadata(roomRef, key)`
+   Example idea: "What is the current room metadata value for a puzzle key?"
+   Example: `q.getRoomMetadata('myarea:observatory', 'puzzleState.phase')`
 
-3. `q.roomHasItem(roomRef, itemRef)`
+2. `q.getAreaMetadata(areaRef, key)`
+   Example idea: "What is the current area metadata value for arc progression?"
+   Example: `q.getAreaMetadata('myarea', 'storyArc.chapter')`
+
+3. `q.getWorldMetadata(key)`
+   Example idea: "What is the current world metadata value for global progression?"
+   Example: `q.getWorldMetadata('globalState.chapter')`
+
+4. `q.roomHasItem(roomRef, itemRef)`
    Example idea: "Does the altar room still contain the ceremonial dagger?"
    Example: `q.roomHasItem('myarea:altar_room', 'myarea:ceremonialDagger')`
 
-4. `q.currentContainerHasItem(itemRef)`
+5. `q.currentContainerHasItem(itemRef)`
    Example idea: "Does the container this description belongs to currently hold a black pearl?"
    Example: `q.currentContainerHasItem('myarea:blackPearl')`
 
-5. `q.roomContainerHasItem(roomRef, containerRef, itemRef)`
+6. `q.roomContainerHasItem(roomRef, containerRef, itemRef)`
    Example idea: "Is the wax seal placed in the reliquary in the nave?"
    Example: `q.roomContainerHasItem('myarea:nave', 'myarea:reliquary', 'myarea:waxSeal')`
 
-6. `q.actorHasItem(itemRef)`
+7. `q.actorHasItem(itemRef)`
    Example idea: "Is the player carrying a lantern, so they notice faint wall writing?"
    Example: `q.actorHasItem('myarea:lantern')`
 
-7. `q.actorHasEffect(effectId)`
+8. `q.actorHasEffect(effectId)`
    Example idea: "Is the player under a blessing effect, so the shrine feels warmer?"
    Example: `q.actorHasEffect('blessed')`
 
-8. `q.actorQuestActive(questRef)`
+9. `q.actorQuestActive(questRef)`
    Example idea: "Is the bell trial currently in progress?"
    Example: `q.actorQuestActive('myarea:bellTrial')`
 
-9. `q.actorQuestCompleted(questRef)`
+10. `q.actorQuestCompleted(questRef)`
    Example idea: "Has the player already completed the crypt rite?"
    Example: `q.actorQuestCompleted('myarea:cryptRite')`
 
-10. `q.isDoorClosed(direction)`
+11. `q.isDoorClosed(direction)`
    Example idea: "Is the north door currently closed from this room?"
    Example: `q.isDoorClosed('north')`
 
-11. `q.isDoorLocked(direction)`
+12. `q.isDoorLocked(direction)`
    Example idea: "Is the north door currently locked from this room?"
    Example: `q.isDoorLocked('north')`
 
-12. `q.isDoorClosedBetween(roomARef, roomBRef)`
+13. `q.isDoorClosedBetween(roomARef, roomBRef)`
    Example idea: "Is the archive passage closed even if the viewer is elsewhere?"
    Example: `q.isDoorClosedBetween('myarea:archive_south', 'myarea:archive_north')`
 
-13. `q.isDoorLockedBetween(roomARef, roomBRef)`
+14. `q.isDoorLockedBetween(roomARef, roomBRef)`
    Example idea: "Is the vault passage still locked regardless of viewer room?"
    Example: `q.isDoorLockedBetween('myarea:vault_foyer', 'myarea:vault_inner')`
+
+Metadata query notes:
+
+- Metadata query keys use dot-separated camelCase segments (for example `storyArc.chapterOne`).
+- `q.getRoomMetadata(...)` / `q.getAreaMetadata(...)` / `q.getWorldMetadata(...)` return `undefined` when a path is missing or the key is invalid.
+- Stored metadata values `null`, `false`, and `0` are returned as-is and are not treated as missing.
+- Boolean predicates should read via `q.getRoomMetadata(...) === true`, `q.getAreaMetadata(...) === true`, or `q.getWorldMetadata(...) === true`.
+- Metadata reads are case-insensitive for key-path segments; authored key casing is preserved on write.
+- Metadata key style is convention-driven (`camelCase` recommended for new authored metadata keys).
 
 One combined example:
 
 ```js
 module.exports = {
   is_observatory_moonlit: ({ q }) =>
-    q.roomFlag('myarea:observatory', 'moonlit'),
+    q.getRoomMetadata('myarea:observatory', 'moonlit') === true,
 
   is_storm_over_region: ({ q }) =>
-    q.areaFlag('myarea', 'stormActive'),
+    q.getAreaMetadata('myarea', 'stormActive') === true,
+
+  is_global_omens_active: ({ q }) =>
+    q.getWorldMetadata('globalState.omensActive') === true,
 
   is_dagger_still_on_altar: ({ q }) =>
     q.roomHasItem('myarea:altar_room', 'myarea:ceremonialDagger'),
@@ -1523,6 +1619,217 @@ Practical tip:
 - Think of predicates as a camera lens, not a hand.
 - The lens decides what the player sees.
 - The hand (commands + mutation logic) is what changes the world.
+
+## Mutations
+
+Mutations do not refer to weird body parts or super-powers. They refer to changes made to "game state". Everything that can be changed in the game is part of its state. If a character flips a switch in a room and the light goes on, that is a change in the common game state. Consider how that might work: the character types "flip switch" and a flag is set in the room "isSwitch: on". The change of that flag from "off" to "on" is a _mutation._  Mutations are a bit dangerous. Even careful, thoughful code can be made unstable by unexpected mutations from other careful, thoughtful code.
+
+- Mutations change shared state that many systems read, not just the command that triggered it.
+- A small flag write can affect later descriptions, predicates, and command results in places that are not obvious.
+- If two features touch the same state, behavior can become order-dependent ("it works only if you did X first").
+- Partial or hidden writes make bugs hard to reproduce and harder to debug.
+- If a mutation needs two operations and only one is performed accidentally, something could be deleted, or doubled, or just fail.
+
+To prevent this as much as possible, we give you specific "mutation operations" (or "mutator ops") and we take care of the details, to make sure the state changes happen as safely as possible.
+
+Mutation instruction list (current):
+
+1. `setRoomMetadata`
+2. `setAreaMetadata`
+3. `setWorldMetadata`
+4. `deleteRoomMetadata`
+5. `deleteAreaMetadata`
+6. `deleteWorldMetadata`
+7. `noop`
+8. `transferItem`
+9. `movePlayer`
+10. `changeDoor`
+
+Designer-facing scripted mutation:
+
+### `setRoomMetadata`
+
+```js
+{
+  type: 'setRoomMetadata',
+  actor: player,
+  key: 'buttonPushed',
+  value: true
+}
+```
+
+What this does:
+
+- Writes JSON-safe state to `room.metadata.values` using a dot-separated key path.
+- Resolves the target room from actor context (`actor.room`), not authored `roomRef`.
+- Rejects `undefined`; allows `null` as a normal stored value.
+- Lets predicates read that state using `q.getRoomMetadata('myarea:observatory', 'buttonPushed') === true`.
+- Keeps state mutation in command/mutator flow and keeps predicates side-effect free.
+
+### `setAreaMetadata`
+
+```js
+{
+  type: 'setAreaMetadata',
+  actor: player,
+  key: 'storyArc.chapterOne',
+  value: 2
+}
+```
+
+What this does:
+
+- Writes to `area.metadata.values` using a dot-separated key path.
+- Uses current-area-only targeting from actor context (`actor.room.area`).
+- Does not accept authored `areaRef` targeting in this operation.
+- Rejects subtree-conflict writes (for example existing `storyArc.chapterOne` object and attempted set of `storyArc`).
+
+Caution:
+
+- `setAreaMetadata` resolves area at commit-time from actor context.
+- Operation order matters. If one operation moves the actor and a later operation sets area metadata, the write applies to the actor's area at that point in commit order.
+
+### `setWorldMetadata`
+
+```js
+{
+  type: 'setWorldMetadata',
+  key: 'globalState.season',
+  value: 'winter'
+}
+```
+
+What this does:
+
+- Writes to world `metadata.values` using a dot-separated key path.
+- Creates missing world roots (`state.metadata`, `state.metadata.values`) on write.
+- If existing world roots are non-object values, coerces them to objects with warning-level logs.
+- Rejects `undefined`; allows `null` as a storable value.
+- Requires JSON-safe values.
+- Rejects subtree-conflict writes (for example existing `globalState.season.current` object and attempted set of `globalState.season`).
+- Undo removes empty parent/root containers created by this operation to restore pre-op world metadata shape.
+
+### `deleteRoomMetadata`
+
+```js
+{
+  type: 'deleteRoomMetadata',
+  actor: player,
+  key: 'storyArc.chapterOne'
+}
+```
+
+What this does:
+
+- Deletes a key-path from `room.metadata.values` on the actor's current room.
+- Uses current-room targeting from actor context (`actor.room`).
+- Missing key-path is idempotent no-op (no warning, no error).
+- By default only leaf values can be deleted.
+- Deleting an object/array path requires `force: true`.
+- Deletes do not automatically prune empty parent objects.
+
+### `deleteAreaMetadata`
+
+```js
+{
+  type: 'deleteAreaMetadata',
+  actor: player,
+  key: 'storyArc.chapterOne'
+}
+```
+
+What this does:
+
+- Deletes a key-path from current-area `area.metadata.values` resolved from `actor.room.area`.
+- Missing key-path is idempotent no-op (no warning, no error).
+- By default only leaf values can be deleted.
+- Deleting an object/array path requires `force: true`.
+- Deletes do not automatically prune empty parent objects.
+
+### `deleteWorldMetadata`
+
+```js
+{
+  type: 'deleteWorldMetadata',
+  key: 'globalState.season'
+}
+```
+
+What this does:
+
+- Deletes a key-path from world metadata state.
+- If world metadata root/path is missing, the operation is idempotent no-op.
+- Missing-root no-op does not create world metadata root.
+- By default only leaf values can be deleted.
+- Deleting an object/array path requires `force: true`.
+- Deletes do not automatically prune empty parent objects.
+
+Runtime mutator instructions (command/movement systems):
+
+### `noop`
+
+```js
+{ type: 'noop' }
+```
+
+What this does:
+
+- Applies no world-state changes.
+- Keeps a successful plan shape when a command should succeed without mutation.
+
+### `transferItem`
+
+```js
+{
+  type: 'transferItem',
+  item: someItem,
+  from: sourceEntity,
+  to: destinationEntity
+}
+```
+
+What this does:
+
+- Moves an item between supported containers/entities.
+- Uses mutator safety checks to prevent invalid or cyclic containment operations.
+
+### `movePlayer`
+
+```js
+{
+  type: 'movePlayer',
+  actor: player,
+  toRoomRef: 'myarea:targetRoom'
+}
+```
+
+What this does:
+
+- Moves a player actor between rooms through the command/mutator commit flow.
+- Commonly used by directional movement commands after gate checks pass.
+
+### `changeDoor`
+
+```js
+{
+  type: 'changeDoor',
+  mutation: 'open',
+  direction: 'north'
+}
+```
+
+Supported `mutation` values:
+
+- `open`
+- `close`
+- `unlock`
+- `unlockAndOpen`
+- `closeAndLock`
+
+What this does:
+
+- Applies canonical door state changes through the Virtual Door mutation service.
+- Keeps paired directional state synchronized through one logical mutator operation.
 
 ## Scenario Runner
 

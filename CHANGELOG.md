@@ -4,6 +4,70 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Inline predicate tags in room-view and direct look descriptions
+
+Summary:
+
+- Added predicate-only inline tag runtime support for `[predicate:then]` and `[predicate:then|else]` description text.
+- Integrated inline tag resolution into room-view base/variant/fragment text, item/NPC `roomDesc`, and direct-look target `description`.
+- Added fail-open runtime behavior for parse failures so unresolved malformed tags return original source text while logging warning diagnostics.
+Why:
+- Description authors need deterministic, read-only inline conditional text without introducing command-phase behavior coupling.
+Impact:
+- Room and direct-look descriptive text can now render predicate-controlled wording inline.
+- Malformed inline tags do not break render output; original authored text is preserved with warning diagnostics.
+Migration/Action:
+- Optional: authors may begin using inline predicate tags in supported description surfaces.
+References:
+- `bundles/bundle-rantamuta/lib/inline-tags/parse-inline-tags.js`
+- `bundles/bundle-rantamuta/lib/inline-tags/render-inline-tags.js`
+- `bundles/bundle-rantamuta/lib/inline-tags/inline-tag-cache.js`
+- `bundles/bundle-rantamuta/lib/inline-tags/resolve-inline-tags.js`
+- `bundles/bundle-rantamuta/lib/helpers/room-view-helper.js`
+- `bundles/bundle-rantamuta/commands/look.js`
+- `bundles/bundle-rantamuta/tests/inline.tags.runtime.test.js`
+Timestamp: 2026.02.27 12:05
+
+### Predicate rendering scope expanded to item and PC descriptions
+
+Summary:
+
+- Updated the normative predicate rendering contract to apply to room, item, and PC description rendering paths (not room-only).
+- Added normative inline-tag rendering rules for `[predicate:then]` and `[predicate:then|else]` on room/item/PC description surfaces.
+- Updated the implementation checklist to align implementation scope with room/item/PC descriptions while preserving the broader inline-tag design proposal for later phases.
+Why:
+- Current implementation planning requires room, item, and PC description support, and normative scope must match planned behavior to avoid architecture/compatibility drift.
+Impact:
+- Predicate-driven descriptive rendering guidance now explicitly includes item and PC description surfaces in addition to rooms.
+- Phase-1 checklist scope is aligned with normative expectations for room/item/PC inline-tag integration.
+Migration/Action:
+- None.
+References:
+- `docs/normative/PredicateStateRendering.md`
+- `docs/drafts/InlineRoomTagsDesign.md`
+- `docs/drafts/checklists/inline-tags-phase-1-implementation-checklist.md`
+Timestamp: 2026.02.26 23:01
+
+### Exit metadata showInExits room-view filtering
+
+Summary:
+
+- Added support for `exits[].metadata.showInExits: false` to hide specific exits from room-view `Exits:` output.
+- Added room-view baseline coverage for hidden exits, default-visible exits, and invalid/non-boolean flag values.
+- Updated designer documentation with an exit authoring example using `showInExits` plus a `go` veto message.
+Why:
+- Content authors need to hide blocked or gated exits from room-view listings while preserving movement policy hooks.
+Impact:
+- Room-view exit listing now omits exits only when `metadata.showInExits` is explicitly boolean `false`.
+- Exit resolution and movement policy behavior (`go`, permissions, capture hooks) are unchanged.
+Migration/Action:
+- Optional: set `metadata.showInExits: false` on exits you want hidden from `Exits: ...`.
+References:
+- `bundles/bundle-rantamuta/lib/helpers/room-view-helper.js`
+- `bundles/bundle-rantamuta/tests/room.view.baseline.test.js`
+- `docs/manuals/DesignerManual.md`
+Timestamp: 2026.02.26 18:54
+
 ### Tomo player-metadata parity via command commit path
 
 Summary:

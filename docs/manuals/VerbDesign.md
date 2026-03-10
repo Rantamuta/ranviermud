@@ -168,7 +168,7 @@ This is the "veto" phase, where designers get to stop the action. Maybe the room
 
 This is the main phase where the verb assigns instructions to the queue. We don't want to make changes just yet, but this is where the changes are decided. This is “the verb script” in bundle terms. It is a **planner**. It decides: given the bound targets and context, do we succeed, and if so what mutation plan should be committed. No direct mutation here. Depending on the verb, the target objects might get a chance to override the default behavior and default success message of the verb.
 
-### Phase 4: Bubble
+### Phase 4: React
 
 Reactions. "The audience gasps."  "The sky goes dark." Other entities can add extra narrative. They cannot veto and they cannot change the game state. But first the target objects get a chance to comment: "The sword glows." Then the player gets to comment on the action: "Your stomach rumbles!" Then the room: "The lights flicker!" Then the quest: "Not yet, chief. But close. So, so, close!" Then the world: "And the moon became as blood."
 
@@ -373,7 +373,7 @@ These requirements are written as engineering constraints, but they exist to pro
 
 9. **`render.instructions` is delivery-only dispatch data (not mutation).**
 
-10. **Bubble contributions may include render data only; bubble must not return mutation operations.**
+10. **Reaction contributions may include render data only; reaction must not return mutation operations.**
     This is the normative model. (If the implementation currently allows more, treat that as legacy and keep new verbs clean.)
 
 11. **If using `planDirect` / `planIndirect`, those contributions are advisory data only.**
@@ -497,7 +497,7 @@ Use this when reviewing a verb design or a PR. It is phrased as “what to verif
 * [ ] No direct world mutation in the command.
 * [ ] Verb implementation PR touches only `commands/`, `lib/`, and `tests/` (no `areas/**` edits).
 * [ ] Capture checks are read-only.
-* [ ] Bubble is non-veto, render contribution only.
+* [ ] Reaction is non-veto, render contribution only.
 * [ ] Resolver emits structured results, not player text.
 * [ ] Every non-empty input yields visible feedback.
 

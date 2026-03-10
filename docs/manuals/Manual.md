@@ -785,11 +785,11 @@ Bundle loading is filesystem-driven and convention-driven:
 
 ### 6.2 How bundles are installed and enabled in `ranviermud`
 
-Rantamuta’s tooling treats bundles as **git submodules**:
+By default, Rantamuta’s tooling treats bundles as **git submodules**:
 
-* `util/install-bundle.js` adds a bundle as `git submodule add … bundles/<name>` and runs `npm install --no-audit` inside the bundle if it has a `package.json`. ([GitHub][3])
+* `util/install-bundle.js` normally adds a bundle as `git submodule add … bundles/<name>` and runs `npm install --no-audit` inside the bundle if it has a `package.json`. If `bundles/` is git-ignored in the local clone, it falls back to `git clone` (local-only, non-submodule mode). ([GitHub][3])
 * `util/remove-bundle.js` deinitializes and removes the submodule and its `.git/modules` entry. ([GitHub][19])
-* `util/update-bundle-url.js` rewrites the submodule URL in `.gitmodules` and runs `git submodule sync` and `git submodule update --remote`. ([GitHub][20])
+* `util/update-bundle-url.js` rewrites the submodule URL in `.gitmodules` and runs `git submodule sync` and `git submodule update --init --recursive --remote`. ([GitHub][20])
 
 `util/init-bundles.js` is a higher-level helper that:
 
@@ -2094,6 +2094,43 @@ Hydration:
 * Script file detection is broad:
   * Regex `/js$/` in `src/Data.js:134` matches `.js`, `.cjs`, `.mjs` suffixes.
 
+#### 6.3.8 Mutation ops
+
+A mutation op is a declarative instruction applied during command/script mutation execution to change world state in a controlled way.
+
+Purpose:
+
+* Keep state changes explicit and deterministic in the mutator flow.
+* Support rollback when a later mutation in the same plan fails.
+* Keep predicates/query helpers read-only by moving writes into the mutation phase.
+
+##### `bundle-rantamuta` mutation op: `setRoomMetadata`
+
+`bundle-rantamuta` command plans support a room-flag mutation instruction for deterministic room-state toggles used by predicates and description rendering.
+
+Instruction shape:
+
+```js
+{
+  type: 'setRoomMetadata',
+  roomRef: 'area:roomId',
+  key: 'flagName',
+  value: true
+}
+```
+
+Behavior:
+
+* Resolves `roomRef` through `RoomManager`.
+* Writes boolean `value` to `room.metadata.flags[key]`.
+* Returns an inverse operation for rollback if a later mutation in the same plan fails.
+* Is intended for command/script mutation phase, not predicate execution.
+
+Read path pairing:
+
+* Predicates should read these values with `q.roomFlag(roomRef, key)`.
+* Predicates remain read-only and must never mutate world state directly.
+
 #### 6.3.9 Server Events
 
 ##### 1. What “server events” are
@@ -2170,7 +2207,7 @@ Hydration:
 6. Re-attaching the same manager to same emitter duplicates active handlers because each `bind` creates a new function.
 7. `detach` is broad and removes all listeners for an event name, including listeners not owned by this manager.  
    References: `src/EventManager.js:57`, `src/EventManager.js:73`, `docs/NOTES.md:80`.
-8. Startup/shutdown emits are synchronous; thrown listener errors bubble to caller (no guard in `GameServer`).
+8. Startup/shutdown emits are synchronous; thrown listener errors propogate to caller (no guard in `GameServer`).
 
 ##### 8. Empirical probe results I ran locally
 

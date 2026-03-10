@@ -8,7 +8,7 @@ Use this as a reference implementation for:
 
 - indirect-target `put` veto/allow behavior via item script
 - room exit gating for `go` via room script
-- puzzle-state flavor output via `bubbleEvent`
+- puzzle-state flavor output via `reactEvent`
 
 ## Area Entry
 
@@ -23,7 +23,7 @@ Three fixed world targets accept specific offerings:
 - `rantamuta:stoneBasin` accepts `rantamuta:prayerStone`
 
 Wrong offerings are denied with a custom message during Capture.
-Correct offerings can add flavor render lines during Bubble.
+Correct offerings can add flavor render lines during React.
 
 ## Item Metadata Pattern
 
@@ -49,7 +49,7 @@ script: ritualPutTarget
 That script sets:
 
 - `allowAction(action, context)` to veto wrong `put` offerings
-- `bubbleEvent(action, context)` to add success flavor lines on correct `put`
+- `reactEvent(action, context)` to add success flavor lines on correct `put`
 
 Implementation:
 
@@ -92,4 +92,4 @@ Room script/helper:
 - `commands/put.js` and `commands/go.js` remain generic.
 - Area-specific policy lives with area content (YAML + scripts).
 - Veto logic is Capture-time (`allowAction`).
-- Flavor contributions are Bubble-time (`bubbleEvent`).
+- Flavor contributions are React-time (`reactEvent`).
