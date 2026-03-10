@@ -1,3 +1,6 @@
 [submodule "bundles/bundle-rantamuta"]
 	path = bundles/bundle-rantamuta
 	url = https://github.com/Rantamuta/bundle-rantamuta.git
+[submodule "docs/lore"]
+	path = docs/lore
+	url = https://github.com/Rantamuta/lore.git
