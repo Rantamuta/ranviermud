@@ -23,5 +23,5 @@ audit.json
 
 # ignore api.ai key
 bundles/ranvier-npc-behaviors/APIAIKEY
-docs/lore/*
+docs/lore/
 raw/*
