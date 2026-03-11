@@ -16,6 +16,8 @@ This directory contains behavior contracts that are normative for this repositor
   - Defines read-only entity binding, deterministic scope/disambiguation behavior, and resolver failure ownership.
 - `checklist.md`
   - Defines the checklist-authoring phase of the two-step workflow.
+- `Plan.md`
+  - Defines planning conventions, approval gating, and plan QA expectations.
 - `implementation.md`
   - Defines checklist execution (setup, behavior-slice test-first loop, and repo-specific validation/commit order).
 - `PredicateStateRendering.md`
