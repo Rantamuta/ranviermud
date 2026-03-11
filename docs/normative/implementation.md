@@ -39,9 +39,24 @@ If either working tree is dirty with files unrelated to this implementation, sto
 
 If working trees are dirty and you are instructed to continue, do not stage or commit unrelated changes. Only stage files required for the checklist item being implemented.
 
-Check out a new git branch with a name that reflects the goal of the implementation, in the form `<verb>-<noun>` or possibly `<verb>-<adjective>-<noun>`.
+Check out a new git branch with a name that reflects the goal of the implementation, in the form `<verb>-<noun>` or `<verb>-<adjective>-<noun>`.
+
+- Branch names SHOULD use lowercase kebab-case tokens.
+- Prefer names that describe the behavior or contract being implemented rather than an internal codename.
 
 If the working tree is dirty at this stage, `git add . && git commit -m "Init <implementation>"` where implementation is suitably descriptive.
+
+## Validation selection
+
+For each behavior slice, choose the primary validation path from the approved plan, checklist validation handoff, and `AGENTS.md` requirements.
+
+Use these defaults unless the approved plan requires something more specific:
+
+- behavior or contract change: prefer fail-first unit or integration coverage
+- build, CI, or tooling change: prefer contract/parity checks plus smoke validation
+- docs-only or governance-only change: validate references, cited commands, and documented evidence consistency
+
+Prefer behavior-level evidence over tool-internal assertions when both are available.
 
 ## Loop
 
@@ -58,6 +73,7 @@ Stop with any questions, or if implementing the task requires expanding beyond t
 - If an item is mechanical only (for example type plumbing, constant/table wiring, rename-only, or internal refactor with no direct behavior contract), you may implement it within the current behavior slice without adding a dedicated failing test for that single item.
 - If the item is docs-only or non-code, skip the failing-test step for that item.
 - Implement the selected behavior slice as written in the checklist.
+- After the fail-first step is in place, prefer fixing production code over rewriting tests.
 - Run tests after implementation.
   - You may run a targeted test command for the touched scope first.
   - Run full `npm test` at the end of the behavior slice iteration.
@@ -68,6 +84,16 @@ Stop with any questions, or if implementing the task requires expanding beyond t
 - Commit all behavior-slice implementation changes with an imperative message `<slice summary>` edited for clarity and length less than 50 characters. You may add a git body.
 - Complete slice cadence before starting the next slice: test commit, implementation, passing tests, implementation commit.
 - Continue with the loop until all items are completed.
+
+## Stop conditions
+
+Pause and confirm direction when:
+
+- proposed changes exceed approved checklist scope
+- normative docs, ADRs, or other governing references conflict
+- unexpected repo state risks unrelated work
+- green cannot be restored for the current slice without changing tests to mask behavior, or without editing out-of-scope code
+- the checklist no longer matches the implementation reality closely enough to proceed safely
 
 ## Final validation
 

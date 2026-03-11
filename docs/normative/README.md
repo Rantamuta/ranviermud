@@ -1,10 +1,11 @@
 # Normative Documents
 
-This directory contains behavior contracts that are normative for this repository.
+This directory contains the normative contracts and workflow rules for this repository.
 
 ## Purpose
 
 - Make compatibility-impacting behavior explicit in-repo.
+- Make planning, checklist, and implementation workflow expectations explicit in-repo.
 - Prevent drift between implementation, tests, and maintainer expectations.
 - Provide versioned contracts that can be changed intentionally.
 
@@ -15,11 +16,11 @@ This directory contains behavior contracts that are normative for this repositor
 - `EntityResolution.md`
   - Defines read-only entity binding, deterministic scope/disambiguation behavior, and resolver failure ownership.
 - `checklist.md`
-  - Defines the checklist-authoring phase of the two-step workflow.
-- `Plan.md`
-  - Defines planning conventions, approval gating, and plan QA expectations.
+  - Defines the checklist-authoring phase between approved planning and checklist execution.
+- `plan.md`
+  - Defines planning conventions, approval gating, traceability expectations, and plan QA expectations.
 - `implementation.md`
-  - Defines checklist execution (setup, behavior-slice test-first loop, and repo-specific validation/commit order).
+  - Defines checklist execution (setup, validation selection, behavior-slice test-first loop, stop conditions, and repo-specific validation/commit order).
 - `PredicateStateRendering.md`
   - Defines predicates as the authoritative, render-only mechanism for state-dependent room description rendering (`descriptionVariants` / `descriptionFragments`).
 - `TypecheckPolicy.md`

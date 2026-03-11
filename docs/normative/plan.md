@@ -10,7 +10,7 @@ Companion goal: turn a brainstormed implementation design into a formal, checkli
 
 ## Applicability
 
-This process applies when a maintainer explicitly requests a plan using this document (for example: "Write the plan per `docs/normative/Plan.md` and stop for review.").
+This process applies when a maintainer explicitly requests a plan using this document (for example: "Write the plan per `docs/normative/plan.md` and stop for review." or "...per `norms/plan`..." for short).
 
 Related policies:
 
@@ -81,6 +81,7 @@ A formal plan MUST include:
 A formal plan MAY include:
 
 - `Constraints` (technical/process constraints)
+- `Implementation Surfaces` (specific files, functions, modules, contracts, or runtime phases expected to change)
 - `Risks and Mitigations`
 - `Open Questions / Assumptions`
 - `Validation Strategy` (required when the plan changes behavior, contracts, or build outputs)
@@ -97,6 +98,32 @@ Clarity rules:
 - avoid stacked clauses that hide multiple decisions
 
 If neither collaborator can rewrite intent in plain language, pause planning and simplify before proceeding.
+
+## Traceability to Implementation
+
+Plans must bridge human plain-language intent to concrete implementation surfaces closely enough that checklist authoring can stay faithful to the approved change.
+
+This does not require writing code in the plan. It does require naming the implementation surfaces that carry the behavior when those surfaces are known.
+
+Traceability rules:
+
+- plain-language `Goal`, `Intent`, and `Acceptance Criteria` must describe the behavior in human terms first
+- the plan must then map that behavior to specific code surfaces such as files, functions, modules, commands, mutators, docs contracts, or runtime phases when known
+- if exact files/functions are not yet known, the plan must still identify the owning subsystem or boundary closely enough to prevent checklist drift
+- plans must make it clear how each acceptance criterion would be realized in implementation, even when multiple code surfaces participate
+- plans should distinguish behavior intent from implementation mechanism so later checklist items can quote intent without inventing scope
+
+Preferred pattern:
+
+- plain-language statement of the behavior or constraint
+- concrete implementation surface(s) expected to carry it
+- notes about boundaries that must not be crossed
+
+Example:
+
+- Intent: "Conversation capture should intercept freeform player text before normal command dispatch while an NPC conversation is active."
+- Implementation surface: `bundles/bundle-rantamuta/lib/session/command-dispatch.js`, `bundles/bundle-rantamuta/input-events/main.js`
+- Boundary: preserve the runtime/content split; area-authored conversation content may use the capture surface, but runtime dispatch must not hardcode area-specific IDs or scripts.
 
 ## Ambiguity and Risk Surfacing
 
@@ -152,6 +179,8 @@ Conformance QC output format:
 - `Traceability readiness`
 - `Pass/Fail: ready for checklist authoring`
 
+`Traceability readiness` must explicitly assess whether the plan connects plain-language behavior to sufficiently concrete implementation surfaces for checklist authoring without forcing speculative design details.
+
 Advisory suggestions MUST be separated under a distinct `Advisory` section.
 
 ## Exit Criteria for Checklist Authoring
@@ -160,7 +189,9 @@ Checklist authoring under `docs/normative/checklist.md` may begin only when:
 
 - required plan sections are present
 - plan text contains clear, quotable statements under stable section headings so checklist items can cite source intent directly
+- plan text connects plain-language behavior to concrete implementation surfaces or owning subsystems closely enough to avoid checklist invention
 - acceptance criteria are explicit and testable/checkable
 - if required, `Validation Strategy` defines checkable evidence expectations
 - plain-language intent is approved by collaborators
 - conformance QC result is `Pass`
+
