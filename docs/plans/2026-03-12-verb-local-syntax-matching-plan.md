@@ -60,15 +60,15 @@ Expected owning surfaces (final list to confirm during checklist authoring):
 
 ## Open Questions / Assumptions
 
-- Unresolved entity in `TEXT to <target>` follows the `SayTo` direction: fallback to literal text (no hard failure in the parser layer).
-- Whether quoted spans are syntax-layer responsibilities or preserved as opaque text.
-- Whether existing parse artifact names should be reused or replaced in the syntax artifact.
-- Exact naming choice: `LIVING` vs `CHARACTER` (planning preference currently `LIVING`).
+- Unresolved entity in `TEXT to <target>` falls back to literal text (no hard failure in the parser layer).
+- Quoted spans are preserved as opaque `TEXT` placeholders; syntax matching does not split or reinterpret quoted internals.
+- Use existing parse artifact names initially (for compatibility), then evaluate a rename only if migration evidence justifies it.
+- Slot naming uses `LIVING`, defined as NPC + PC actor targets.
 
 ## Acceptance Criteria
 
 1. Verb-local syntax matching can be enabled per verb without changing behavior for non-participating verbs.
-2. `say` supports `TEXT` and `TEXT to ENTITY` in the pilot.
+2. `say` migrates to verb-local syntax matching for both plain speech (`TEXT`) and addressed speech (`TEXT to ENTITY`) in the pilot.
 3. Literal speech containing connector words remains literal unless a declared syntax rule matches.
 4. Entity resolution binds only entity-bearing slots declared by the selected syntax rule.
 5. Slot taxonomy preserves `ENTITY` and supports future narrower slots (including `LIVING` and `ITEM`) without forcing immediate behavior narrowing.

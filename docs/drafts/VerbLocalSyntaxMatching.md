@@ -109,15 +109,15 @@ This keeps literal speech as the default and makes addressed speech an explicit 
 
 Syntax matching should also allow narrower slot kinds as optional future constraints, for example:
 
-- `LIVING`: actor-like targets (NPC/PC)
+- `LIVING`: actor-like targets (NPC + PC)
 - `ITEM`: object-like targets
 
 The naming and classification should be syntax-facing and gameplay-readable. Engine-specific classes (for example, scriptability internals) should be mapped in entity resolution metadata rather than hardcoded into parser rule matching.
 
 Migration posture for `say`:
 
-- start with `TEXT` and `TEXT to ENTITY`
-- add support for `TEXT to LIVING` as an opt-in tightening if/when compatibility evidence supports it
+- migrate `say` to verb-local syntax with `TEXT` and `TEXT to ENTITY` as the baseline addressed/public forms
+- keep `ENTITY` available as the broad slot while supporting optional narrower forms like `TEXT to LIVING` where content policy wants NPC+PC targeting
 - avoid removing `ENTITY` until behavior and content expectations are validated
 
 ## General Use Beyond `say`
@@ -231,11 +231,11 @@ A low-risk migration path would be:
 
 ## Open Questions
 
-- whether syntax matching should replace current generic parse shapes or coexist with them
-- how free-text slots should interact with quoted spans
-- whether the syntax artifact should reuse current names such as `primaryTargetSpan` / `secondaryTargetSpan`
+- for `say`, syntax matching replaces the current generic relation-splitting path (full migration of `say` input handling)
+- quoted spans are preserved as opaque `TEXT` placeholders; parser/syntax layers do not reinterpret quoted internals
+- for compatibility, syntax artifacts should initially reuse current names such as `primaryTargetSpan` / `secondaryTargetSpan`
 - how rule ordering should be declared and validated
-- unresolved entity-bearing addressed forms should fall back to literal text (per `sayto` planning direction)
+- unresolved entity-bearing addressed forms should fall back to literal text
 - how much of current relation handling should remain in generic parser code once verb-local syntax exists
 
 ## Summary
