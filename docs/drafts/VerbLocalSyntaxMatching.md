@@ -235,10 +235,7 @@ A low-risk migration path would be:
 - how free-text slots should interact with quoted spans
 - whether the syntax artifact should reuse current names such as `primaryTargetSpan` / `secondaryTargetSpan`
 - how rule ordering should be declared and validated
-- whether unresolved entity-bearing syntax forms should be command-configurable as:
-  - hard failure
-  - fallback to literal
-  - disambiguation prompt
+- unresolved entity-bearing addressed forms should fall back to literal text (per `sayto` planning direction)
 - how much of current relation handling should remain in generic parser code once verb-local syntax exists
 
 ## Summary

@@ -60,7 +60,7 @@ Expected owning surfaces (final list to confirm during checklist authoring):
 
 ## Open Questions / Assumptions
 
-- Unresolved entity in `TEXT to <target>`: hard fail, fallback to literal, or disambiguation prompt?
+- Unresolved entity in `TEXT to <target>` follows the `SayTo` direction: fallback to literal text (no hard failure in the parser layer).
 - Whether quoted spans are syntax-layer responsibilities or preserved as opaque text.
 - Whether existing parse artifact names should be reused or replaced in the syntax artifact.
 - Exact naming choice: `LIVING` vs `CHARACTER` (planning preference currently `LIVING`).
