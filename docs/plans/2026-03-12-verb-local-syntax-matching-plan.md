@@ -38,6 +38,7 @@ When a player enters a command, the parser should stop guessing structure global
 - Runtime/content boundary in `bundles/bundle-rantamuta` must remain intact.
 - Migration must be incremental and reversible.
 - Only parsing/pattern-matching surfaces may change in this effort; command phases and mutation/resolution policies are explicitly preserved.
+- Phase model reference remains `Receive Input (parse included) -> Entity Resolution -> Capture/Veto -> Plan -> React -> Commit -> Render/Dispatch` per `docs/normative/CommandArchitecture.md`.
 - Any user-visible compatibility-impacting behavior change needs explicit approval and follow-up records (`docs/normative/**`, `CHANGELOG.md`, ADR if applicable).
 
 ## Implementation Surfaces
@@ -96,7 +97,7 @@ The implementation should provide a generic matcher, not a `say`-special parser.
 4. Entity resolution binds only entity-bearing slots declared by the selected syntax rule.
 5. Slot taxonomy preserves `ENTITY` and supports future narrower slots (including `LIVING` and `ITEM`) without forcing immediate behavior narrowing.
 6. Tests cover the motivating `say` examples and fallback/error semantics selected for the pilot.
-7. Existing phase ordering and mutation policy are unchanged (Receive Input, Entity Resolution, Plan, Commit, Render/Dispatch; no mutation outside Commit).
+7. Existing phase ordering and mutation policy are unchanged (`Receive Input (parse included) -> Entity Resolution -> Capture/Veto -> Plan -> React -> Commit -> Render/Dispatch`; no mutation outside Commit).
 
 ## Validation Strategy
 

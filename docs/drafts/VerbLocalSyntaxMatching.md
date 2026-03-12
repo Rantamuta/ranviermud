@@ -48,10 +48,10 @@ This design is intentionally scoped to parsing and pattern matching only.
 
 Everything else in the current command architecture remains unchanged:
 
-- phase sequencing remains Receive Input -> Entity Resolution -> Plan -> Commit -> Render/Dispatch,
+- phase sequencing remains Receive Input (including parse) -> Entity Resolution -> Capture/Veto -> Plan -> React -> Commit -> Render/Dispatch,
 - mutation policy remains unchanged (no mutation outside Commit),
 - resolution policy ownership remains unchanged (Entity Resolution owns world-binding decisions),
-- planner/execution/render contracts remain unchanged except for consuming the new syntax artifact.
+- capture/react/plan/commit/render contracts remain unchanged except for consuming the new syntax artifact.
 
 The migration goal is to change *how rule shape is selected*, not to redesign command phases or mutation semantics.
 
@@ -336,16 +336,35 @@ A likely future phase split is:
 - match the remaining input against that verb’s syntax rules
 - produce a syntax artifact
 
+(Parsing/matching is explicitly represented inside Receive Input; it does not introduce a new downstream phase.)
+
 ### Entity Resolution
 
 - bind entity slots declared by the matched syntax rule
 - preserve free-text slots without entity binding
 - apply rule-specific scope and accepted-relation logic
 
+### Capture/Veto
+
+- consume resolved entities and enforce policy checks
+- deny/allow without mutation
+
 ### Plan
 
 - decide command-specific fallback behavior when binding is unresolved but recoverable
-- render literal vs directed speech, or equivalent command outcomes
+- produce deterministic planned operations and base render intent
+
+### React
+
+- add post-validation render/reaction contributions without direct mutation
+
+### Commit
+
+- apply planned operations transactionally
+
+### Render/Dispatch
+
+- deliver output after successful commit
 
 This keeps the parser generic without forcing it to guess semantics that belong later. It also preserves existing command architecture boundaries by changing only syntax selection, not downstream phase responsibilities.
 
