@@ -60,6 +60,104 @@ The first matching rule wins.
 
 Entity Resolution then binds only the entity slots declared by the matched rule.
 
+## Generic Pattern-Matching Model (Detailed)
+
+This section defines the matching behavior as a general mechanism, not a `say`-specific special case.
+
+### Rule Declaration Shape
+
+Each verb declares an ordered `syntaxRules` list. Each rule contains:
+
+- `id`: stable identifier for diagnostics/tests
+- `pattern`: ordered array of pattern atoms
+- `slots`: slot metadata keyed by slot name (type, constraints, resolver hints)
+- `semantics` (optional): rule-local flags used by planner/renderer (not by matcher)
+
+Pattern atoms:
+
+- `LITERAL(word)`: exact normalized token match (for example `to`, `with`, `in`)
+- `SLOT(name, kind)`: slot placeholder that consumes part of the remaining input
+
+Slot kinds (extensible):
+
+- `TEXT`: opaque text span; matcher does not interpret internal words
+- `WORD`: single token free-text slot
+- `NUMBER`: numeric token slot
+- `ENTITY`: broad resolvable target slot
+- `LIVING`: resolvable NPC + PC target slot
+- `ITEM`: resolvable object target slot
+
+### Input Normalization Assumptions
+
+Before rule matching:
+
+1. input is canonicalized using existing command input normalization
+2. verb token is resolved
+3. remainder is preserved as both:
+   - token stream (for literal and narrow-slot matching)
+   - raw remainder string slices (for opaque `TEXT` capture)
+
+Quoted content remains opaque text and is never structurally re-parsed by the matcher.
+
+### Matching Algorithm
+
+Given ordered rules `R1..Rn`, evaluate in declaration order:
+
+1. Attempt full-pattern match of rule `Ri` against the verb remainder.
+2. A rule matches only if all pattern atoms match and all input is consumed (except explicit trailing `TEXT` slot capture by design).
+3. On first successful rule match, return a `syntaxArtifact` and stop.
+4. If no rule matches, return existing command-level parse failure/fallback path.
+
+Atom matching semantics:
+
+- `LITERAL(word)`: case-normalized equality with current token.
+- `SLOT(TEXT)`: greedy capture policy with backtracking to satisfy subsequent literal atoms.
+  - Practically: when followed by later literals, capture the largest span that still allows the rest of the pattern to match.
+  - If no later literals exist, capture entire remaining input.
+- `SLOT(WORD|NUMBER)`: consume exactly one token; validate kind immediately.
+- `SLOT(ENTITY|LIVING|ITEM)`: capture a candidate text span for resolver binding; matcher validates only structural fit, not world resolution.
+
+### Deterministic Rule Selection and Ambiguity
+
+Selection is deterministic by declaration order with two guardrails:
+
+- Prefer higher-specificity rules earlier (more literals, narrower slot kinds).
+- Keep a lint/check that flags equal-shape ambiguous rules whose ordering could hide one another.
+
+If two rules both structurally match, earlier declaration wins; this is intentional and testable.
+
+### Syntax Artifact Contract
+
+Matcher output should be a stable artifact consumed by Entity Resolution and Planner:
+
+- `verb`: resolved verb key
+- `ruleId`: matched rule id
+- `ruleForm`: existing verb-form category (intransitive/direct/indirect/etc.)
+- `slots`: captured slot spans with:
+  - `name`
+  - `kind`
+  - `raw` (exact text)
+  - `tokenRange` (start/end indices in remainder token list)
+- compatibility aliases for existing parse names (`primaryTargetSpan`, `secondaryTargetSpan`) during migration
+
+### Entity Binding Handoff
+
+Entity Resolution consumes only entity-bearing slots (`ENTITY`, `LIVING`, `ITEM`, future entity-like kinds):
+
+- resolver binds candidates according to slot kind + scope profile
+- non-entity slots (especially `TEXT`) are passed through unchanged
+- unresolved addressed forms that rely on entity binding fall back to literal interpretation when command policy says so (current `say` direction)
+
+### Extensibility Rules
+
+To add new syntax capability, introduce a new slot kind or literal pattern, not a verb-specific parser branch.
+
+Examples of future-safe extension points:
+
+- add `DIRECTION` slot kind for exits
+- add slot constraint metadata (`minTokens`, `maxTokens`, `allowedScopes`)
+- add compile-time rule validation (unreachable rule detection, ambiguity checks)
+
 ## Why `say` Is the Motivating Case
 
 `say` is the clearest example of a verb whose natural language shape cannot be reliably inferred by generic relation-token scanning.

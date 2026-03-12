@@ -49,6 +49,28 @@ Expected owning surfaces (final list to confirm during checklist authoring):
 - `say` command behavior and associated tests.
 - Documentation touchpoints for migration notes and compatibility rationale.
 
+## Matching Engine Detail (Plan-Level)
+
+The implementation should provide a generic matcher, not a `say`-special parser.
+
+1. **Rule schema and loader**
+   - Add ordered rule declarations per verb with atomized patterns (`LITERAL`, `SLOT`).
+   - Support extensible slot kinds (`TEXT`, `WORD`, `NUMBER`, `ENTITY`, `LIVING`, `ITEM`).
+2. **Deterministic matcher**
+   - Match rule list in declaration order (first full match wins).
+   - Enforce full-pattern consumption semantics and deterministic behavior for identical input/state.
+3. **`TEXT` capture semantics**
+   - Preserve quoted and unquoted text as opaque `TEXT` capture spans.
+   - Use greedy-with-backtracking behavior only to satisfy later literals; never reinterpret internals.
+4. **Syntax artifact contract**
+   - Emit stable rule id, slot captures, and compatibility aliases for existing parse span names.
+5. **Resolver integration**
+   - Bind only entity-bearing slots in Entity Resolution.
+   - Preserve non-entity slots verbatim for planner/render phases.
+6. **Validation and guardrails**
+   - Add rule-order/ambiguity characterization tests.
+   - Add matcher tests that prove generic behavior across non-`say`-specific patterns.
+
 ## Risks and Mitigations
 
 - Risk: Mixed parser model introduces ambiguity while only some verbs opt in.
