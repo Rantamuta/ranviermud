@@ -1,0 +1,89 @@
+# Verb-Local Syntax Matching Implementation Plan (Incremental)
+
+## Status
+
+- Status: draft
+- Scope: bundle-layer command parsing and rule selection
+- Binding: no (planning artifact)
+
+## Goal
+
+Introduce an incremental, reversible verb-local syntax matching path that improves free-text verbs such as `say` while preserving compatibility for existing commands.
+
+## Intent
+
+When a player enters a command, the parser should stop guessing structure globally for verbs that opt in. Instead, each participating verb should declare accepted syntax patterns. This should keep natural speech text literal by default and only treat connector words as structure when the verb says so.
+
+## In Scope
+
+- Add an optional syntax-rule declaration surface for verbs.
+- Reuse existing verb rule categories (for example intransitive/direct/indirect forms) as the migration entry point.
+- Add a syntax-matching phase before entity resolution for opted-in verbs.
+- Pilot with `say` only.
+- Define slot taxonomy posture:
+  - retain `ENTITY` as the broad compatibility slot,
+  - support future narrower slots such as `LIVING` and `ITEM`.
+- Preserve resolver ownership for binding entity-bearing slots from the matched syntax rule.
+- Add focused tests for `say` literal vs addressed behavior.
+
+## Out of Scope
+
+- Replacing global parser behavior for all verbs in one change.
+- Changes to engine internals under `Rantamuta/core`.
+- CLI/config/boot/load-order/tick compatibility contract changes.
+- Broad refactors unrelated to syntax matching pilot behavior.
+
+## Constraints
+
+- Runtime/content boundary in `bundles/bundle-rantamuta` must remain intact.
+- Migration must be incremental and reversible.
+- Any user-visible compatibility-impacting behavior change needs explicit approval and follow-up records (`docs/normative/**`, `CHANGELOG.md`, ADR if applicable).
+
+## Implementation Surfaces
+
+Expected owning surfaces (final list to confirm during checklist authoring):
+
+- Bundle command parsing/dispatch path where verb and syntax are selected.
+- Verb metadata definition/loading path for syntax declarations.
+- Entity resolution handoff artifact from syntax match stage.
+- `say` command behavior and associated tests.
+- Documentation touchpoints for migration notes and compatibility rationale.
+
+## Risks and Mitigations
+
+- Risk: Mixed parser model introduces ambiguity while only some verbs opt in.
+  - Mitigation: Per-verb opt-in gate; default non-opt-in verbs to current parser path.
+- Risk: Addressed `say` edge cases regress to over-reading text.
+  - Mitigation: Characterization tests for literal speech, connector-heavy text, and trailing `to ...` forms.
+- Risk: Prematurely narrowing target class breaks existing behavior.
+  - Mitigation: Start with `TEXT to ENTITY`; keep `LIVING` optional until evidence supports tightening.
+
+## Open Questions / Assumptions
+
+- Unresolved entity in `TEXT to <target>`: hard fail, fallback to literal, or disambiguation prompt?
+- Whether quoted spans are syntax-layer responsibilities or preserved as opaque text.
+- Whether existing parse artifact names should be reused or replaced in the syntax artifact.
+- Exact naming choice: `LIVING` vs `CHARACTER` (planning preference currently `LIVING`).
+
+## Acceptance Criteria
+
+1. Verb-local syntax matching can be enabled per verb without changing behavior for non-participating verbs.
+2. `say` supports `TEXT` and `TEXT to ENTITY` in the pilot.
+3. Literal speech containing connector words remains literal unless a declared syntax rule matches.
+4. Entity resolution binds only entity-bearing slots declared by the selected syntax rule.
+5. Slot taxonomy preserves `ENTITY` and supports future narrower slots (including `LIVING` and `ITEM`) without forcing immediate behavior narrowing.
+6. Tests cover the motivating `say` examples and fallback/error semantics selected for the pilot.
+
+## Validation Strategy
+
+Required evidence for implementation phase:
+
+- Unit/behavior tests for syntax matching and resolver handoff.
+- Integration/smoke validation for command dispatch with `say`.
+- Repository-required validation commands for behavior changes:
+  - `npm test`
+  - `npm run ci:local`
+
+Pass: pilot behavior matches approved acceptance criteria, with no regressions in non-opt-in verbs.
+
+Fail: parser behavior drifts for non-opt-in verbs, or `say` literal/addressed semantics fail tests.

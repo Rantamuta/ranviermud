@@ -54,6 +54,8 @@ A syntax rule is an ordered pattern composed of:
 - entity slots
 - future slot kinds such as number or single-word if needed
 
+The syntax layer should reuse existing verb rule categories (intransitive/direct/indirect and related forms) as the migration entry point rather than introducing a separate dispatch path.
+
 The first matching rule wins.
 
 Entity Resolution then binds only the entity slots declared by the matched rule.
@@ -84,6 +86,8 @@ A minimal `say` rule set would look conceptually like:
 - `TEXT`
 - `TEXT to ENTITY`
 
+Near-term migration should keep `ENTITY` as the broad compatibility slot. Longer-term, the slot taxonomy can support narrower forms such as `LIVING` (NPC/PC targets) and `ITEM` without removing `ENTITY`.
+
 Interpretation:
 
 - `say hello there`
@@ -98,6 +102,23 @@ Interpretation:
   - remains `TEXT` unless the trailing `to <entity>` actually matches a valid addressed form
 
 This keeps literal speech as the default and makes addressed speech an explicit verb-owned form.
+
+## Slot Taxonomy Direction
+
+`ENTITY` should remain available as the broadest entity-bearing placeholder for compatibility and incremental migration.
+
+Syntax matching should also allow narrower slot kinds as optional future constraints, for example:
+
+- `LIVING`: actor-like targets (NPC/PC)
+- `ITEM`: object-like targets
+
+The naming and classification should be syntax-facing and gameplay-readable. Engine-specific classes (for example, scriptability internals) should be mapped in entity resolution metadata rather than hardcoded into parser rule matching.
+
+Migration posture for `say`:
+
+- start with `TEXT` and `TEXT to ENTITY`
+- add support for `TEXT to LIVING` as an opt-in tightening if/when compatibility evidence supports it
+- avoid removing `ENTITY` until behavior and content expectations are validated
 
 ## General Use Beyond `say`
 
