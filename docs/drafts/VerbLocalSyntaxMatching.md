@@ -42,6 +42,20 @@ This is especially important for free-text verbs such as `say`, but the model sh
 
 ## Core Idea
 
+### Command Architecture Compatibility Guardrails
+
+This design is intentionally scoped to parsing and pattern matching only.
+
+Everything else in the current command architecture remains unchanged:
+
+- phase sequencing remains Receive Input (including parse) -> Entity Resolution -> Capture/Veto -> Plan -> React -> Commit -> Render/Dispatch,
+- mutation policy remains unchanged (no mutation outside Commit),
+- resolution policy ownership remains unchanged (Entity Resolution owns world-binding decisions),
+- capture/react/plan/commit/render contracts remain unchanged except for consuming the new syntax artifact.
+
+The migration goal is to change *how rule shape is selected*, not to redesign command phases or mutation semantics.
+
+
 Parsing becomes a two-stage operation:
 
 1. Resolve the verb from the first token.
@@ -54,9 +68,147 @@ A syntax rule is an ordered pattern composed of:
 - entity slots
 - future slot kinds such as number or single-word if needed
 
+The syntax layer should reuse existing verb rule categories (intransitive/direct/indirect and related forms) as the migration entry point rather than introducing a separate dispatch path.
+
 The first matching rule wins.
 
 Entity Resolution then binds only the entity slots declared by the matched rule.
+
+## Generic Pattern-Matching Model (Detailed)
+
+This section defines the matching behavior as a general mechanism, not a `say`-specific special case.
+
+### Rule Declaration Shape
+
+Each verb declares an ordered `syntaxRules` list.
+
+At the authored command surface, rules may be compact syntax strings.
+
+At runtime/load time, those strings can compile into richer internal rule objects used by the matcher. A compiled rule object may contain:
+
+- `id`: stable internal identifier for diagnostics/tests
+- `pattern`: ordered array of pattern atoms
+- `slots`: slot metadata keyed by slot name (type, constraints, resolver hints)
+- `semantics` (optional): rule-local flags used by planner/renderer (not by matcher)
+
+Pattern atoms:
+
+- `LITERAL(word)`: exact normalized token match (for example `to`, `with`, `in`)
+- `SLOT(name, kind)`: slot placeholder that consumes part of the remaining input
+
+Slot kinds (extensible):
+
+- `TEXT`: opaque text span; matcher does not interpret internal words
+- `WORD`: single token free-text slot
+- `NUMBER`: numeric token slot
+- `ENTITY`: broad resolvable target slot
+- `LIVING`: resolvable NPC + PC target slot
+- `ITEM`: resolvable object target slot
+- `MULTI_ENTITY`: multi-target entity capture
+- `MULTI_LIVING`: multi-target living capture
+
+Compatibility mapping to LIMA/MudOS-style parse tokens:
+
+- `OBJ` -> `ENTITY`
+- second `OBJ` (or `OBJ2`) -> indirect entity slot
+- `LIV` -> `LIVING`
+- `OBS` -> `MULTI_ENTITY`
+- `LVS` -> `MULTI_LIVING`
+- `WRD` -> `WORD`
+- `STR` -> `TEXT`
+- `PREP` -> `LITERAL(<connector>)` at declaration time
+
+### Input Normalization Assumptions
+
+Before rule matching:
+
+1. input is canonicalized using existing command input normalization
+2. verb token is resolved
+3. remainder is preserved as both:
+   - token stream (for literal and narrow-slot matching)
+   - raw remainder string slices (for opaque `TEXT` capture)
+
+Quoted content remains opaque text and is never structurally re-parsed by the matcher.
+
+### Matching Algorithm
+
+Given ordered rules `R1..Rn`, evaluate in declaration order with a recursive backtracking matcher:
+
+1. **Pre-check literals (fast filter).**
+   - For each rule, run a cheap literal-presence/order gate before deep matching (equivalent intent to `check_literal(...)`).
+   - If required literal connectors cannot fit, skip rule immediately.
+2. **Token-by-token recursive match.**
+   - Walk pattern atoms against input tokens (`match(ruleIndex, tokenIndex)`).
+   - Record successful partial captures, recurse to the next atom, and backtrack on failure.
+3. **Accept only full matches.**
+   - Candidate success requires pattern exhaustion and input exhaustion, except a terminal `TEXT` slot that intentionally captures the remainder.
+4. **Candidate validation and selection.**
+   - For each structural candidate, run follow-on validation hooks and relation checks in existing command architecture terms.
+   - Select deterministic winner by rule order and quality scoring policy.
+
+Atom matching semantics:
+
+- `LITERAL(word)`: case-normalized equality with current token.
+- `SLOT(TEXT)` (LIMA `STR` equivalent): tries one-or-more-token spans and recurses.
+  - Operationally this behaves as greedy capture with backtracking to satisfy later literals/slots.
+  - Quoted internals remain opaque text and are never structurally re-tokenized.
+- `SLOT(WORD|NUMBER)` (LIMA `WRD` analogue for `WORD`): consume exactly one token; validate kind immediately.
+- `SLOT(ENTITY|LIVING|ITEM|MULTI_ENTITY|MULTI_LIVING)` (LIMA `OBJ`/`LIV`/`OBS`/`LVS` analogues):
+  - capture candidate spans structurally during syntax match,
+  - defer world binding (nouns/adjectives/plurals/ordinals/`all`/`self`) to resolver phase.
+
+This ordering preserves the key LIMA property: literal token order is part of rule identity, so `OBJ with OBJ for STR` and `OBJ for STR with OBJ` are different rule shapes with different dispatch outcomes.
+
+### Validation/Dispatch Flow Parity
+
+After structural match, execution flow remains staged:
+
+1. build rule-shape-specific validation targets (conceptually like `can_`, `direct_`, `indirect_` phases),
+2. run relation validation for multi-entity forms where required,
+3. dispatch planner/executor path for the selected rule shape with arguments in declared slot order.
+
+The matcher does not bypass these phases; it only makes rule-shape selection explicit and verb-local.
+
+### Deterministic Rule Selection and Ambiguity
+
+Selection is deterministic by declaration order with two guardrails:
+
+- Prefer higher-specificity rules earlier (more literals, narrower slot kinds).
+- Keep a lint/check that flags equal-shape ambiguous rules whose ordering could hide one another.
+
+If two rules both structurally match, earlier declaration wins; this is intentional and testable.
+
+### Syntax Artifact Contract
+
+Matcher output should be a stable artifact consumed by Entity Resolution and Planner:
+
+- `verb`: resolved verb key
+- `ruleId`: matched rule id
+- `ruleForm`: existing verb-form category (intransitive/direct/indirect/etc.)
+- `slots`: captured slot spans with:
+  - `name`
+  - `kind`
+  - `raw` (exact text)
+  - `tokenRange` (start/end indices in remainder token list)
+- compatibility aliases for existing parse names (`primaryTargetSpan`, `secondaryTargetSpan`) during migration
+
+### Entity Binding Handoff
+
+Entity Resolution consumes only entity-bearing slots (`ENTITY`, `LIVING`, `ITEM`, future entity-like kinds):
+
+- resolver binds candidates according to slot kind + scope profile
+- non-entity slots (especially `TEXT`) are passed through unchanged
+- unresolved addressed forms that rely on entity binding fall back to literal interpretation when command policy says so (current `say` direction)
+
+### Extensibility Rules
+
+To add new syntax capability, introduce a new slot kind or literal pattern, not a verb-specific parser branch.
+
+Examples of future-safe extension points:
+
+- add `DIRECTION` slot kind for exits
+- add slot constraint metadata (`minTokens`, `maxTokens`, `allowedScopes`)
+- add compile-time rule validation (unreachable rule detection, ambiguity checks)
 
 ## Why `say` Is the Motivating Case
 
@@ -84,6 +236,8 @@ A minimal `say` rule set would look conceptually like:
 - `TEXT`
 - `TEXT to ENTITY`
 
+Near-term migration should keep `ENTITY` as the broad compatibility slot. Longer-term, the slot taxonomy can support narrower forms such as `LIVING` (NPC/PC targets) and `ITEM` without removing `ENTITY`.
+
 Interpretation:
 
 - `say hello there`
@@ -98,6 +252,23 @@ Interpretation:
   - remains `TEXT` unless the trailing `to <entity>` actually matches a valid addressed form
 
 This keeps literal speech as the default and makes addressed speech an explicit verb-owned form.
+
+## Slot Taxonomy Direction
+
+`ENTITY` should remain available as the broadest entity-bearing placeholder for compatibility and incremental migration.
+
+Syntax matching should also allow narrower slot kinds as optional future constraints, for example:
+
+- `LIVING`: actor-like targets (NPC + PC)
+- `ITEM`: object-like targets
+
+The naming and classification should be syntax-facing and gameplay-readable. Engine-specific classes (for example, scriptability internals) should be mapped in entity resolution metadata rather than hardcoded into parser rule matching.
+
+Migration posture for `say`:
+
+- migrate `say` to verb-local syntax with `TEXT` and `TEXT to ENTITY` as the baseline addressed/public forms
+- keep `ENTITY` available as the broad slot while supporting optional narrower forms like `TEXT to LIVING` where content policy wants NPC+PC targeting
+- avoid removing `ENTITY` until behavior and content expectations are validated
 
 ## General Use Beyond `say`
 
@@ -169,18 +340,37 @@ A likely future phase split is:
 - match the remaining input against that verb’s syntax rules
 - produce a syntax artifact
 
+(Parsing/matching is explicitly represented inside Receive Input; it does not introduce a new downstream phase.)
+
 ### Entity Resolution
 
 - bind entity slots declared by the matched syntax rule
 - preserve free-text slots without entity binding
 - apply rule-specific scope and accepted-relation logic
 
+### Capture/Veto
+
+- consume resolved entities and enforce policy checks
+- deny/allow without mutation
+
 ### Plan
 
 - decide command-specific fallback behavior when binding is unresolved but recoverable
-- render literal vs directed speech, or equivalent command outcomes
+- produce deterministic planned operations and base render intent
 
-This keeps the parser generic without forcing it to guess semantics that belong later.
+### React
+
+- add post-validation render/reaction contributions without direct mutation
+
+### Commit
+
+- apply planned operations transactionally
+
+### Render/Dispatch
+
+- deliver output after successful commit
+
+This keeps the parser generic without forcing it to guess semantics that belong later. It also preserves existing command architecture boundaries by changing only syntax selection, not downstream phase responsibilities.
 
 ## Advantages
 
@@ -210,14 +400,11 @@ A low-risk migration path would be:
 
 ## Open Questions
 
-- whether syntax matching should replace current generic parse shapes or coexist with them
-- how free-text slots should interact with quoted spans
-- whether the syntax artifact should reuse current names such as `primaryTargetSpan` / `secondaryTargetSpan`
+- for `say`, syntax matching replaces the current generic relation-splitting path (full migration of `say` input handling)
+- quoted spans are preserved as opaque `TEXT` placeholders; parser/syntax layers do not reinterpret quoted internals
+- for compatibility, syntax artifacts should initially reuse current names such as `primaryTargetSpan` / `secondaryTargetSpan`
 - how rule ordering should be declared and validated
-- whether unresolved entity-bearing syntax forms should be command-configurable as:
-  - hard failure
-  - fallback to literal
-  - disambiguation prompt
+- unresolved entity-bearing addressed forms should fall back to literal text
 - how much of current relation handling should remain in generic parser code once verb-local syntax exists
 
 ## Summary
