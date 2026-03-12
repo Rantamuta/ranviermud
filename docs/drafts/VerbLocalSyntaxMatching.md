@@ -86,6 +86,19 @@ Slot kinds (extensible):
 - `ENTITY`: broad resolvable target slot
 - `LIVING`: resolvable NPC + PC target slot
 - `ITEM`: resolvable object target slot
+- `MULTI_ENTITY`: multi-target entity capture
+- `MULTI_LIVING`: multi-target living capture
+
+Compatibility mapping to LIMA/MudOS-style parse tokens:
+
+- `OBJ` -> `ENTITY`
+- second `OBJ` (or `OBJ2`) -> indirect entity slot
+- `LIV` -> `LIVING`
+- `OBS` -> `MULTI_ENTITY`
+- `LVS` -> `MULTI_LIVING`
+- `WRD` -> `WORD`
+- `STR` -> `TEXT`
+- `PREP` -> `LITERAL(<connector>)` at declaration time
 
 ### Input Normalization Assumptions
 
@@ -101,21 +114,42 @@ Quoted content remains opaque text and is never structurally re-parsed by the ma
 
 ### Matching Algorithm
 
-Given ordered rules `R1..Rn`, evaluate in declaration order:
+Given ordered rules `R1..Rn`, evaluate in declaration order with a recursive backtracking matcher:
 
-1. Attempt full-pattern match of rule `Ri` against the verb remainder.
-2. A rule matches only if all pattern atoms match and all input is consumed (except explicit trailing `TEXT` slot capture by design).
-3. On first successful rule match, return a `syntaxArtifact` and stop.
-4. If no rule matches, return existing command-level parse failure/fallback path.
+1. **Pre-check literals (fast filter).**
+   - For each rule, run a cheap literal-presence/order gate before deep matching (equivalent intent to `check_literal(...)`).
+   - If required literal connectors cannot fit, skip rule immediately.
+2. **Token-by-token recursive match.**
+   - Walk pattern atoms against input tokens (`match(ruleIndex, tokenIndex)`).
+   - Record successful partial captures, recurse to the next atom, and backtrack on failure.
+3. **Accept only full matches.**
+   - Candidate success requires pattern exhaustion and input exhaustion, except a terminal `TEXT` slot that intentionally captures the remainder.
+4. **Candidate validation and selection.**
+   - For each structural candidate, run follow-on validation hooks and relation checks in existing command architecture terms.
+   - Select deterministic winner by rule order and quality scoring policy.
 
 Atom matching semantics:
 
 - `LITERAL(word)`: case-normalized equality with current token.
-- `SLOT(TEXT)`: greedy capture policy with backtracking to satisfy subsequent literal atoms.
-  - Practically: when followed by later literals, capture the largest span that still allows the rest of the pattern to match.
-  - If no later literals exist, capture entire remaining input.
-- `SLOT(WORD|NUMBER)`: consume exactly one token; validate kind immediately.
-- `SLOT(ENTITY|LIVING|ITEM)`: capture a candidate text span for resolver binding; matcher validates only structural fit, not world resolution.
+- `SLOT(TEXT)` (LIMA `STR` equivalent): tries one-or-more-token spans and recurses.
+  - Operationally this behaves as greedy capture with backtracking to satisfy later literals/slots.
+  - Quoted internals remain opaque text and are never structurally re-tokenized.
+- `SLOT(WORD|NUMBER)` (LIMA `WRD` analogue for `WORD`): consume exactly one token; validate kind immediately.
+- `SLOT(ENTITY|LIVING|ITEM|MULTI_ENTITY|MULTI_LIVING)` (LIMA `OBJ`/`LIV`/`OBS`/`LVS` analogues):
+  - capture candidate spans structurally during syntax match,
+  - defer world binding (nouns/adjectives/plurals/ordinals/`all`/`self`) to resolver phase.
+
+This ordering preserves the key LIMA property: literal token order is part of rule identity, so `OBJ with OBJ for STR` and `OBJ for STR with OBJ` are different rule shapes with different dispatch outcomes.
+
+### Validation/Dispatch Flow Parity
+
+After structural match, execution flow remains staged:
+
+1. build rule-shape-specific validation targets (conceptually like `can_`, `direct_`, `indirect_` phases),
+2. run relation validation for multi-entity forms where required,
+3. dispatch planner/executor path for the selected rule shape with arguments in declared slot order.
+
+The matcher does not bypass these phases; it only makes rule-shape selection explicit and verb-local.
 
 ### Deterministic Rule Selection and Ambiguity
 

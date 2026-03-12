@@ -55,13 +55,13 @@ The implementation should provide a generic matcher, not a `say`-special parser.
 
 1. **Rule schema and loader**
    - Add ordered rule declarations per verb with atomized patterns (`LITERAL`, `SLOT`).
-   - Support extensible slot kinds (`TEXT`, `WORD`, `NUMBER`, `ENTITY`, `LIVING`, `ITEM`).
+   - Support extensible slot kinds (`TEXT`, `WORD`, `NUMBER`, `ENTITY`, `LIVING`, `ITEM`, `MULTI_ENTITY`, `MULTI_LIVING`) and compatibility mapping to LIMA-style tokens (`STR`, `WRD`, `OBJ`, `LIV`, `OBS`, `LVS`).
 2. **Deterministic matcher**
-   - Match rule list in declaration order (first full match wins).
+   - Match rule list in declaration order using recursive backtracking with a fast literal pre-check (LIMA-style flow).
    - Enforce full-pattern consumption semantics and deterministic behavior for identical input/state.
 3. **`TEXT` capture semantics**
    - Preserve quoted and unquoted text as opaque `TEXT` capture spans.
-   - Use greedy-with-backtracking behavior only to satisfy later literals; never reinterpret internals.
+   - Use one-or-more-token span search with backtracking to satisfy later literals; never reinterpret internals.
 4. **Syntax artifact contract**
    - Emit stable rule id, slot captures, and compatibility aliases for existing parse span names.
 5. **Resolver integration**
@@ -69,7 +69,7 @@ The implementation should provide a generic matcher, not a `say`-special parser.
    - Preserve non-entity slots verbatim for planner/render phases.
 6. **Validation and guardrails**
    - Add rule-order/ambiguity characterization tests.
-   - Add matcher tests that prove generic behavior across non-`say`-specific patterns.
+   - Add matcher tests that prove generic behavior across non-`say`-specific patterns, including literal-order shape differences (for example `... with ... for ...` vs `... for ... with ...`).
 
 ## Risks and Mitigations
 
