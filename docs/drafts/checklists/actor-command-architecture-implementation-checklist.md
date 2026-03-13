@@ -92,10 +92,12 @@
     - one NPC should exercise a command path that would normally succeed but is denied by `canActor`
   - Validation handoff: `S5`, `integration/smoke`
 
-- [ ] `C11` [records] Update `CHANGELOG.md` for the new bundle-layer command hook surfaces and record the ADR decision as “not required” unless implementation reveals broader architecture/policy drift.
+- [x] `C11` [records] Update `CHANGELOG.md` for the new bundle-layer command hook surfaces and record the ADR decision as “not required” unless implementation reveals broader architecture/policy drift.
   - Trace:
     - "`CHANGELOG.md` should be updated because this adds new bundle-layer command hook surfaces and runtime behavior" (`Compatibility and Records`)
     - "ADR requirement: not required by default, unless implementation reveals a broader long-term architecture or policy change beyond extending the current hook model" (`Compatibility and Records`)
+  - Implementation note:
+    - ADR decision: not required; implementation stayed within the existing command-hook model and did not change long-term layering or compatibility posture.
   - Validation handoff: `S6`, `contract/parity`
 
 - [ ] `C12` [content] Add a Codex-authored creative illustration in `bundles/bundle-rantamuta/areas/codex` and the corresponding coverage that uses the new actor hook surfaces in a way that is interesting, valid within the command architecture, and not hardcoded into runtime.

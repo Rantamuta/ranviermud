@@ -4,6 +4,30 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Actor-side command Capture and Plan hooks
+
+Summary:
+
+- Added additive `canActor(actor, verbId, context)` and `planActor(actor, verbId, context)` support to the bundle command-dispatch pipeline.
+- Preserved existing `metadata.actorKindsAllowed` Capture behavior while allowing actor-authored hooks to participate before metadata gating and before direct/indirect plan contributions.
+- Added deterministic authored coverage in `areas/test` plus actor-hook dispatcher coverage for precedence, normalization, merge ordering, and failure handling.
+Why:
+- Actor-authored behavior needed the same phase-correct command hook family already available to direct and indirect targets.
+Impact:
+- NPC and player actors may now expose `canActor` and `planActor` on the actor object to participate in Capture and Plan without introducing a separate execution path.
+- Existing `metadata.actorKindsAllowed` commands continue to work unchanged.
+Migration/Action:
+- Optional: authored actors may add `canActor` and `planActor` hooks when actor-specific command gating or plan contribution is needed.
+References:
+- `docs/normative/CommandArchitecture.md`
+- `docs/normative/NpcActionArchitecture.md`
+- `bundles/bundle-rantamuta/lib/session/command-dispatch.js`
+- `bundles/bundle-rantamuta/areas/test/npcs.yml`
+- `bundles/bundle-rantamuta/tests/command.dispatch.test.js`
+- `bundles/bundle-rantamuta/tests/npc.capture.actor-kind.test.js`
+- `bundles/bundle-rantamuta/tests/test.actor-hooks.script.test.js`
+Timestamp: 2026.03.13 12:28
+
 ### Inline predicate tags in room-view and direct look descriptions
 
 Summary:
