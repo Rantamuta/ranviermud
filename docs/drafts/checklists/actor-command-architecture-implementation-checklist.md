@@ -100,7 +100,7 @@
     - ADR decision: not required; implementation stayed within the existing command-hook model and did not change long-term layering or compatibility posture.
   - Validation handoff: `S6`, `contract/parity`
 
-- [ ] `C12` [content] Add a Codex-authored creative illustration in `bundles/bundle-rantamuta/areas/codex` and the corresponding coverage that uses the new actor hook surfaces in a way that is interesting, valid within the command architecture, and not hardcoded into runtime.
+- [x] `C12` [content] Add a Codex-authored creative illustration in `bundles/bundle-rantamuta/areas/codex` and the corresponding coverage that uses the new actor hook surfaces in a way that is interesting, valid within the command architecture, and not hardcoded into runtime.
   - Trace:
     - "`areas/codex` should get a Codex-authored creative illustration of the new actor hook surfaces." (`Tests`)
     - "the expectation is to use the new surfaces in a way that is interesting, valid within the command architecture, and not hardcoded into runtime" (`Tests`)
