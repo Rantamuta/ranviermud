@@ -82,7 +82,7 @@
     - "`canActor` and `planActor` are implemented symmetrically with the current `canDirect` / `canIndirect` and `planDirect` / `planIndirect` patterns" (`Acceptance Criteria`)
   - Validation handoff: `S4`, `unit`
 
-- [ ] `C10` [content] Add a deterministic authored harness in `bundles/bundle-rantamuta/areas/test` and the corresponding coverage that exercises `canActor` and `planActor` through normal bundle loading and dispatch with predictable outcomes suitable for integration evidence.
+- [x] `C10` [content] Add a deterministic authored harness in `bundles/bundle-rantamuta/areas/test` and the corresponding coverage that exercises `canActor` and `planActor` through normal bundle loading and dispatch with predictable outcomes suitable for integration evidence.
   - Trace:
     - "`areas/test` should get a deterministic authored harness that demonstrates `canActor` and `planActor` through loaded content with predictable outcomes suitable for integration coverage." (`Tests`)
     - "`bundles/bundle-rantamuta/areas/test` provides deterministic authored harness coverage for the new actor hooks." (`Acceptance Criteria`)
