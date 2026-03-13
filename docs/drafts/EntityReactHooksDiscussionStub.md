@@ -3,7 +3,7 @@
 ## Status
 
 - Status: `stub`
-- Scope: future discussion of entity-scoped React hooks such as `reactDirect` and `reactIndirect`and `reactActor`
+- Scope: future discussion of entity-scoped React hooks such as `reactDirect` and `reactIndirect` and `reactActor`
 - Binding: no
 
 ## Purpose
