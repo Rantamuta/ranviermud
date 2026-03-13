@@ -70,13 +70,13 @@
     - "`planActor.render.messages` participate in the same deterministic Render/Dispatch assembly used for other Plan contributions" (`Proposed Behavior`)
   - Validation handoff: `S3`, `unit`
 
-- [ ] `C08` [tests] Extend dispatcher-level tests in `bundles/bundle-rantamuta/tests/command.dispatch.test.js` and any narrower focused suites needed to cover `canActor` discovery, normalization, precedence, deterministic behavior, and compatibility with existing `metadata.actorKindsAllowed` behavior.
+- [x] `C08` [tests] Extend dispatcher-level tests in `bundles/bundle-rantamuta/tests/command.dispatch.test.js` and any narrower focused suites needed to cover `canActor` discovery, normalization, precedence, deterministic behavior, and compatibility with existing `metadata.actorKindsAllowed` behavior.
   - Trace:
     - "Dispatcher contract tests for `canActor`: allow / deny / no-decision normalization, precedence against `metadata.actorKindsAllowed`, deterministic behavior." (`Tests`)
     - "Existing commands that rely on `metadata.actorKindsAllowed` continue to work unchanged." (`Acceptance Criteria`)
   - Validation handoff: `S4`, `unit`
 
-- [ ] `C09` [tests] Extend dispatcher-level tests in `bundles/bundle-rantamuta/tests/command.dispatch.test.js` and any narrower focused suites needed to cover `planActor` discovery, merge ordering, failure behavior, render replacement behavior, and symmetry with `planDirect` / `planIndirect`, including invalid-shape handling.
+- [x] `C09` [tests] Extend dispatcher-level tests in `bundles/bundle-rantamuta/tests/command.dispatch.test.js` and any narrower focused suites needed to cover `planActor` discovery, merge ordering, failure behavior, render replacement behavior, and symmetry with `planDirect` / `planIndirect`, including invalid-shape handling.
   - Trace:
     - "Dispatcher contract tests for `planActor`: merge ordering, failure behavior, render replacement behavior, interaction with `planDirect` / `planIndirect`." (`Tests`)
     - "`canActor` and `planActor` are implemented symmetrically with the current `canDirect` / `canIndirect` and `planDirect` / `planIndirect` patterns" (`Acceptance Criteria`)
