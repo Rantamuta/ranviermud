@@ -45,13 +45,13 @@
     - "Keep `metadata.actorKindsAllowed` in place as an existing canonical Capture mechanism." (`In Scope`)
   - Validation handoff: `S1`, `contract/parity`
 
-- [ ] `C04` [dispatch] Add actor-side Capture evaluation in `bundles/bundle-rantamuta/lib/session/command-dispatch.js`, reusing the current policy normalization path so `actor.canActor(actor, verbId, context)` is discovered on the actor object and handled symmetrically with direct/indirect Capture hooks.
+- [x] `C04` [dispatch] Add actor-side Capture evaluation in `bundles/bundle-rantamuta/lib/session/command-dispatch.js`, reusing the current policy normalization path so `actor.canActor(actor, verbId, context)` is discovered on the actor object and handled symmetrically with direct/indirect Capture hooks.
   - Trace:
     - "`canActor` should be symmetrical and unsurprising with respect to `canDirect` and `canIndirect`: discovery, invocation, normalization, and failure handling should follow the same runtime patterns already used for direct and indirect Capture hooks." (`Proposed Behavior`)
     - "likely helper seams include actor-side counterparts to the current capture-policy and target-plan contribution flow" (`Implementation Surfaces`)
   - Validation handoff: `S2`, `unit`
 
-- [ ] `C05` [dispatch] Integrate the new actor-side Capture evaluation into `runCaptureChecks` in `bundles/bundle-rantamuta/lib/session/command-dispatch.js` so `canActor` runs before `metadata.actorKindsAllowed`, command `captureChecks`, and ordered entity policy checks, while preserving the current metadata-gate behavior unchanged.
+- [x] `C05` [dispatch] Integrate the new actor-side Capture evaluation into `runCaptureChecks` in `bundles/bundle-rantamuta/lib/session/command-dispatch.js` so `canActor` runs before `metadata.actorKindsAllowed`, command `captureChecks`, and ordered entity policy checks, while preserving the current metadata-gate behavior unchanged.
   - Trace:
     - "Use the proposal's Capture ordering: 1. `canActor(actor, verbId, context)` explicit decision 2. command metadata gate `metadata.actorKindsAllowed` 3. command-level `captureChecks` 4. existing ordered entity policy checks." (`Proposed Behavior`)
     - "Existing `metadata.actorKindsAllowed` behavior remains intact." (`Acceptance Criteria`)
