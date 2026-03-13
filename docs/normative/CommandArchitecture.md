@@ -218,7 +218,7 @@ Rules:
 - Render payload shape is `render.messages`.
 - Must not mutate world state directly.
 
-Optional entity plan-contribution surface:
+Optional actor and entity plan-contribution surfaces:
 
 After a successful command result envelope, runtime optionally consults the
 actor and then bound entities for Plan-phase contributions:
