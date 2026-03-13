@@ -25,21 +25,21 @@
 
 ## Checklist
 
-- [ ] `C01` [docs] Update `docs/normative/CommandArchitecture.md` Capture section to define additive `canActor(actor, verbId, context)` hook placement, object-attached discovery on the actor, precedence before `metadata.actorKindsAllowed`, normalization rules, `ACTOR_KIND_FORBIDDEN` deny envelope, deterministic constraints, and the family-consistent redundant actor argument note.
+- [x] `C01` [docs] Update `docs/normative/CommandArchitecture.md` Capture section to define additive `canActor(actor, verbId, context)` hook placement, object-attached discovery on the actor, precedence before `metadata.actorKindsAllowed`, normalization rules, `ACTOR_KIND_FORBIDDEN` deny envelope, deterministic constraints, and the family-consistent redundant actor argument note.
   - Trace:
     - "`docs/normative/CommandArchitecture.md` normatively defines `canActor` as an additive Capture hook alongside `metadata.actorKindsAllowed`." (`Acceptance Criteria`)
     - "Use the proposal's Capture ordering: 1. `canActor(actor, verbId, context)` explicit decision 2. command metadata gate `metadata.actorKindsAllowed` 3. command-level `captureChecks` 4. existing ordered entity policy checks." (`Proposed Behavior`)
     - "`canActor` keeps the same argument shape as the other entity hook surfaces for hook-family consistency, even though the actor is also the receiver and is therefore passed redundantly." (`Proposed Behavior`)
   - Validation handoff: `S1`, `contract/parity`
 
-- [ ] `C02` [docs] Update `docs/normative/CommandArchitecture.md` Plan section to define additive `planActor(actor, verbId, context)` hook placement, object-attached discovery on the actor, contribution contract, merge order before `planDirect` and `planIndirect`, downstream Commit/Render participation, invalid-shape symmetry with target Plan hooks, and the family-consistent redundant actor argument note.
+- [x] `C02` [docs] Update `docs/normative/CommandArchitecture.md` Plan section to define additive `planActor(actor, verbId, context)` hook placement, object-attached discovery on the actor, contribution contract, merge order before `planDirect` and `planIndirect`, downstream Commit/Render participation, invalid-shape symmetry with target Plan hooks, and the family-consistent redundant actor argument note.
   - Trace:
     - "`docs/normative/CommandArchitecture.md` normatively defines `planActor` as an additive Plan contribution hook alongside `planDirect` and `planIndirect`." (`Acceptance Criteria`)
     - "Planned merge order: 1. base command result 2. `planActor` 3. `planDirect` 4. `planIndirect`." (`Proposed Behavior`)
     - "`planActor` should be symmetrical and unsurprising with respect to `planDirect` and `planIndirect`." (`Proposed Behavior`)
   - Validation handoff: `S1`, `contract/parity`
 
-- [ ] `C03` [docs] Align `docs/normative/NpcActionArchitecture.md` anywhere actor-hook or actor-eligibility cross-references would otherwise drift from the updated command architecture, without changing the current `metadata.actorKindsAllowed` compatibility stance.
+- [x] `C03` [docs] Align `docs/normative/NpcActionArchitecture.md` anywhere actor-hook or actor-eligibility cross-references would otherwise drift from the updated command architecture, without changing the current `metadata.actorKindsAllowed` compatibility stance.
   - Trace:
     - "align `docs/normative/NpcActionArchitecture.md` where cross-references or actor-hook expectations need to match" (`Compatibility and Records`)
     - "Keep `metadata.actorKindsAllowed` in place as an existing canonical Capture mechanism." (`In Scope`)

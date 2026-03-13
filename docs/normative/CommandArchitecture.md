@@ -96,22 +96,35 @@ Rules:
 - Hooks must not append mutation instructions, render events, or reaction contributions.
 - First deny wins.
 - If denied, command terminates with failure envelope and does not enter Plan.
-- Capture runs in two steps:
+- Capture runs in ordered checks:
+  - actor hook (`canActor`) on the actor object, if present
   - actor-kind gate from command metadata (`metadata.actorKindsAllowed`)
   - command-level `captureChecks` functions (if declared)
   - shared policy evaluation on ordered capture subjects
+- Optional actor capture hook:
+  - `canActor(actor, verbId, context)`
+  - discovered directly on the actor object itself; no registry or adapter layer is required
+  - evaluated before `metadata.actorKindsAllowed`, command-level capture checks, and ordered capture subjects
+  - keeps the same argument shape as other entity hook surfaces for family consistency, even though the actor is also the receiver and is therefore passed redundantly
+  - implementations may ignore the first argument and use `this` if preferred
+- `canActor` policy return normalization:
+  - allow: `true`, `'allow'`, `{ ok: true }`, `{ allow: true }`
+  - deny: `false`, `'deny'`, deny message string, `{ ok: false, ... }`, `{ allow: false, ... }`
+  - no decision: `undefined` / `null` / unrecognized values
+- On deny, `canActor` returns failure envelope:
+  - `{ ok: false, error: { code: 'ACTOR_KIND_FORBIDDEN', message?, details? } }`
 - `metadata.actorKindsAllowed` contract:
   - optional string array, default `['player', 'npc']`
-  - evaluated before command-level capture checks and entity-level policy hooks
+  - evaluated after `canActor` and before command-level capture checks and entity-level policy hooks
   - if actor kind is disallowed, capture returns deny code `ACTOR_KIND_FORBIDDEN` and Plan is not executed
 - Runtime policy hooks are role-routed:
   - direct role: `canDirect(actor, verbId, context)`
   - indirect role: `canIndirect(actor, verbId, relationTokenCanonical, context)`
-- `canDirect`/`canIndirect` are synchronous.
+- `canActor`/`canDirect`/`canIndirect` are synchronous.
 - `canDirect`/`canIndirect` are evaluated only on bound direct/indirect entities.
 - Item/room/area/player/world YAML definitions remain data-only; they do not embed executable hook functions.
 - Declarative policy fallback may be supplied through metadata (for example `metadata.permissions`), evaluated by shared capture helpers.
-- Special-case runtime policy logic may be implemented in code behaviors/scripts that attach `canDirect` / `canIndirect`.
+- Special-case runtime policy logic may be implemented in code behaviors/scripts that attach `canActor`, `canDirect`, or `canIndirect`.
 
 Determinism constraints for capture hooks:
 
@@ -207,16 +220,24 @@ Rules:
 
 Optional entity plan-contribution surface:
 
-After a successful command result envelope, runtime optionally consults bound
-entities for Plan-phase contributions:
+After a successful command result envelope, runtime optionally consults the
+actor and then bound entities for Plan-phase contributions:
 
+- actor hook: `planActor(actor, verbId, context)`
 - direct target hook: `planDirect(actor, verbId, context)`
 - indirect target hook: `planIndirect(actor, verbId, relationTokenCanonical, context)`
 
+Discovery:
+
+- `planActor` is discovered directly on the actor object itself; no registry or adapter layer is required
+- `planActor` keeps the same argument shape as other entity hook surfaces for family consistency, even though the actor is also the receiver and is therefore passed redundantly
+- implementations may ignore the first argument and use `this` if preferred
+
 Evaluation order is fixed:
 
-1. direct contribution
-2. indirect contribution
+1. actor contribution
+2. direct contribution
+3. indirect contribution
 
 Contribution return handling:
 
@@ -279,7 +300,7 @@ Rules:
 
 - Commit applies merged operations from:
   - command base plan (`result.plan.operations`)
-  - plan contribution operations (`planDirect` / `planIndirect`)
+  - plan contribution operations (`planActor` / `planDirect` / `planIndirect`)
 - React does not contribute mutation operations (attempts are ignored).
 - Apply with compensating rollback:
   - mutator applies operations in order
@@ -314,7 +335,7 @@ Rules:
   - instruction failure is logged and counted
   - remaining instructions continue
   - command outcome remains success when commit already succeeded
-- Base-success suppression authority is Plan-only (`planDirect` / `planIndirect`); React cannot suppress command success render.
+- Base-success suppression authority is Plan-only (`planActor` / `planDirect` / `planIndirect`); React cannot suppress command success render.
 
 Non-command render path:
 
@@ -327,7 +348,7 @@ Non-command render path:
 Three hook kinds are used across phases:
 
 - Policy hook (capture): allow/deny only.
-- Plan contribution hook (Plan): data-only contribution, no veto, no direct mutation/output (`planDirect`, `planIndirect`); may contribute render-assembly policy (`renderPolicy.replaceSuccess`).
+- Plan contribution hook (Plan): data-only contribution, no veto, no direct mutation/output (`planActor`, `planDirect`, `planIndirect`); may contribute render-assembly policy (`renderPolicy.replaceSuccess`).
 - React hook (reaction): data-only render contribution, no veto, no direct mutation/output (command metadata `reactions` functions).
 
 Accepted-next naming (not wired in current runtime):
