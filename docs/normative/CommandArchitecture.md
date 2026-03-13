@@ -111,7 +111,7 @@ Rules:
   - allow: `true`, `'allow'`, `{ ok: true }`, `{ allow: true }`
   - deny: `false`, `'deny'`, deny message string, `{ ok: false, ... }`, `{ allow: false, ... }`
   - no decision: `undefined` / `null` / unrecognized values
-- On deny, `canActor` returns failure envelope:
+- On deny, the runtime normalizes the `canActor` result to a failure envelope:
   - `{ ok: false, error: { code: 'ACTOR_KIND_FORBIDDEN', message?, details? } }`
 - `metadata.actorKindsAllowed` contract:
   - optional string array, default `['player', 'npc']`
