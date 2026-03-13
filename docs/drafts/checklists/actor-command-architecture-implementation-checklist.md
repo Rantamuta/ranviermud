@@ -57,13 +57,13 @@
     - "Existing `metadata.actorKindsAllowed` behavior remains intact." (`Acceptance Criteria`)
   - Validation handoff: `S2`, `unit`
 
-- [ ] `C06` [dispatch] Add actor-side Plan contribution collection in `bundles/bundle-rantamuta/lib/session/command-dispatch.js` so `actor.planActor(actor, verbId, context)` is discovered on the actor object and fed through the same contribution-consumption path used by target Plan hooks, including the maintainer comment about the intentionally redundant actor argument.
+- [x] `C06` [dispatch] Add actor-side Plan contribution collection in `bundles/bundle-rantamuta/lib/session/command-dispatch.js` so `actor.planActor(actor, verbId, context)` is discovered on the actor object and fed through the same contribution-consumption path used by target Plan hooks, including the maintainer comment about the intentionally redundant actor argument.
   - Trace:
     - "`planActor` should be symmetrical and unsurprising with respect to `planDirect` and `planIndirect`: discovery, invocation, contribution merge behavior, and invalid-shape handling should follow the same runtime patterns already used for direct and indirect Plan hooks." (`Proposed Behavior`)
     - "the runtime implementation should include a short maintainer comment explaining that implementations may ignore the first argument and use `this` if preferred" (`Proposed Behavior`)
   - Validation handoff: `S3`, `unit`
 
-- [ ] `C07` [dispatch] Update `collectTargetPlanContributions` in `bundles/bundle-rantamuta/lib/session/command-dispatch.js` or the extracted equivalent helper so actor contributions merge in the approved order before direct and indirect target contributions and participate in the same Commit/Render flow.
+- [x] `C07` [dispatch] Update `collectTargetPlanContributions` in `bundles/bundle-rantamuta/lib/session/command-dispatch.js` or the extracted equivalent helper so actor contributions merge in the approved order before direct and indirect target contributions and participate in the same Commit/Render flow.
   - Trace:
     - "Planned merge order: 1. base command result 2. `planActor` 3. `planDirect` 4. `planIndirect`." (`Proposed Behavior`)
     - "`planActor.plan.operations` are appended into the same merged Commit plan used by `planDirect` and `planIndirect`" (`Proposed Behavior`)
