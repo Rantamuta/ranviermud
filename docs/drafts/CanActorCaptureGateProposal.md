@@ -5,6 +5,7 @@
 - Status: `draft-v1`
 - Scope: Optional actor-level capture hook for command eligibility
 - Binding: no
+- Superseded by: `docs/plans/actorCommandArchitecturePlan.md`
 - Related:
   - `docs/normative/CommandArchitecture.md`
   - `docs/normative/NpcActionArchitecture.md`

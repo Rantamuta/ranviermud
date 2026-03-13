@@ -193,7 +193,17 @@ Capture must:
 
 ### Privilege Enforcement
 
-Privilege decisions are enforced in Capture via command metadata.
+Privilege decisions are enforced in Capture via actor-side and command-metadata policy surfaces.
+
+Additive actor hook:
+
+```js
+actor.canActor(actor, verbId, context)
+```
+
+- If present, `canActor` executes in Capture before command metadata gating.
+- `canActor` deny normalizes to `ACTOR_KIND_FORBIDDEN`.
+- `canActor` is additive; command metadata gating remains canonical and valid.
 
 Example:
 
@@ -285,6 +295,7 @@ Illustrative deferred shape:
 
 - Some commands may be NPC-only.
 - NPC-only commands MUST declare `metadata.actorKindsAllowed: ['npc']`.
+- Actor-authored `canActor` hooks MAY further allow/deny in Capture, but they do not replace command-local metadata gating.
 - Eligibility MUST be enforced in Capture via `ACTOR_KIND_FORBIDDEN`.
 - v1 behavior for NPC-only commands uses Capture veto; Phase-0 command lookup hiding is deferred.
 - Planner MAY assert defensively; if reached with a disallowed actor kind, it should fail closed with `ACTOR_KIND_FORBIDDEN`.
