@@ -615,81 +615,21 @@ Matching behavior is deterministic, ambiguity behavior is deterministic, and leg
 - Affected compatibility boundary:
 
   - bundle-layer command interpretation and the normative command-flow or entity-binding contracts consumed by bundle commands.
-- Normative updates required if implemented:
+- Normative contract status:
 
   - `docs/normative/CommandArchitecture.md`
   - `docs/normative/EntityResolution.md`
-- `CHANGELOG.md` update required if implemented:
+- ADR status:
+
+  - proposed ADR recorded at `docs/drafts/adr/ADR-0003-verb-local-syntax-matching.md`
+- `CHANGELOG.md` update required on runtime implementation:
 
   - yes, because command interpretation behavior is player-visible and runtime-visible.
-- ADR required if implemented:
+- Current alignment:
 
-  - yes. This plan changes architecture boundaries and the long-term command-interpretation model, so it requires a proposed ADR per `docs/ADR_POLICY.md` before or alongside implementation approval.
-
-## Conflicts / Maintainer Pushback
-
-### Conflict 1: current normative phase model does not match this design
-
-- Current normative contract:
-
-  - `docs/normative/CommandArchitecture.md` defines `Receive Input -> Entity Resolution -> Capture -> Plan -> React -> Commit -> Render/Dispatch`.
-- Design-driven plan:
-
-  - this plan uses `Receive Input -> Parsing and Entity Resolution -> Capture -> Plan -> React -> Commit -> Render`.
-- Why this matters:
-
-  - implementing this design without updating the normative contract would create spec drift around where command meaning is established.
-- Safer alternative:
-
-  - update the normative command architecture in the same approved change set so the architecture record and runtime behavior move together.
-- Tradeoff:
-
-  - this increases documentation and review scope, but avoids an implementation that is correct only relative to a draft.
-- Recommendation:
-
-  - do not implement this plan without the required normative update.
-
-### Conflict 2: current normative entity-resolution rule model conflicts with ordered syntax strings
-
-- Current normative contract:
-
-  - `docs/normative/EntityResolution.md` defines keyed rule declarations such as `intransitive`, `direct`, `indirect`, and `directIndirect`, and states that ordered rule arrays are not used.
-- Design-driven plan:
-
-  - this plan uses ordered arrays of compact verb-local syntax strings compiled into matcher patterns.
-- Why this matters:
-
-  - the declaration model, rule-selection mechanism, relation handling contract, and ambiguity contract all change. Implementing the design without replacing the normative rule model would leave the repo with incompatible sources of truth.
-- Safer alternative:
-
-  - replace the normative rule-declaration contract as part of the same approved change and describe how the interpretation artifact supersedes the keyed-form model.
-- Tradeoff:
-
-  - this is a larger contract change, but it is required if the design is to remain the source of truth.
-- Recommendation:
-
-  - treat this as a contract rewrite, not as a local refactor.
-
-### Conflict 3: ADR policy requires an architecture record for this change
-
-- Current repo policy:
-
-  - `docs/ADR_POLICY.md` requires an ADR when a task changes architecture boundaries or long-term project constraints.
-- Design-driven plan:
-
-  - verb-local syntax matching becomes the primary command-shape model and changes the architecture wording for interpretation.
-- Why this matters:
-
-  - skipping the ADR would violate repo process for architecture-level changes and make later reasoning about the shift harder.
-- Safer alternative:
-
-  - create a proposed ADR that records the move from keyed or global parsing assumptions to verb-local ordered syntax matching before implementation begins.
-- Tradeoff:
-
-  - this adds one more review artifact, but preserves rationale and approval history.
-- Recommendation:
-
-  - require the ADR as part of implementation approval.
+  - the normative command-flow contract has been updated to make `Parsing and Entity Resolution` explicit in `docs/normative/CommandArchitecture.md`
+  - the normative interpretation contract has been updated to use ordered verb-local syntax rules in `docs/normative/EntityResolution.md`
+  - the architecture rationale has been recorded as a proposed ADR in `docs/drafts/adr/ADR-0003-verb-local-syntax-matching.md`
 
 ## Appendix: Current Diegetic Verbs and Putative Rules
 
