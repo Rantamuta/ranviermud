@@ -34,7 +34,8 @@
     "bench:scenario": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-scenario.js",
     "bench:all": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-all.js",
     "bench:record": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-record.js",
-    "bench:check": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-check.js"
+    "bench:check": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-check.js",
+    "syntax:cli": "node ./util/verb-local-syntax-cli.js"
   },
   "dependencies": {
     "commander": "^2.19.0",
