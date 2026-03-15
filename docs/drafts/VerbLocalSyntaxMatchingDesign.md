@@ -229,6 +229,8 @@ Entity-bearing slots participate in candidate viability during matching.
 
 A candidate rule may be rejected if required entity-bearing slots cannot be interpreted according to the slot type.
 
+When this happens, the rule still ends as non-viable, but the matcher may preserve a more specific underlying entity-bearing failure reason for diagnostics or tooling. For example, an implementation may distinguish `ENTITY_SLOT_MISSING` from `ENTITY_SLOT_NO_VIABLE_BINDING` instead of collapsing every rejected entity-bearing span into one generic slot failure.
+
 ### Capture semantics
 
 * quoted and unquoted text is preserved as opaque spans

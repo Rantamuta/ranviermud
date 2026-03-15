@@ -218,6 +218,8 @@ Each rule evaluation must end in exactly one of these outcomes:
   - a required fixed-width slot does not satisfy its slot contract, or
   - a required rule-local semantic check fails.
 
+`nonViable` remains the top-level outcome class, but implementations may preserve more specific underlying entity-bearing failure reasons for diagnostics or tooling. For example, a rule may remain `nonViable` while still reporting a specific cause such as `ENTITY_SLOT_MISSING` or `ENTITY_SLOT_NO_VIABLE_BINDING` rather than collapsing all such cases into one generic variable-slot failure.
+
 ### Rule Selection Algorithm
 
 The matcher must select rules as follows:
@@ -755,4 +757,3 @@ Once:
 this work should stop.
 
 Further command-surface redesign should be treated as separate follow-on work, not bundled into this migration.
-

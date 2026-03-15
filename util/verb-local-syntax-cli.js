@@ -53,9 +53,9 @@ function tokenize(input) {
   return input.split(' ');
 }
 
-function compileRule(ruleText) {
+function compileRule(ruleText, compiledRuleId) {
   if (ruleText === '(empty)') {
-    return { ruleText, atoms: [] };
+    return { ruleText, compiledRuleId, atoms: [] };
   }
 
   const atoms = ruleText.split(' ').map((raw) => {
@@ -66,20 +66,59 @@ function compileRule(ruleText) {
     return { type: 'literal', value: raw };
   });
 
-  return { ruleText, atoms };
+  return { ruleText, compiledRuleId, atoms };
 }
 
 function compileVerbRules(ruleMap) {
-  return Object.fromEntries(Object.entries(ruleMap).map(([verb, rules]) => [verb, rules.map(compileRule)]));
+  return Object.fromEntries(
+    Object.entries(ruleMap).map(([verb, rules]) => [
+      verb,
+      rules.map((ruleText, ruleIndex) => compileRule(ruleText, `${verb}:${ruleIndex}`)),
+    ]),
+  );
 }
 
-function tryMatchRule(rule, tokens) {
+function isEntityBearingSlot(kind) {
+  return kind === 'ENTITY' || kind === 'LIVING' || kind === 'EXIT';
+}
+
+function cloneCandidates(candidates) {
+  return candidates.map((candidate) => ({ ...candidate }));
+}
+
+function cloneResolution(result) {
+  return {
+    kind: result.kind,
+    status: result.status,
+    surface: result.surface || null,
+    selected: result.selected ? { ...result.selected } : null,
+    candidates: cloneCandidates(result.candidates || []),
+  };
+}
+
+function cloneCapture(capture) {
+  return {
+    kind: capture.kind,
+    start: capture.start,
+    end: capture.end,
+    tokens: capture.tokens.slice(),
+  };
+}
+
+function tryMatchRule(rule, tokens, world) {
   const captures = [];
+  const slotStates = [];
 
   function recurse(atomIndex, tokenIndex) {
     if (atomIndex === rule.atoms.length) {
       if (tokenIndex === tokens.length) {
-        return { ok: true, captures: captures.slice() };
+        const outcome = slotStates.some((entry) => entry.status === 'ambiguous') ? 'ambiguous' : 'success';
+        return {
+          ok: true,
+          outcome,
+          captures: captures.map(cloneCapture),
+          slotStates: slotStates.map(cloneResolution),
+        };
       }
 
       return { ok: false, reason: 'UNCONSUMED_TOKENS' };
@@ -105,28 +144,78 @@ function tryMatchRule(rule, tokens) {
       }
 
       captures.push({ kind: atom.kind, start: tokenIndex, end: tokenIndex + 1, tokens: [token] });
+      slotStates.push({ kind: atom.kind, status: 'resolved' });
       const next = recurse(atomIndex + 1, tokenIndex + 1);
       if (next.ok) {
         return next;
       }
 
       captures.pop();
+      slotStates.pop();
       return next;
     }
 
     if (VARIABLE_WIDTH_SLOTS.has(atom.kind)) {
       const minimumRemaining = countRemainingMinimumTokens(rule.atoms, atomIndex + 1);
       const maxEndExclusive = tokens.length - minimumRemaining;
+      let firstAmbiguous = null;
+      let firstSpecificFailure = null;
+      let sawResolvedEntitySpan = false;
+      let sawMissingEntitySpan = false;
 
       for (let endExclusive = maxEndExclusive; endExclusive > tokenIndex; endExclusive -= 1) {
         const span = tokens.slice(tokenIndex, endExclusive);
         captures.push({ kind: atom.kind, start: tokenIndex, end: endExclusive, tokens: span });
+        if (isEntityBearingSlot(atom.kind)) {
+          const resolution = resolveEntityCapture({ kind: atom.kind, tokens: span }, world);
+          if (resolution.status === 'missing') {
+            sawMissingEntitySpan = true;
+            captures.pop();
+            continue;
+          }
+
+          sawResolvedEntitySpan = true;
+          slotStates.push({ kind: atom.kind, ...resolution });
+        } else {
+          slotStates.push({ kind: atom.kind, status: 'resolved' });
+        }
+
         const next = recurse(atomIndex + 1, endExclusive);
         if (next.ok) {
-          return next;
+          if (next.outcome === 'success') {
+            return next;
+          }
+
+          if (!firstAmbiguous) {
+            firstAmbiguous = next;
+          }
+        } else if (
+          !firstSpecificFailure &&
+          (next.reason === 'ENTITY_SLOT_MISSING' || next.reason === 'ENTITY_SLOT_NO_VIABLE_BINDING')
+        ) {
+          firstSpecificFailure = next;
         }
 
         captures.pop();
+        slotStates.pop();
+      }
+
+      if (firstAmbiguous) {
+        return firstAmbiguous;
+      }
+
+      if (firstSpecificFailure) {
+        return firstSpecificFailure;
+      }
+
+      if (isEntityBearingSlot(atom.kind)) {
+        if (sawMissingEntitySpan && !sawResolvedEntitySpan) {
+          return { ok: false, reason: 'ENTITY_SLOT_MISSING' };
+        }
+
+        if (sawResolvedEntitySpan) {
+          return { ok: false, reason: 'ENTITY_SLOT_NO_VIABLE_BINDING' };
+        }
       }
 
       return { ok: false, reason: 'VARIABLE_SLOT_NO_SPAN' };
@@ -245,7 +334,7 @@ function deriveRoleMapping(captures, rule) {
     const capture = captures[slotCount];
     const prev = rule.atoms[atomIndex - 1];
     let role = null;
-    if (capture && ['ENTITY', 'LIVING', 'EXIT'].includes(capture.kind)) {
+    if (capture && isEntityBearingSlot(capture.kind)) {
       role = prev && prev.type === 'literal' ? 'indirect' : 'direct';
     }
 
@@ -257,12 +346,13 @@ function deriveRoleMapping(captures, rule) {
 }
 
 function evaluateRule(rule, tokens, world) {
-  const structural = tryMatchRule(rule, tokens);
+  const structural = tryMatchRule(rule, tokens, world);
   if (!structural.ok) {
     return {
       outcome: 'nonViable',
       reason: structural.reason,
       ruleText: rule.ruleText,
+      compiledRuleId: rule.compiledRuleId,
     };
   }
 
@@ -275,40 +365,34 @@ function evaluateRule(rule, tokens, world) {
 
   const roleMapping = deriveRoleMapping(structural.captures, rule);
   const slotResults = captures.map((capture, slotIndex) => {
-    if (!['ENTITY', 'LIVING', 'EXIT'].includes(capture.kind)) {
-      return { slotIndex, kind: capture.kind, status: 'resolved' };
-    }
-
-    const resolved = resolveEntityCapture(structural.captures[slotIndex], world);
-    return {
+    const base = {
       slotIndex,
       kind: capture.kind,
       role: roleMapping[slotIndex] ? roleMapping[slotIndex].role : null,
-      status: resolved.status,
-      surface: resolved.surface,
-      selected: resolved.selected || null,
-      candidates: resolved.candidates,
+      tokenRange: capture.tokenRange,
+    };
+    const state = structural.slotStates[slotIndex];
+
+    if (!isEntityBearingSlot(capture.kind)) {
+      return { ...base, status: 'resolved' };
+    }
+
+    return {
+      ...base,
+      status: state.status,
+      surface: state.surface,
+      selected: state.selected || null,
+      candidates: cloneCandidates(state.candidates || []),
     };
   });
 
-  const hasMissing = slotResults.some((entry) => entry.status === 'missing');
   const ambiguous = slotResults.filter((entry) => entry.status === 'ambiguous');
 
-  if (hasMissing) {
-    return {
-      outcome: 'nonViable',
-      reason: 'ENTITY_SLOT_MISSING',
-      ruleText: rule.ruleText,
-      captures,
-      roleMapping,
-      slotResults,
-    };
-  }
-
-  if (ambiguous.length > 0) {
+  if (structural.outcome === 'ambiguous') {
     return {
       outcome: 'ambiguous',
       ruleText: rule.ruleText,
+      compiledRuleId: rule.compiledRuleId,
       captures,
       roleMapping,
       ambiguity: ambiguous,
@@ -319,6 +403,7 @@ function evaluateRule(rule, tokens, world) {
   return {
     outcome: 'success',
     ruleText: rule.ruleText,
+    compiledRuleId: rule.compiledRuleId,
     captures,
     roleMapping,
     slotResults,
