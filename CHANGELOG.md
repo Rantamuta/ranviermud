@@ -4,6 +4,33 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Verb-local syntax matching for diegetic commands
+
+Summary:
+
+- Replaced bundle-layer structural command parsing with verb-local ordered `syntaxRules` matching for diegetic commands.
+- Added linked interpretation artifacts that match syntax and entity-bearing slots together, including deterministic ambiguity data for downstream clarification.
+- Migrated bundle diegetic verbs to the new declaration model, including addressed `say`, `put ... on ...`, and `take ... from ...` forms.
+Why:
+- The previous global relation-word parser could not express verb-specific syntax cleanly and was especially awkward for addressed speech.
+Impact:
+- Bundle diegetic commands now resolve syntax by per-verb declaration order instead of shared structural inference.
+- `Receive Input` now stops at canonicalization, tokenization, and exact verb identification.
+- Player-visible command behavior now includes verb-local addressed `say`, explicit `take ... from ...`, and explicit `put ... on ...` interpretation.
+Migration/Action:
+- Bundle command authors should declare ordered `metadata.syntaxRules` and rely on the shared interpretation artifact instead of legacy structural parsing assumptions.
+References:
+- `bundles/bundle-rantamuta/lib/parse-input.js`
+- `bundles/bundle-rantamuta/lib/session/verb-local-syntax.js`
+- `bundles/bundle-rantamuta/lib/session/entity-resolution.js`
+- `bundles/bundle-rantamuta/lib/session/command-dispatch.js`
+- `bundles/bundle-rantamuta/commands/say.js`
+- `bundles/bundle-rantamuta/commands/put.js`
+- `bundles/bundle-rantamuta/commands/take.js`
+- `docs/normative/CommandArchitecture.md`
+- `docs/normative/EntityResolution.md`
+Timestamp: 2026.03.15 19:00
+
 ### Actor-side command Capture and Plan hooks
 
 Summary:
