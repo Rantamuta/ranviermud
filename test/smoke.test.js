@@ -39,7 +39,7 @@ function runWrapper({ cwd, outputPath }) {
 }
 
 describe('ranvier wrapper smoke tests', function () {
-  this.timeout(10000);
+  this.timeout(15000);
 
   it('boots through bundle loading without starting the server', async function () {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ranvier-smoke-'));

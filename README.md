@@ -53,7 +53,20 @@ This is a checklist outlining the scope of this work and the current status.
 * [x] Establish a clean install baseline (no critical vulnerabilities on `npm install`)
 * [x] Audit and modernize remaining dependencies incrementally
 
-### Documentation
+#
+## Verb-local syntax prototype CLI
+
+This repository includes an exploratory CLI harness for evaluating verb-local syntax matching behavior without wiring into the production runtime parser/dispatcher flow.
+
+Run it with one player-input example:
+
+```bash
+npm run syntax:cli -- "say hello there to bob"
+```
+
+The CLI always prints pretty JSON that includes the resolved verb, outcome (`success`, `ambiguous`, or `nonViable`), selected rule when available, and deterministic artifact details from the prototype matcher/resolver.
+
+## Documentation
 
 * [x] Clarify project scope and intent (this README)
 * [x] Document baseline bundle set and expected layout
@@ -79,6 +92,19 @@ Ranvier is a [MUD](https://en.wikipedia.org/wiki/MUD) game engine whose goal is 
 * Effects e.g., buffs/debuffs
 * Quest system allowing for starting/progress/completion from any event in the game
 * Communication channels with custom audiences
+
+
+## Verb-local syntax prototype CLI
+
+This repository includes an exploratory CLI harness for evaluating verb-local syntax matching behavior without wiring into the production runtime parser/dispatcher flow.
+
+Run it with one player-input example:
+
+```bash
+npm run syntax:cli -- "say hello there to bob"
+```
+
+The CLI always prints pretty JSON that includes the resolved verb, outcome (`success`, `ambiguous`, or `nonViable`), selected rule when available, and deterministic artifact details from the prototype matcher/resolver.
 
 ## Documentation
 

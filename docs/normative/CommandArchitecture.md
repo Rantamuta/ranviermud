@@ -1,12 +1,12 @@
 # Command Architecture
 
-This document defines the end-to-end command data flow for the bundle-layer runtime, from player input intake through validation, planning, mutation commit, and final output delivery.
+This document defines the end-to-end command data flow for the bundle-layer runtime, from player input intake through interpretation, validation, planning, mutation commit, and final output delivery.
 
-It presents a phase-based architecture centered on deterministic command planning and transactional execution. The model allows multiple game entities to participate in command handling in a controlled way: specific entities can veto actions during policy evaluation, and then contribute post-validation reactions once an action is valid, without bypassing atomic commit guarantees.
+It presents a phase-based architecture centered on deterministic command interpretation, planning, and transactional execution. The model allows multiple game entities to participate in command handling in a controlled way: specific entities can veto actions during policy evaluation, and then contribute post-validation reactions once an action is valid, without bypassing atomic commit guarantees.
 
 ## Status
 
-- Status: normative-v1
+- Status: normative-v2
 - Scope: Bundle-layer command execution flow
 - Binding: yes
 - Related:
@@ -32,7 +32,7 @@ Messaging contract boundary:
 Execution phases are:
 
 0. Receive Input
-1. Entity Resolution
+1. Parsing and Entity Resolution
 2. Capture
 3. Plan
 4. React
@@ -44,7 +44,7 @@ Execution phases are:
 Rules:
 
 - Accept one actor-issued input payload for the active session.
-- Canonicalize shorthand input using deterministic ordered rewrite rules before parse/token binding.
+- Canonicalize shorthand input using deterministic ordered rewrite rules before tokenization and verb-key resolution.
   - Rule order is authoritative (first-match wins).
   - Canonicalization is pure string-to-string transform with no side effects.
   - Current canonical shorthand examples:
@@ -52,30 +52,36 @@ Rules:
     - `east` -> `go east`
     - `l` -> `look`
     - `x <thing>` -> `look <thing>`
-- Normalize and parse canonical input into command artifact/context.
-- Parse artifact must preserve both:
+- Preserve both:
   - `actorInput` (raw user text, unexpanded)
   - `canonicalInput` (post-canonicalization text)
+- Tokenize or lex canonical input.
 - Resolve intent to a command by exact command/alias key match.
 - Prefix matching for command lookup is not allowed.
-- If no command matches, render unknown-intent feedback and stop before Entity Resolution.
+- No structural command interpretation occurs here beyond identifying the verb key.
+- If no command matches, render unknown-intent feedback and stop before Parsing and Entity Resolution.
 - No world mutation.
 - No audience output.
-- Produces the parse/rule context consumed by Entity Resolution.
+- Produces the intake artifact consumed by Parsing and Entity Resolution.
 
-### 1) Entity Resolution (binding phase)
+### 1) Parsing and Entity Resolution (interpretation phase)
 
-Execute Entity Resolution as specified in [EntityResolution.md](EntityResolution.md).
+Execute Parsing and Entity Resolution as specified in [EntityResolution.md](EntityResolution.md).
 
 Rules:
 
-- Resolve parse spans to concrete world entities before policy hooks.
-- Produce bound entities for direct and indirect roles, plus any contextual entities.
+- Load the resolved verb's ordered syntax rules.
+- Match those rules against the post-verb token stream in declaration order.
+- Treat literal connector words as structural only when declared by the rule.
+- Resolve entity-bearing slots as part of rule viability during matching, not as a detached post-pass.
+- Produce either:
+  - a final interpretation artifact for downstream phases, or
+  - a structured ambiguity artifact for downstream clarification handling
 - Remain deterministic for identical input and state.
 - No world mutation.
 - No audience output.
 
-Capture must consume these concrete bindings; it must not re-run entity resolution logic.
+Capture and later phases must consume the completed interpretation artifact. They must not re-run syntax matching or entity resolution logic.
 
 ### 2) Capture (veto phase)
 
@@ -361,16 +367,16 @@ This split prevents veto/mutation ambiguity and keeps behavior predictable.
 ## Immediate Application To `put`
 
 - `put.js` lives in Plan.
-- Span-to-entity binding happens in Entity Resolution before Capture.
+- Syntax matching and span-to-entity binding happen in Parsing and Entity Resolution before Capture.
 - Container/object/player/room/quest/world policy checks run in Capture.
 - Post-plan narrative and quest/world effects accumulate in React.
 - Mutator executes one merged plan in Commit.
 
 ## Immediate Application To `go`
 
-- `go.js` lives in Plan and declares direct-only form with direct scope `room.exits`.
-- Direction text is resolved to a concrete exit entity in Entity Resolution.
-- `go.js` performs command-level validation and destination binding, then returns an empty base success envelope (`plan.operations: []`, `render.messages: []`).
+- `go.js` lives in Plan and declares the syntax rule `EXIT`.
+- Direction text is resolved to a concrete exit entity in Parsing and Entity Resolution.
+- `go.js` performs command-level validation and returns an empty base success envelope (`plan.operations: []`, `render.messages: []`) while exit-directed planning remains owned by the downstream command and plan-contribution surfaces.
 - Exit/world policy checks run in Capture and can veto via metadata or runtime hooks.
 - Exit candidate hook composition owns go-door ergonomics:
   - fallback `canDirect` denies locked movement with `GO_EXIT_LOCKED` when no matching key is carried
