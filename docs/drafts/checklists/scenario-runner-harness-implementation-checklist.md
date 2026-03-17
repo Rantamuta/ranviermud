@@ -68,7 +68,7 @@
     - "The migrated tests reuse one booted runtime per file and maintain deterministic isolation through explicit cleanup." (`Acceptance Criteria`)
   - Validation handoff: `S3`, `behavior-level regression evidence`
 
-- [ ] `C04` [boundary] When booting the shared runtime inside the main test process contaminates other suites, move the once-per-file harness behind a long-lived child-process boundary rather than relying on broad in-process global-state reset.
+- [x] `C04` [boundary] When booting the shared runtime inside the main test process contaminates other suites, move the once-per-file harness behind a long-lived child-process boundary rather than relying on broad in-process global-state reset.
   - Trace:
     - "Allow that shared harness to use a long-lived child-process boundary when booting the runtime inside the main test process would leak cross-suite global state." (`In Scope`)
     - "Prefer a long-lived child-process harness over fragile in-process global-state reset when the shared runtime contaminates the main test process." (`Constraints`)
