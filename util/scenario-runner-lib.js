@@ -224,6 +224,24 @@ function collectScenarioConfig(args, root) {
   };
 }
 
+function parseRunnerArgs(args, root) {
+  const scenarioConfig = collectScenarioConfig(args, root);
+  const parsedCommands = scenarioConfig.commandLines.map(parseCommandLine).filter(Boolean);
+  if (!parsedCommands.length) {
+    throw new Error('No commands were provided to execute');
+  }
+
+  return {
+    commandLines: scenarioConfig.commandLines,
+    parsedCommands,
+    roomRef: scenarioConfig.roomRef,
+    seedRefs: scenarioConfig.seedRefs,
+    failOnUnknown: args.includes('--failOnUnknown'),
+    jsonOutput: args.includes('--json'),
+    includeWhitespace: args.includes('--whitespace'),
+  };
+}
+
 async function bootEngine(root, config) {
   const Ranvier = require('ranvier');
   Ranvier.Data.setDataPath(ensureTrailingSeparator(path.join(root, 'data')));
@@ -624,6 +642,210 @@ function resolveMovementCommand(player, command) {
   return null;
 }
 
+function getHelpText() {
+  return [
+    'Usage: node util/scenario-runner.js [--command "look"] [--scenario <path>] [--room "area:roomId"] [--failOnUnknown] [--json]',
+    '       node util/scenario-runner.js [--command <name>] [--args "<args>"]',
+    '       node util/scenario-runner.js [--seedInventory "<area:itemId>"] [--seedRoomItem "<area:itemId>"]',
+    '       node util/scenario-runner.js --playerEmit:<event> [args]',
+    '       --scenario             load directives from .scenario files',
+    '       --failOnUnknown        exit non-zero if any unknown commands are encountered',
+    '       --json                 emit machine-readable JSON output',
+    '       --whitespace           with --json, keep blank/ANSI-only output lines',
+    '       --seedInventory        seed an item into player inventory (repeatable)',
+    '       --seedRoomItem         seed an item into the current room (repeatable)',
+    'Boots the engine in no-transport mode, loads bundles, and executes commands through InputEvent "main".',
+    'Scenario files are key/value directives: command, room, seedInventory, seedRoomItem.',
+    'Unknown flags are ignored.',
+  ].join('\n');
+}
+
+async function runScenarioCli(args, options = {}) {
+  const root = options.root || process.cwd();
+  const stdout = options.stdout || process.stdout;
+  const stderr = options.stderr || process.stderr;
+  const parseInput = options.parseInput;
+
+  if (args.includes('--help')) {
+    stdout.write(`${getHelpText()}\n`);
+    return 0;
+  }
+
+  if (typeof parseInput !== 'function') {
+    throw new TypeError('runScenarioCli requires options.parseInput');
+  }
+
+  const request = parseRunnerArgs(args, root);
+  const events = [];
+  const emitEvent = (event) => {
+    if (request.jsonOutput) {
+      events.push(event);
+    }
+  };
+  const emitOutput = request.jsonOutput
+    ? (text) => {
+      const line = String(text);
+      if (!request.includeWhitespace && isBlankOrAnsiOnly(line)) {
+        return;
+      }
+      emitEvent({ type: 'output', text: line });
+    }
+    : null;
+  const logCapture = request.jsonOutput ? createLogCapture(emitEvent, stdout, stderr) : null;
+
+  try {
+    const config = loadConfig(root);
+    const GameState = await bootEngine(root, config);
+    const output = [];
+    const player = createFakePlayer(output, GameState);
+    const inputListeners = getMainInputListeners(GameState);
+    if (inputListeners.length === 0) {
+      throw new Error('No input-event listeners are registered for "main"');
+    }
+    const inputSession = createInGameSession(player);
+
+    if (request.roomRef) {
+      const room = GameState.RoomManager.getRoom(request.roomRef);
+      if (!room) {
+        if (logCapture) {
+          logCapture.restore();
+        }
+        stderr.write(`[error] room not found: ${request.roomRef}\n`);
+        return 1;
+      }
+
+      player.room = room;
+      if (typeof room.addPlayer === 'function') {
+        room.addPlayer(player);
+      }
+    }
+
+    if (player && typeof player.hydrate === 'function' && !player.__hydrated) {
+      player.hydrate(GameState);
+    }
+
+    applySeeds(GameState, player, request.seedRefs, emitEvent);
+
+    if (request.jsonOutput) {
+      emitEvent({ type: 'start', commands: request.parsedCommands.length });
+    }
+    let unknownCount = 0;
+
+    for (let i = 0; i < request.parsedCommands.length; i += 1) {
+      const commandSpec = request.parsedCommands[i];
+      if (!request.jsonOutput) {
+        stdout.write(`${commandSpec.raw}\n`);
+      }
+
+      let runEvent = null;
+      if (request.jsonOutput) {
+        runEvent = { type: 'run', index: i + 1, raw: commandSpec.raw };
+        emitEvent(runEvent);
+      }
+
+      if (commandSpec.type === 'playerEmit') {
+        if (commandSpec.event === 'move') {
+          const direction = (commandSpec.args || '').trim().toLowerCase();
+          const movement = direction ? resolveMovementCommand(player, direction) : null;
+          const roomExit = movement ? movement.roomExit : null;
+          player.emit('move', { roomExit, originalCommand: direction });
+        } else {
+          player.emit(commandSpec.event, commandSpec.args);
+        }
+        if (runEvent) {
+          Object.assign(runEvent, {
+            parse: {
+              intentToken: null,
+              canonicalInput: '',
+              normalizedInput: '',
+              primaryTargetSpan: null,
+              relationToken: null,
+              secondaryTargetSpan: null,
+            },
+            lookup: {
+              commandFound: false,
+              commandName: null,
+              alias: null,
+            },
+            phases: {
+              input: { ok: true, code: 'PLAYER_EVENT' },
+            },
+            outcome: {
+              ok: true,
+              phase: 'success',
+              code: 'PLAYER_EVENT',
+              errorTag: null,
+            },
+          });
+        }
+        flushOutput(output, emitOutput, stdout.write.bind(stdout));
+        continue;
+      }
+
+      const parsedInput = parseInput(commandSpec.raw);
+      const intentToken = typeof parsedInput.intentToken === 'string'
+        ? parsedInput.intentToken
+        : resolveCanonicalIntent(parsedInput, commandSpec.raw);
+      const { command, alias } = resolveCommandExact(GameState, intentToken);
+      const fallbackLookup = {
+        commandFound: !!command,
+        commandName: command && typeof command.name === 'string' ? command.name : (intentToken || null),
+        alias: alias || null,
+      };
+
+      for (const listener of inputListeners) {
+        await listener(inputSession, commandSpec.raw);
+      }
+
+      if (runEvent) {
+        Object.assign(runEvent, mapRunEvent(parsedInput, fallbackLookup));
+        const outcome = runEvent.outcome && typeof runEvent.outcome === 'object'
+          ? runEvent.outcome
+          : null;
+        if (outcome && outcome.code === 'UNKNOWN_COMMAND') {
+          unknownCount += 1;
+          emitEvent({ type: 'unknown', index: i + 1, raw: commandSpec.raw });
+        }
+      } else if (!fallbackLookup.commandFound) {
+        unknownCount += 1;
+      }
+
+      flushOutput(output, emitOutput, stdout.write.bind(stdout));
+    }
+
+    const failed = request.failOnUnknown && unknownCount > 0 ? 1 : 0;
+    flushOutput(output, emitOutput, stdout.write.bind(stdout));
+
+    if (request.jsonOutput) {
+      emitEvent({ type: 'complete' });
+      if (logCapture) {
+        logCapture.flush();
+      }
+      const payload = {
+        meta: {
+          commands: request.parsedCommands.length,
+          unknown: unknownCount,
+          failed,
+        },
+        events,
+      };
+      if (logCapture) {
+        logCapture.writeStdoutRaw(`${JSON.stringify(payload, null, 2)}\n`);
+        logCapture.restore();
+      } else {
+        stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+      }
+    }
+
+    return failed;
+  } catch (error) {
+    if (logCapture) {
+      logCapture.restore();
+    }
+    throw error;
+  }
+}
+
 module.exports = {
   applySeeds,
   bootEngine,
@@ -632,14 +854,17 @@ module.exports = {
   createInGameSession,
   createLogCapture,
   flushOutput,
+  getHelpText,
   getMainInputListeners,
   isBlankOrAnsiOnly,
   loadConfig,
   mapRunEvent,
   parseCommandLine,
+  parseRunnerArgs,
   readScenarioFile,
   resolveCanonicalIntent,
   resolveCommandExact,
   resolveMovementCommand,
+  runScenarioCli,
   stripAnsi,
 };

@@ -55,7 +55,7 @@
     - "Keep `util/scenario-runner.js` as the CLI entry point and preserve its current external behavior." (`In Scope`)
   - Validation handoff: `S2`, `integration/smoke`
 
-- [ ] `C02` [cli] Refactor [scenario-runner.js](/mnt/c/workspace/mud/ranviermud/util/scenario-runner.js) into a thin CLI wrapper over the shared runner module while preserving help, error, text output, JSON output, and exit-code behavior for retained subprocess smoke coverage.
+- [x] `C02` [cli] Refactor [scenario-runner.js](/mnt/c/workspace/mud/ranviermud/util/scenario-runner.js) into a thin CLI wrapper over the shared runner module while preserving help, error, text output, JSON output, and exit-code behavior for retained subprocess smoke coverage.
   - Trace:
     - "Keep `util/scenario-runner.js` as the CLI entry point and preserve its current external behavior." (`In Scope`)
     - "The refactor preserves the current external behavior of `util/scenario-runner.js` for the retained CLI smoke cases." (`Acceptance Criteria`)
