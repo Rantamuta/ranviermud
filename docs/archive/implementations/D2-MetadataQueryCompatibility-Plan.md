@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `draft-v2`
+- Status: archived
 - Type: decision-locked migration plan (not implementation checklist)
 - Scope: full migration from legacy `*Flag` helpers/shape to metadata `values` + `q.get*Metadata`
 

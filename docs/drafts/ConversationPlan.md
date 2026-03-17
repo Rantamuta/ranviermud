@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `draft-v1`
+- Status: draft
 - Binding: Proposed (for Codex implementation)
 - Scope: Bundle-layer conversation system built on Command Architecture + Semantic Messaging
 - Related:

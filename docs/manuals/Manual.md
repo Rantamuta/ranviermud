@@ -2225,7 +2225,7 @@ Read path pairing:
 1. No dedicated server-event unit tests currently in `test/unit`.
 2. There is explicit TODO to add GameServer event contract tests and EventManager attach/detach tests.  
    References: `README.md:67`, `README.md:92`.
-3. “First-class script exports” is proposal-only (`Status: Proposed`), not current runtime behavior; current server events still use `.listeners` map contract.  
+3. “First-class script exports” is proposal-only (`Status: draft`), not current runtime behavior; current server events still use `.listeners` map contract.  
    References: `docs/proposals/FIRST_CLASS_SCRIPT_EXPORTS.md:3`, `docs/proposals/FIRST_CLASS_SCRIPT_EXPORTS.md:55`.
 
 ##### 10. Practical “known-good” server-event template

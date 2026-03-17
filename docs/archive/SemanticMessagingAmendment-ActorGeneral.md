@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `draft-v1`
+- Status: archived
 - Scope: Proposed amendment to `docs/normative/SemanticMessaging.md`
 - Binding: no
 - Related:

@@ -1,6 +1,6 @@
 # ADR-0003: Adopt Verb-Local Syntax Matching for Bundle Command Interpretation
 
-- Status: proposed
+- Authority: non-normative
 - Date: 2026-03-15
 - Owner: maintainers
 

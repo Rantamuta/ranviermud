@@ -4,7 +4,7 @@ Companion goal: turn a brainstormed implementation design into a formal, checkli
 
 ## Status
 
-- Status: normative-v1
+- Authority: normative
 - Scope: Planning conventions and approval gating for tasks in this repo
 - Binding: yes
 
@@ -17,6 +17,7 @@ Related policies:
 - `AGENTS.md` (approval, validation, and stop-rule guardrails)
 - `docs/ADR_POLICY.md` (decision-record requirements)
 - `docs/CHANGELOG_POLICY.md` (user-visible change logging)
+- `docs/normative/ArtifactLifecycle.md` (working-artifact lifecycle vocabulary and transitions)
 - `docs/normative/checklist.md` (checklist-authoring phase)
 
 ## Source of Truth
@@ -50,6 +51,19 @@ Implementation MUST NOT begin until the maintainer grants explicit approval usin
 - "Apply the change."
 
 If explicit approval is absent, remain in discussion/analysis mode.
+
+## Plan Artifact Lifecycle
+
+Plans are non-normative working artifacts governed by `docs/normative/ArtifactLifecycle.md`.
+
+Lifecycle rules for plans:
+
+- exploratory or discussion-only plan artifacts MUST use `Status: draft`
+- once a plan is explicitly adopted as the current planning basis, it MUST be updated to `Status: planning`
+- checklist authoring from an approved plan joins that same task artifact set and the checklist MUST also use `Status: planning`
+- approved plans and their related checklist artifacts remain `Status: planning` until implementation begins
+- when implementation is executed from an approved checklist, the related task artifacts move together to `Status: active`
+- when the task is complete and the related working artifacts are archived, the plan MUST be updated to `Status: archived` and moved to `docs/archive/**`
 
 ## Repository Constraints
 
@@ -194,4 +208,3 @@ Checklist authoring under `docs/normative/checklist.md` may begin only when:
 - if required, `Validation Strategy` defines checkable evidence expectations
 - plain-language intent is approved by collaborators
 - conformance QC result is `Pass`
-

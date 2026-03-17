@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `stub`
+- Status: draft
 - Scope: future discussion of entity-scoped React hooks such as `reactDirect` and `reactIndirect` and `reactActor`
 - Binding: no
 

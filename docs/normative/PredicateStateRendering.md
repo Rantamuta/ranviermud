@@ -4,7 +4,7 @@ This document defines the normative contract for state-dependent descriptive ren
 
 ## Status
 
-- Status: `normative-v1`
+- Authority: normative
 - Binding: Yes
 - Scope: Bundle-layer descriptive rendering for room, item, and PC state
 - Related:

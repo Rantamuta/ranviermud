@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `normative-v1`
+- Authority: normative
 - Binding: Yes
 - Scope: Virtual-door pairing, lifecycle ownership, mutation/query semantics, and door-command/movement policy
 - Related:

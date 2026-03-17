@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `draft-v1`
+- Status: draft
 - Scope: bundle-layer command execution flow in `bundle-rantamuta`, limited to adding `canActor` and `planActor` alongside the current command architecture
 
 ## Goal

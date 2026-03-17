@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: draft-v4
+- Status: archived
 - Scope: remaining NPC dispatch wiring work for v1 execution semantics
 - Binding: no
 - Audience: maintainers implementing the post–pre-flight slice

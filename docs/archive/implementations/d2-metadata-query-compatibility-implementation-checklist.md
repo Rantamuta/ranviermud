@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: draft
+- Status: archived
 - Scope: execute D2 migration from legacy `q.*Flag`/`metadata.flags` to `q.get*Metadata`/`metadata.values`
 - Source: `docs/drafts/D2-MetadataQueryCompatibility-Plan.md`
 

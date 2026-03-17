@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: draft
+- Status: archived
 - Scope: migrate room metadata mutator surface from `setRoomFlag` + `roomRef` targeting to metadata-native room operations scoped to current actor room
 - Source: `docs/active/RoomMetadataSurfaceMigration-ImplementationPlan.md`
 - Note: this checklist excludes tests/testing per `docs/normative/checklist.md`; test authoring/execution belongs to implementation phase.

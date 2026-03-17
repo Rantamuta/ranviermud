@@ -4,7 +4,7 @@ This document defines the normative process for triaging and fixing typecheck fa
 
 ## Status
 
-- Status: normative-v1
+- Authority: normative
 - Scope: Typecheck triage and remediation workflow
 - Binding: yes
 

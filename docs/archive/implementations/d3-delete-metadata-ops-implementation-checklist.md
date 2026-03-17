@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: draft
+- Status: archived
 - Scope: implement explicit metadata delete operations for room/area/world scopes
 - Source: `docs/drafts/D3-DeleteMetadataOps-Plan.md`
 

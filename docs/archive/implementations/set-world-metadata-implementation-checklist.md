@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: draft
+- Status: archived
 - Scope: implement `setWorldMetadata` mutator operation
 - Source: `docs/active/SetWorldMetadata-ImplementationPlan.md`
 

@@ -1,6 +1,6 @@
 # Submodule Workflow (Non-Normative)
 
-Status: maintainer guidance (non-normative)
+Status: draft
 
 This repository tracks one Git submodule:
 

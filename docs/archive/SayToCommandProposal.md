@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `draft-v2`
+- Status: archived
 - Scope: targeted/private speech command surface, renderer contract, and Tomo integration
 - Binding: no
 - Related:

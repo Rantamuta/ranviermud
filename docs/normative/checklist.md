@@ -6,7 +6,7 @@ You have been tasked with creating a checklist for a task. These are the instruc
 
 ## Status
 
-- Status: normative-v1
+- Authority: normative
 - Scope: Task checklist-authoring workflow
 - Binding: yes
 
@@ -21,6 +21,8 @@ Expected directive form:
 Rules:
 
 - MUST produce a checklist file under `docs/drafts/checklists/`.
+- MUST include lifecycle metadata per `docs/normative/ArtifactLifecycle.md`.
+- the checklist MUST use `Status: planning` to match the related task artifact set.
 - MUST stop after checklist authoring and wait for explicit approval.
 - MUST NOT implement behavior changes during this phase.
 
@@ -29,6 +31,7 @@ Related policies:
 - `AGENTS.md` (approval, validation, and stop-rule guardrails)
 - `docs/ADR_POLICY.md` (decision-record requirements)
 - `docs/CHANGELOG_POLICY.md` (user-visible change logging)
+- `docs/normative/ArtifactLifecycle.md` (working-artifact lifecycle vocabulary and transitions)
 - `docs/normative/plan.md` (plan approval and source-of-truth requirements)
 
 There have been discussions about how to implement the task. This exercise is to write a step-by-step implementation checklist according to those instructions such that an engineer could implement your vision of the plan simply by following the checklist. The intent is to review and discuss specifics so there is no drift between understanding.
@@ -45,6 +48,17 @@ Before drafting checklist items, lock from the approved plan:
 - required evidence types from `Validation Strategy`, when that section is required by `docs/normative/plan.md`
 
 If the plan changes behavior, contracts, or build outputs and does not include the required `Validation Strategy` section, stop and fail checklist conformance review before drafting items.
+
+## Checklist Artifact Lifecycle
+
+Checklists are non-normative working artifacts governed by `docs/normative/ArtifactLifecycle.md`.
+
+Lifecycle rules for checklists:
+
+- checklist authoring from an approved plan produces a `Status: planning` artifact that matches the related plan
+- the approved plan and checklist remain `Status: planning` through review and approval for implementation
+- when implementation begins from the approved checklist, execution updates the related task artifacts to `Status: active` under `docs/normative/implementation.md`
+- when the task is complete, the checklist MUST be updated to `Status: archived` and moved to `docs/archive/**`
 
 ## Traceability
 
@@ -142,7 +156,7 @@ e.g.
 ```md
 ## Status
 
-- Status: draft
+- Status: planning
 - Scope: add `basicText` to structured description output
 - Source plan: `docs/drafts/example-plan.md`
 - In Scope:

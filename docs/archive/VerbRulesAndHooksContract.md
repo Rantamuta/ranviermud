@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `proposed`
+- Status: archived
 - Scope: bundle-layer verb execution model (rule matching, target matching, object hooks, and mutation boundaries)
 - Related:
   - `docs/normative/CommandInteractionReferenceProfile-v1.md`

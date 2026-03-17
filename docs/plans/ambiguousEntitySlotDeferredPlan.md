@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `stub`
+- Status: draft
 - Scope: deferred follow-up for bundle-layer verb-local syntax matching
 - Posture: discussion stub only; not implementation approval
 

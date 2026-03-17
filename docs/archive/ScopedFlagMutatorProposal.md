@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `draft-v1`
+- Status: archived
 - Scope: Framework-level mutation ops for area/world metadata
 - Binding: no
 - D3 sequencing note:
