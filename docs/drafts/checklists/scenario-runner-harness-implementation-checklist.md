@@ -87,7 +87,7 @@
     - "Preferred first migrated cases: room look assertions, shorthand canonicalization, simple movement, inventory listing, simple take/put flows, JSON event shape assertions, seed event assertions." (`First Slice`)
   - Validation handoff: `S4`, `behavior-level regression evidence`
 
-- [ ] `C07` [smoke] Retain a small subprocess smoke layer in [scenario.basic.test.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/tests/scenarios/scenario.basic.test.js) for help, CLI-error paths, representative `.scenario` coverage, representative `--json` coverage, and other intentionally process-boundary cases.
+- [x] `C07` [smoke] Retain a small subprocess smoke layer in [scenario.basic.test.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/tests/scenarios/scenario.basic.test.js) for help, CLI-error paths, representative `.scenario` coverage, representative `--json` coverage, and other intentionally process-boundary cases.
   - Trace:
     - "Keep a small subprocess smoke layer for CLI-help, CLI-error, and representative end-to-end scenario-runner coverage." (`In Scope`)
     - "Remaining subprocess tests are intentional and limited to cases where CLI realism or cleanup risk still justifies them." (`Acceptance Criteria`)
