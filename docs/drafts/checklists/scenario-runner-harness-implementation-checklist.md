@@ -74,7 +74,7 @@
     - "Prefer a long-lived child-process harness over fragile in-process global-state reset when the shared runtime contaminates the main test process." (`Constraints`)
   - Validation handoff: `S3`, `integration/smoke`
 
-- [ ] `C05` [compat] Keep the shared harness repo-level by ensuring baseline scenario execution depends only on the booted configured runtime's playable scenario surface and does not hardwire core execution to `bundle-rantamuta` parser code.
+- [x] `C05` [compat] Keep the shared harness repo-level by ensuring baseline scenario execution depends only on the booted configured runtime's playable scenario surface and does not hardwire core execution to `bundle-rantamuta` parser code.
   - Trace:
     - "Keep the harness at the `ranviermud` level rather than hardwiring core execution to `bundle-rantamuta`." (`In Scope`)
     - "Preserve configured bundle loading semantics; the harness must inspect the booted configured runtime rather than inventing a new bundle discovery model." (`Constraints`)

@@ -1,10 +1,9 @@
 'use strict';
 
-const { parseInput } = require('../bundles/bundle-rantamuta/lib/parse-input');
 const { createScenarioRuntimeHarness } = require('./scenario-runner-lib');
 
 const root = process.env.SCENARIO_HARNESS_ROOT || process.cwd();
-const harnessPromise = createScenarioRuntimeHarness({ root, parseInput });
+const harnessPromise = createScenarioRuntimeHarness({ root });
 
 function serializeError(error) {
   return {

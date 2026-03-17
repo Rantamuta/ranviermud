@@ -932,12 +932,11 @@ async function runScenarioCli(args, options = {}) {
     return 0;
   }
 
-  if (typeof parseInput !== 'function') {
-    throw new TypeError('runScenarioCli requires options.parseInput');
-  }
-
   const request = parseRunnerArgs(args, root);
-  const harness = await createScenarioRuntimeHarness({ root, parseInput });
+  const harness = await createScenarioRuntimeHarness({
+    root,
+    parseInput: typeof parseInput === 'function' ? parseInput : undefined,
+  });
   const result = await harness.runRequest(request, {
     captureLogs: true,
     stdout,
