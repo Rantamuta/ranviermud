@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: draft
+- Status: planning
 - Scope: speed up `npm test` by reducing repeated scenario-runner bootstrap cost
 - Type: design note for review
 
