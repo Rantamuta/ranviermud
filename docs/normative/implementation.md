@@ -6,7 +6,7 @@ You have a checklist and have been tasked with following it. These are those ins
 
 ## Status
 
-- Status: normative-v1
+- Authority: normative
 - Scope: Task implementation workflow and commit protocol
 - Binding: yes
 

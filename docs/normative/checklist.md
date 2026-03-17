@@ -6,7 +6,7 @@ You have been tasked with creating a checklist for a task. These are the instruc
 
 ## Status
 
-- Status: normative-v1
+- Authority: normative
 - Scope: Task checklist-authoring workflow
 - Binding: yes
 

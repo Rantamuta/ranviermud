@@ -6,7 +6,7 @@ It presents a phase-based architecture centered on deterministic command interpr
 
 ## Status
 
-- Status: normative-v2
+- Authority: normative
 - Scope: Bundle-layer command execution flow
 - Binding: yes
 - Related:

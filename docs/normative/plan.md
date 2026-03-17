@@ -4,7 +4,7 @@ Companion goal: turn a brainstormed implementation design into a formal, checkli
 
 ## Status
 
-- Status: normative-v1
+- Authority: normative
 - Scope: Planning conventions and approval gating for tasks in this repo
 - Binding: yes
 

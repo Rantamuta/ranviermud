@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `normative-v2`
+- Authority: normative
 - Binding: Yes
 - Related:
   - [CommandArchitecture.md](CommandArchitecture.md)
