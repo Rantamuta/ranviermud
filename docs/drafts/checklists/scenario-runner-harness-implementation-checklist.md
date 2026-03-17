@@ -49,7 +49,7 @@
     - The `node:test` subprocess-heavy bucket reported `duration_ms 226028.901605` before `tsc`.
     - On this checkout, the full `npm test` command remained in the roughly 4 to 6 minute range end-to-end.
 
-- [ ] `C01` [runner] Extract reusable runtime execution logic from [scenario-runner.js](/mnt/c/workspace/mud/ranviermud/util/scenario-runner.js) into new shared module [scenario-runner-lib.js](/mnt/c/workspace/mud/ranviermud/util/scenario-runner-lib.js) without changing current CLI-visible behavior.
+- [x] `C01` [runner] Extract reusable runtime execution logic from [scenario-runner.js](/mnt/c/workspace/mud/ranviermud/util/scenario-runner.js) into new shared module [scenario-runner-lib.js](/mnt/c/workspace/mud/ranviermud/util/scenario-runner-lib.js) without changing current CLI-visible behavior.
   - Trace:
     - "Extract reusable scenario execution logic from `util/scenario-runner.js` into a shared module." (`In Scope`)
     - "Keep `util/scenario-runner.js` as the CLI entry point and preserve its current external behavior." (`In Scope`)
