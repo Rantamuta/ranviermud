@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: draft
+- Status: archived
 - Scope: implement verb-local syntax matching for bundle-layer diegetic commands in `bundles/bundle-rantamuta`
 - Source plan: `docs/drafts/VerbLocalSyntaxMatchingPlan.md`
 - In Scope:

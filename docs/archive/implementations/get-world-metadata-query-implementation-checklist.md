@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: complete
+- Status: archived
 - Scope: implement predicate query helper `q.getWorldMetadata(...)`
 - Source: `docs/active/GetWorldMetadataQuery-ImplementationPlan.md`
 - Note: test steps are intentionally excluded here per `docs/normative/checklist.md`; test scope remains unchanged in the implementation plan for execution phase.

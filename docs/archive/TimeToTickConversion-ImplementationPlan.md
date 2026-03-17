@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: draft-v1
+- Status: archived
 - Scope: `bundle-rantamuta` runtime helper + tests + doc alignment
 - Type: implementation plan (no code changes in this document)
 

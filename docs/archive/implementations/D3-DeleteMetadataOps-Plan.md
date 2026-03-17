@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `draft-v2`
+- Status: archived
 - Type: decision-locked plan (not implementation checklist)
 - Scope: explicit metadata delete operation design and rollout sequencing
 

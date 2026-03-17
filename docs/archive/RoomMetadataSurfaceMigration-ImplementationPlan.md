@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `completed-v1`
+- Status: archived
 - Type: implementation plan (not checklist)
 - Scope: migrate room metadata mutator surface from `setRoomFlag` + `roomRef` targeting to metadata-native room operations scoped to current actor room
 

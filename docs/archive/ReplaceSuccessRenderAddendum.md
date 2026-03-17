@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: draft-v1
+- Status: archived
 - Scope: bundle-layer command pipeline render behavior (`bundle-rantamuta`)
 - Type: spec addendum proposal for review (not yet implemented)
 - Intended normative targets:

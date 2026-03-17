@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `draft-v2`
+- Status: archived
 - Type: implementation plan (not checklist)
 - Scope: add predicate query helper `q.getWorldMetadata(...)`
 

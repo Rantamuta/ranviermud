@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: completed
+- Status: archived
 - Scope: standalone verb-local syntax matching prototype CLI (exploratory, not runtime-integrated)
 - Source plan: assistant-authored plan in task discussion
 - In Scope:
