@@ -80,7 +80,7 @@
     - "Preserve configured bundle loading semantics; the harness must inspect the booted configured runtime rather than inventing a new bundle discovery model." (`Constraints`)
   - Validation handoff: `S3`, `integration/smoke`
 
-- [ ] `C06` [scenarios] Migrate the first low-risk set of scenario assertions in [scenario.basic.test.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/tests/scenarios/scenario.basic.test.js) from per-test subprocess execution to the harness-backed execution path.
+- [x] `C06` [scenarios] Migrate the first low-risk set of scenario assertions in [scenario.basic.test.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/tests/scenarios/scenario.basic.test.js) from per-test subprocess execution to the harness-backed execution path.
   - Trace:
     - "Migrate the first low-risk set of scenario-runner tests away from per-test subprocess execution." (`In Scope`)
     - "The first migration slice moves a meaningful set of low-risk scenario assertions off per-test subprocess execution." (`Acceptance Criteria`)
