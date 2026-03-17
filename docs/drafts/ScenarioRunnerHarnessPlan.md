@@ -9,7 +9,7 @@
 
 ## Goal
 
-Reduce full `npm test` wall-clock time by moving most low-risk scenario-runner assertions away from per-test subprocess bootstrap and onto a shared in-process harness, while preserving the existing `util/scenario-runner.js` CLI contract.
+Reduce full `npm test` wall-clock time by moving most low-risk scenario-runner assertions away from per-test subprocess bootstrap and onto a shared once-per-file harness, while preserving the existing `util/scenario-runner.js` CLI contract.
 
 ## Intent
 
@@ -21,7 +21,8 @@ We want to keep a small number of true CLI smoke tests, but most narrow scenario
 
 - Extract reusable scenario execution logic from `util/scenario-runner.js` into a shared module.
 - Keep `util/scenario-runner.js` as the CLI entry point and preserve its current external behavior.
-- Add an in-process harness for tests that can boot the configured runtime once per file and run multiple scenario assertions against it.
+- Add a shared harness for tests that can boot the configured runtime once per file and run multiple scenario assertions against it.
+- Allow that shared harness to use a long-lived child-process boundary when booting the runtime inside the main test process would leak cross-suite global state.
 - Migrate the first low-risk set of scenario-runner tests away from per-test subprocess execution.
 - Keep a small subprocess smoke layer for CLI-help, CLI-error, and representative end-to-end scenario-runner coverage.
 - Preserve explicit cleanup so harness-backed tests remain deterministic.
@@ -51,6 +52,7 @@ We want to keep a small number of true CLI smoke tests, but most narrow scenario
 - Preserve the runtime/content boundary in `bundles/bundle-rantamuta`.
 - Keep CommonJS and Node 22 compatibility.
 - Keep the refactor small, reversible, and test-focused.
+- Prefer a long-lived child-process harness over fragile in-process global-state reset when the shared runtime contaminates the main test process.
 
 ## Implementation Surfaces
 
@@ -61,7 +63,7 @@ We want to keep a small number of true CLI smoke tests, but most narrow scenario
 - `bundles/bundle-rantamuta/tests/scenarios/scenario.basic.test.js`
   - migrate the low-risk majority of current subprocess scenario tests to the harness-backed execution path.
 - new harness-backed test helper, if needed
-  - provide per-file boot and per-test run utilities without duplicating setup logic in the scenario test file.
+  - provide per-file boot and per-test run utilities without duplicating setup logic in the scenario test file, whether the shared runtime lives in-process or in a long-lived child process.
 - retained subprocess smoke cases in the scenario-runner suite
   - preserve direct CLI coverage for help, error paths, and representative end-to-end behavior.
 
@@ -92,7 +94,7 @@ Preferred initial subprocess holdouts:
 ## Risks and Mitigations
 
 - Risk: hidden shared state causes order-dependent failures.
-  - Mitigation: reuse runtime only per file, create fresh player/session state per test, and track explicit cleanup of created entities and placements.
+  - Mitigation: reuse runtime only per file, create fresh player/session state per test, and track explicit cleanup of created entities and placements. If an in-process harness leaks process-global state into other suites, move the shared runtime behind a long-lived child-process boundary instead of attempting broad global resets in the Mocha process.
 - Risk: the refactor drifts into general harness architecture work and loses the test-speed objective.
   - Mitigation: keep the first slice narrowly focused on the scenario-runner suite and stop once full-suite runtime improvement is good enough.
 - Risk: bundle-specific parser assumptions leak into the shared core.
