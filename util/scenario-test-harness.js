@@ -19,6 +19,7 @@ function createScenarioHarness(options = {}) {
   let ready = false;
   let closed = false;
   const pending = new Map();
+  let runQueue = Promise.resolve();
   let readyResolve;
   let readyReject;
   const readyPromise = new Promise((resolve, reject) => {
@@ -89,13 +90,18 @@ function createScenarioHarness(options = {}) {
       return child.pid;
     },
     async runScenario(args) {
-      await readyPromise;
-      const id = nextRequestId;
-      nextRequestId += 1;
-      return new Promise((resolve, reject) => {
-        pending.set(id, { resolve, reject });
-        child.send({ type: 'run', id, args });
+      const scheduled = runQueue.then(async () => {
+        await readyPromise;
+        const id = nextRequestId;
+        nextRequestId += 1;
+        return new Promise((resolve, reject) => {
+          pending.set(id, { resolve, reject });
+          child.send({ type: 'run', id, args });
+        });
       });
+
+      runQueue = scheduled.catch(() => undefined);
+      return scheduled;
     },
     async close() {
       if (closed) {
@@ -103,6 +109,7 @@ function createScenarioHarness(options = {}) {
       }
 
       closed = true;
+      await runQueue.catch(() => undefined);
       await readyPromise;
       await new Promise((resolve) => {
         child.once('exit', () => resolve());

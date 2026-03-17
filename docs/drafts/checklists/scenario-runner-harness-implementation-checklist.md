@@ -94,7 +94,7 @@
     - "Preferred initial subprocess holdouts: `--help`, missing-value error paths, unsupported legacy flag behavior, one `.scenario` file smoke case, one `--json` smoke case..." (`First Slice`)
   - Validation handoff: `S4`, `integration/smoke`
 
-- [ ] `C08` [cleanup] Ensure migrated harness-backed scenario tests do not introduce ordering-sensitive failures by explicitly cleaning up created players, seeded items, and placement state after each run.
+- [x] `C08` [cleanup] Ensure migrated harness-backed scenario tests do not introduce ordering-sensitive failures by explicitly cleaning up created players, seeded items, and placement state after each run.
   - Trace:
     - "Preserve explicit cleanup so harness-backed tests remain deterministic." (`In Scope`)
     - "The migrated tests reuse one booted runtime per file and maintain deterministic isolation through explicit cleanup." (`Acceptance Criteria`)
