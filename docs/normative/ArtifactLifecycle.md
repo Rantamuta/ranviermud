@@ -21,7 +21,7 @@ Lifecycle status is denoted in the document with:
 
 `- Status: <Lifecycle value>`
 
-Lifecycle does not apply to ADR or normative documents.
+Lifecycle does not apply to normative documents.
 
 All non-archived working artifacts MUST use one of the lifecycle values defined below.
 

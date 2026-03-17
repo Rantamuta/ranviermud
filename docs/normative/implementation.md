@@ -21,7 +21,6 @@ Expected directive form:
 Related policies:
 
 - `AGENTS.md` (approval, validation, and stop-rule guardrails)
-- `docs/ADR_POLICY.md` (decision-record requirements)
 - `docs/CHANGELOG_POLICY.md` (user-visible change logging)
 - `docs/normative/ArtifactLifecycle.md` (working-artifact lifecycle vocabulary and transitions)
 
@@ -109,7 +108,7 @@ Stop with any questions, or if implementing the task requires expanding beyond t
 Pause and confirm direction when:
 
 - proposed changes exceed approved checklist scope
-- normative docs, ADRs, or other governing references conflict
+- normative docs or other governing references conflict
 - unexpected repo state risks unrelated work
 - green cannot be restored for the current slice without changing tests to mask behavior, or without editing out-of-scope code
 - the checklist no longer matches the implementation reality closely enough to proceed safely

@@ -619,9 +619,6 @@ Matching behavior is deterministic, ambiguity behavior is deterministic, and leg
 
   - `docs/normative/CommandArchitecture.md`
   - `docs/normative/EntityResolution.md`
-- ADR status:
-
-  - proposed ADR recorded at `docs/drafts/adr/ADR-0003-verb-local-syntax-matching.md`
 - `CHANGELOG.md` update required on runtime implementation:
 
   - yes, because command interpretation behavior is player-visible and runtime-visible.
@@ -629,7 +626,6 @@ Matching behavior is deterministic, ambiguity behavior is deterministic, and leg
 
   - the normative command-flow contract has been updated to make `Parsing and Entity Resolution` explicit in `docs/normative/CommandArchitecture.md`
   - the normative interpretation contract has been updated to use ordered verb-local syntax rules in `docs/normative/EntityResolution.md`
-  - the architecture rationale has been recorded as a proposed ADR in `docs/drafts/adr/ADR-0003-verb-local-syntax-matching.md`
 
 ## Appendix: Current Diegetic Verbs and Putative Rules
 

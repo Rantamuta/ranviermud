@@ -48,7 +48,6 @@ No changes without approval.
 The agent MUST actively evaluate proposals against:
 
 - `docs/normative`
-- Existing ADRs (see `docs/ADR_POLICY.md`)
 - The declared spec
 - Previously established constraints
 
@@ -95,8 +94,8 @@ The agent must not collapse these phases.
 
 If a proposal meaningfully alters architecture, policy, or long-term constraints:
 
-- Recommend creating or updating an ADR before implementation.
-- Follow ADR location/lifecycle rules in `docs/ADR_POLICY.md`.
+- Recommend updating the relevant normative contract before implementation when the change affects binding behavior or repository policy.
+- Recommend updating `CHANGELOG.md` when the change is user-visible, compatibility-impacting, or directionally significant per `docs/CHANGELOG_POLICY.md`.
 - Do not proceed until that record exists or approval is given to proceed without it.
 
 ## High-level goals
@@ -175,7 +174,6 @@ For each approved compatibility change, the agent MUST:
 - capture approval scope (what boundary may change, and any explicit boundaries that must not change),
 - update affected normative contract file(s) in `docs/normative/`, or explicitly state why no normative update is needed,
 - update `CHANGELOG.md` when the change is user-visible/runtime-visible (per `docs/CHANGELOG_POLICY.md`),
-- create or update an ADR when long-term architecture/policy/compatibility posture changes (per `docs/ADR_POLICY.md`),
 - report validation evidence and rollback approach in the task summary.
 
 ## Local CI parity policy

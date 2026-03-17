@@ -29,7 +29,6 @@ Rules:
 Related policies:
 
 - `AGENTS.md` (approval, validation, and stop-rule guardrails)
-- `docs/ADR_POLICY.md` (decision-record requirements)
 - `docs/CHANGELOG_POLICY.md` (user-visible change logging)
 - `docs/normative/ArtifactLifecycle.md` (working-artifact lifecycle vocabulary and transitions)
 - `docs/normative/plan.md` (plan approval and source-of-truth requirements)

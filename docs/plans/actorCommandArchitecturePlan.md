@@ -66,7 +66,6 @@ This change should layer cleanly into the current command architecture rather th
   - update `docs/normative/CommandArchitecture.md` to define `canActor` and `planActor`
   - align `docs/normative/NpcActionArchitecture.md` where cross-references or actor-hook expectations need to match
 - `CHANGELOG.md` should be updated because this adds new bundle-layer command hook surfaces and runtime behavior
-- ADR requirement: not required by default, unless implementation reveals a broader long-term architecture or policy change beyond extending the current hook model
 
 ## Implementation Surfaces
 

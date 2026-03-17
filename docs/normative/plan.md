@@ -15,7 +15,6 @@ This process applies when a maintainer explicitly requests a plan using this doc
 Related policies:
 
 - `AGENTS.md` (approval, validation, and stop-rule guardrails)
-- `docs/ADR_POLICY.md` (decision-record requirements)
 - `docs/CHANGELOG_POLICY.md` (user-visible change logging)
 - `docs/normative/ArtifactLifecycle.md` (working-artifact lifecycle vocabulary and transitions)
 - `docs/normative/checklist.md` (checklist-authoring phase)
@@ -26,7 +25,7 @@ The approved plan is the source of truth for checklist authoring and implementat
 
 If implementation fails the approved plan intent, implementation has failed even if code compiles/tests pass.
 
-Plans MUST NOT override or conflict with `docs/normative/**` or ADRs. If a conflict exists, revise the plan before approval or create/update the relevant ADR per `docs/ADR_POLICY.md`.
+Plans MUST NOT override or conflict with `docs/normative/**`. If a conflict exists, revise the plan before approval.
 
 ## Collaboration Requirement
 
@@ -174,8 +173,7 @@ If the plan introduces a compatibility-impacting change, it MUST include:
 
 - the affected compatibility boundary,
 - the required update to the relevant `docs/normative/**` contract (or why no update is needed),
-- the required `CHANGELOG.md` update per `docs/CHANGELOG_POLICY.md`,
-- whether an ADR is required per `docs/ADR_POLICY.md`.
+- the required `CHANGELOG.md` update per `docs/CHANGELOG_POLICY.md`.
 
 ## Plan QC Modes
 

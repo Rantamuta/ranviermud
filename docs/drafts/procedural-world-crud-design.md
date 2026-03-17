@@ -310,7 +310,7 @@ Log:
 
 ## 12) Suggested Implementation Phases
 
-## Phase 0: RFC + ADR
+## Phase 0: RFC + Decision Notes
 - Capture decision boundaries and invariants.
 - Define what is live-patched vs reload-required.
 
