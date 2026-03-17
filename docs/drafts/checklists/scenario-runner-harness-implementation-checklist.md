@@ -32,10 +32,14 @@
 
 ## Checklist
 
-- [ ] `C00` [timing] Establish and record baseline timing observations for the scenario-runner hotspot before refactor work begins.
+- [x] `C00` [timing] Establish and record baseline timing observations for the scenario-runner hotspot before refactor work begins.
   - Trace:
     - "baseline timing for the scenario-runner hotspot should be recorded before the refactor work begins." (`Validation Strategy`)
   - Validation handoff: `S1`, `non-functional timing evidence`
+  - Recorded baseline:
+    - `npm test` completed green before refactor work.
+    - The `node:test` subprocess-heavy bucket reported `duration_ms 226028.901605` before `tsc`.
+    - On this checkout, the full `npm test` command remained in the roughly 4 to 6 minute range end-to-end.
 
 - [ ] `C01` [runner] Extract reusable runtime execution logic from [scenario-runner.js](/mnt/c/workspace/mud/ranviermud/util/scenario-runner.js) into new shared module [scenario-runner-lib.js](/mnt/c/workspace/mud/ranviermud/util/scenario-runner-lib.js) without changing current CLI-visible behavior.
   - Trace:
