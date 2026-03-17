@@ -1,7 +1,7 @@
 # VirtualDoor Implementation Checklist (v1)
 
 Source of truth:
-- `docs/normative/VirtualDoor.md` (`normative-v1`, binding)
+- `docs/normative/VirtualDoor.md` (`normative`, binding)
 
 Purpose:
 - Provide an execution checklist that is strict on required behavior and flexible on internal structure.

@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `draft-v1`
+- Status: archived
 - Scope: Optional actor-level capture hook for command eligibility
 - Binding: no
 - Superseded by: `docs/plans/actorCommandArchitecturePlan.md`
