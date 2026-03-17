@@ -2,19 +2,19 @@
 
 ## Status
 
-- Status: draft-v1
-- Scope: test-only design for faster scenario-runner coverage
-- Type: design note for review (not yet implemented)
+- Status: draft
+- Scope: speed up `npm test` by reducing repeated scenario-runner bootstrap cost
+- Type: design note for review
 
 ## Goal
 
-Reduce the wall-clock cost of scenario-runner tests by avoiding repeated full-engine bootstrap for every scenario assertion, while preserving confidence in command-path behavior and keeping the existing scenario-runner CLI contract intact.
+Reduce `npm test` wall-clock time by removing most repeated full-engine bootstrap work from scenario-runner tests, while preserving confidence in command-path behavior and keeping the existing `util/scenario-runner.js` CLI contract intact.
 
 ## Problem Statement
 
 The current scenario-runner test suite pays the startup cost of a fresh Node process and a fresh Ranvier bootstrap for each test case.
 
-Today, the bulk of this cost comes from:
+Most of the cost is repeated work:
 
 - Node process startup,
 - config loading,
@@ -23,46 +23,34 @@ Today, the bulk of this cost comes from:
 - repeated construction of `GameState`,
 - repeated scenario-runner setup that is mostly identical across tests.
 
-The current `scenario.basic.test.js` file contains many tests that call `spawnSync(process.execPath, ['util/scenario-runner.js', ...])`, and the runner then boots the full runtime before executing one or more commands.
+The largest hotspot is the scenario-runner suite in `bundles/bundle-rantamuta/tests/scenarios/scenario.basic.test.js`, which currently shells out to `node util/scenario-runner.js` for many narrow assertions.
 
-This is a good end-to-end shape for CLI realism, but it is an expensive default for a large number of narrow assertions such as:
+That is a good fit for CLI realism, but it is a poor default for fast local feedback. The suite spends most of its time paying startup cost instead of executing gameplay assertions.
 
-- shorthand canonicalization,
-- basic room look assertions,
-- simple movement checks,
-- inventory/take/put flows,
-- JSON payload shape checks,
-- seeding checks.
+## Why This Matters
 
-The result is that the suite spends most of its time paying repeated startup cost instead of running gameplay assertions.
+This design exists to speed up the test suite.
+
+The purpose is not to design a new general scenario framework. The purpose is to reduce repeated boot cost enough that `npm test` becomes noticeably faster while preserving a small amount of subprocess coverage where it still carries value.
 
 ## Desired Outcome
 
 We want a test structure where:
 
-- most scenario assertions run against one shared booted engine per test file,
+- most scenario assertions run against one shared booted runtime per test file,
 - each individual test still gets isolated player/session state,
-- tests remain deterministic,
-- CLI behavior is still covered by a smaller subprocess smoke layer,
-- the existing `util/scenario-runner.js` command-line interface remains stable.
+- a smaller subprocess smoke layer still covers the CLI path,
+- the existing scenario-runner CLI behavior remains stable,
+- the first implementation slice produces a noticeable reduction in scenario-suite wall-clock time.
 
 ## Non-Goals
 
 - No change to the public CLI behavior of `util/scenario-runner.js`.
 - No compatibility change to wrapper boot, config loading, bundle loading, or command semantics.
 - No engine-internal redesign in `Rantamuta/core`.
-- No speculative optimization of unrelated Mocha or `node:test` suites.
+- No speculative optimization of unrelated test suites.
 - No attempt to deep-clone or snapshot the full world graph unless simpler isolation proves insufficient.
-
-## Constraints
-
-- Preserve the scenario-runner CLI contract and output semantics unless explicitly approved otherwise.
-- Preserve deterministic behavior for identical world state and input.
-- Preserve the repository boundary between runtime code and authored content.
-- Keep the harness viable as a `ranviermud`-level utility rather than hardwiring it to `bundle-rantamuta`.
-- Keep the refactor small, reversible, and test-focused.
-- Prefer explicit cleanup over hidden reset behavior.
-- Keep CommonJS and Node 22 compatibility.
+- No effort to turn this into a broad multi-bundle scenario platform beyond what is needed to keep the harness honest at the `ranviermud` level.
 
 ## Current State
 
@@ -82,188 +70,47 @@ That file currently:
 - captures output and optional JSON events,
 - exits with CLI-appropriate status.
 
-This makes the file useful as a real smoke-test CLI, but it also makes the existing test suite use the most expensive possible path for every scenario assertion.
+This makes the file useful as a smoke-test CLI, but it also makes the test suite use the most expensive possible path for every scenario assertion.
 
 The current file also contains one explicit `bundle-rantamuta` coupling:
 
 - it imports `../bundles/bundle-rantamuta/lib/parse-input` directly for parse metadata enrichment.
 
-That means the current scenario-runner is only partially generic. It loads bundles from config, but one part of its JSON event shape assumes a specific bundle-local parser implementation.
+That is acceptable today for the CLI, but it should not become the center of this design. The speedup objective is primary.
 
-## Proposed Design
+## Strategy
 
-### Summary
+The core speedup strategy is simple:
 
-Split scenario-runner into two layers:
+1. Extract reusable scenario execution logic out of `util/scenario-runner.js`.
+2. Keep `util/scenario-runner.js` as a thin CLI wrapper.
+3. Add an in-process test harness that boots the runtime once per file.
+4. Migrate the majority of low-risk scenario assertions to the in-process harness.
+5. Keep a small subprocess smoke layer for CLI coverage and higher-risk cases.
 
-1. A reusable in-process harness core for tests and CLI execution.
-2. A thin CLI wrapper that preserves the existing `util/scenario-runner.js` behavior.
-3. An optional capability layer for bundle-specific enrichments that are not required for baseline execution.
+This is a performance optimization through reuse, not a behavior redesign.
 
-The harness core will allow test files to:
+## Proposed Shape
 
-- boot the runtime once,
-- create a fresh per-test player/session,
-- execute a scenario run in memory,
-- collect output/events,
-- clean up created entities afterward.
+### Shared runner module
 
-The capability layer will allow richer integrations, such as parse-field enrichment, when a loaded bundle exposes the necessary surfaces.
-
-### Proposed Module Boundary
-
-Recommended shape:
-
-- keep `util/scenario-runner.js` as the CLI entry point,
-- move reusable logic into a new shared module,
-- let both the CLI and tests call the same core execution API,
-- keep bundle-specific enrichments behind optional adapters rather than in the core.
-
-Candidate locations:
+Move reusable scenario-runner logic into a shared module, recommended as:
 
 - `util/scenario-runner-lib.js`
-- `bundles/bundle-rantamuta/tests/helpers/scenario-harness.js`
 
-Recommendation:
+That shared module should support:
 
-Use `util/scenario-runner-lib.js`.
+- booting the configured runtime,
+- creating a fresh per-run player/session,
+- placing the player in a room,
+- seeding inventory and room items,
+- executing input through the existing input-event path,
+- collecting output and structured events,
+- cleaning up per-run state.
 
-Reasoning:
+### CLI wrapper
 
-- the current runner logic already lives under `util/`,
-- the CLI should depend on the shared module directly,
-- the harness is not bundle-specific in purpose even though current tests are concentrated in `bundle-rantamuta`,
-- keeping it near the CLI entry point avoids duplicating runner logic between `util/` and `tests/helpers/`.
-
-### Bundle-Agnostic Core vs Optional Capabilities
-
-The refactor should explicitly separate what is generic from what is bundle-specific.
-
-#### Generic core responsibilities
-
-These belong in `ranviermud` without naming a specific bundle:
-
-- load config from `ranvier.conf.js` or `ranvier.json`,
-- boot Ranvier and load the configured bundles,
-- create fake players and sessions,
-- resolve rooms and seed items by entity reference,
-- dispatch raw input through the runtime's registered input-event surface,
-- capture output,
-- report success/failure status based on observable runner behavior.
-
-This core should only assume what the loaded runtime actually provides at boot time.
-
-#### Optional capability responsibilities
-
-These should be treated as additive and not required for baseline harness viability:
-
-- parse-artifact enrichment based on a bundle-local parser,
-- extra JSON telemetry fields that depend on bundle-specific command architecture,
-- bundle-specific affordances for richer test reporting.
-
-The important design rule is:
-
-The core harness must remain usable even when no capability adapter is present.
-
-### Capability Discovery
-
-The harness should not hardcode `bundle-rantamuta` to decide whether scenario execution is possible.
-
-Instead, it should boot the configured bundle set and inspect the resulting runtime to classify capabilities.
-
-The important design rule is:
-
-The harness must discover scenario capabilities only by inspecting the booted runtime after booting the configured bundle set.
-
-Example capability checks:
-
-- whether the runtime registered any `"main"` input-event listeners,
-- whether a compatible parse-enrichment adapter is available,
-- whether the runtime exposes enough room/entity surfaces for seeding.
-
-This allows the harness to support several compatibility tiers instead of a single all-or-nothing bundle assumption.
-
-### Proposed API
-
-The exact names can change, but the design should support an API with the following roles:
-
-#### Boot API
-
-```js
-const harness = await bootScenarioHarness({ root });
-```
-
-Responsibilities:
-
-- load config,
-- boot Ranvier,
-- construct `GameState`,
-- load bundles,
-- cache any reusable runner-level services,
-- detect available harness capabilities,
-- expose disposal hooks if needed.
-
-#### Per-Run API
-
-```js
-const result = await harness.runScenario({
-  roomRef,
-  commandLines,
-  seedRefs,
-  jsonOutput,
-  includeWhitespace,
-  failOnUnknown,
-});
-```
-
-Responsibilities:
-
-- create a fresh fake player and session,
-- place player into the requested room,
-- apply per-run seeds,
-- execute commands through the same input-event path used today,
-- collect textual output and structured events,
-- degrade gracefully when optional bundle-specific enrichments are unavailable,
-- return stable result data for assertions,
-- remove or undo per-run state afterward.
-
-#### Disposal API
-
-```js
-await harness.dispose();
-```
-
-Responsibilities:
-
-- detach any long-lived listeners if needed,
-- release long-lived test resources,
-- make leaks obvious if future runner changes add global state.
-
-The initial implementation may not require much disposal logic, but the boundary is still worth defining up front.
-
-### Suggested Capability Shape
-
-One reasonable shape is:
-
-```js
-{
-  supportsMainInput: true,
-  supportsParseEnrichment: false,
-  adapterName: null,
-}
-```
-
-Where:
-
-- `supportsMainInput` means the harness can drive command input through the runtime,
-- `supportsParseEnrichment` means richer parse metadata can be returned,
-- `adapterName` identifies any optional adapter in use.
-
-The exact field names can change, but the design should make capability presence explicit rather than implicit.
-
-## CLI Preservation Plan
-
-`util/scenario-runner.js` should remain the authoritative CLI entry point.
+Keep `util/scenario-runner.js` as the authoritative CLI entry point.
 
 After refactor, it should still be responsible for:
 
@@ -273,234 +120,131 @@ After refactor, it should still be responsible for:
 - setting process exit code,
 - preserving current error behavior.
 
-It should delegate the reusable work to the shared module rather than owning the bootstrap and execution logic directly.
+### Test harness
 
-This preserves current user-facing behavior while allowing tests to bypass the process boundary when CLI realism is not the thing being tested.
+Add a harness-backed test helper that:
 
-Where the current CLI exposes bundle-specific JSON fields, the refactor should preserve current behavior when the matching adapter is available. If the adapter is unavailable, the harness should prefer explicit reduced capability over hidden assumptions.
+- boots the runtime once for the file,
+- exposes a `runScenario(...)`-style helper,
+- creates fresh per-test player/session state,
+- returns a stable result object for assertions,
+- performs explicit cleanup after each run.
 
-## Bundle Compatibility Model
+## First Implementation Slice
 
-The harness should support multiple compatibility tiers.
+The first slice should target the highest payoff, lowest-risk cases.
 
-### Tier 1: Baseline runnable bundle set
+### Move to the in-process harness first
 
-Characteristics:
+These are the best initial migration targets:
 
-- configured bundles boot successfully,
-- at least one `"main"` input-event listener is registered,
-- rooms/entities needed by a scenario can be resolved.
-
-Expected harness behavior:
-
-- scenario execution works,
-- output capture works,
-- basic status reporting works.
-
-### Tier 2: Enriched scenario bundle set
-
-Characteristics:
-
-- Tier 1 support, plus
-- an optional adapter can provide parse or telemetry enrichment.
-
-Expected harness behavior:
-
-- baseline execution works,
-- richer JSON event payloads are available,
-- tests may assert on parse metadata when that adapter is present.
-
-### Tier 3: Non-conforming or non-playable bundle set
-
-Characteristics:
-
-- bundles boot, but no playable `"main"` input-event surface exists,
-- or required scenario surfaces are absent.
-
-Expected harness behavior:
-
-- the harness should fail clearly and early for scenario execution,
-- the failure should describe the missing capability,
-- the harness should not pretend that scenario execution is supported.
-
-This makes the utility honest for both conforming and non-conforming bundle sets.
-
-## Implication for `bundle-rantamuta`
-
-`bundle-rantamuta` should be treated as one adapter target, not as the definition of the harness core.
-
-That means:
-
-- the harness core should not import `bundle-rantamuta` parser code directly,
-- any current `bundle-rantamuta` parse enrichment should move behind an adapter boundary,
-- scenario execution should continue to work for other bundle sets that expose a compatible playable surface,
-- reduced metadata is acceptable when a bundle set does not expose the same parser affordances.
-
-## Isolation Model
-
-Isolation is the highest-risk part of this design. The performance win only matters if tests remain deterministic and easy to trust.
-
-### Per-Test Isolation We Want
-
-Each scenario test should receive:
-
-- a fresh fake player,
-- a fresh fake session,
-- fresh output buffers,
-- fresh event buffers,
-- fresh seeded items,
-- no dependency on another test's player position or inventory.
-
-### Cleanup Strategy
-
-Prefer explicit cleanup of things created during a run.
-
-Track and clean up:
-
-- created player objects,
-- created seeded item objects,
-- room placement for the player,
-- inventory placement for seeded items,
-- event/output buffers.
-
-### Shared-State Risk Categories
-
-Not all scenario tests have the same isolation risk.
-
-#### Low-risk cases
-
-These are good candidates for in-process shared-boot execution:
-
-- unknown command handling,
-- input canonicalization assertions,
 - room look assertions,
-- simple movement between existing rooms,
-- inventory listing,
-- simple take/put flows with seeded items,
-- JSON event shape validation,
-- seed event validation.
-
-These cases mostly depend on ephemeral player state and short-lived seeded items.
-
-#### Medium-risk cases
-
-These are likely still viable in-process, but may require explicit reset work:
-
-- tests that open/close/unlock doors,
-- tests that mutate room-local metadata,
-- tests that move authored NPCs indirectly,
-- tests that rely on room state changing during command flow.
-
-These are still local enough that targeted cleanup may be practical.
-
-#### High-risk cases
-
-These should initially remain subprocess tests unless we prove cleanup is simple and robust:
-
-- tests that depend on hidden bundle-global singleton state,
-- tests that mutate broader world metadata,
-- tests that rely on process-level CLI semantics rather than runner semantics,
-- tests where authored scripts retain runtime state in hard-to-reset places,
-- any scenario whose cleanup path is less obvious than its setup path.
-
-### Explicit Non-Strategy
-
-The first implementation should not attempt:
-
-- full deep cloning of `GameState`,
-- snapshotting the whole world object graph,
-- clever hidden reset of arbitrary bundle state.
-
-Those strategies are harder to validate and more likely to create silent flakiness than a conservative hybrid approach.
-
-## Test Suite Shape After Refactor
-
-### Recommended Split
-
-Split current scenario-runner coverage into two layers.
-
-#### 1. Fast harness-backed scenario tests
-
-These will import the shared harness directly and reuse one booted runtime per file.
-
-Target assertions:
-
-- look/canonicalization cases,
+- shorthand canonicalization,
 - simple movement,
-- inventory/take/put,
+- inventory listing,
+- simple take/put flows,
 - JSON event shape assertions,
-- seeding assertions,
-- selected authored scenarios with straightforward cleanup.
+- seed event assertions.
 
-#### 2. Thin CLI smoke tests
+These cases are narrow, frequent, and mostly depend on ephemeral player state plus short-lived seeded items.
 
-These will continue to spawn `node util/scenario-runner.js`.
+### Keep subprocess coverage first
 
-Target assertions:
+These should remain subprocess-based initially:
 
 - `--help`,
 - missing-value error paths,
 - unsupported legacy flag behavior,
-- one or two end-to-end `.scenario` and `--json` smoke checks,
+- one `.scenario` file smoke case,
+- one `--json` smoke case,
+- any scenario whose cleanup path is less obvious than its setup path,
 - any scenario intentionally validating process-boundary CLI behavior.
 
-This keeps the CLI honest without forcing every gameplay assertion through a separate process.
+### Expected payoff from the first slice
 
-Where CLI JSON assertions depend on parse enrichment, those tests should either:
+The first slice should aim for:
 
-- remain in the adapter-aware test bucket, or
-- assert only the baseline fields guaranteed by the core harness contract.
+- a visible reduction in scenario-suite runtime,
+- no change in CLI behavior,
+- no new ordering-sensitive flakiness,
+- a clear basis for deciding whether more authored scenarios are worth migrating.
 
-## Migration Strategy
+## Isolation Model
 
-### Phase 1: Extract Shared Logic
+The performance win only matters if tests remain deterministic and trustworthy.
 
-Refactor `util/scenario-runner.js` into:
+Each harness-backed test run should get:
 
-- shared reusable execution logic,
-- thin CLI wrapper with no intended behavior change.
+- a fresh fake player,
+- a fresh fake session,
+- fresh output/event buffers,
+- fresh seeded items,
+- no dependency on another test's player location or inventory.
 
-Validation target:
+Cleanup should be explicit. Track and remove:
 
-- existing subprocess-based scenario tests still pass.
+- created players,
+- seeded items,
+- player room placement,
+- inventory placement,
+- per-run buffers.
 
-This phase is mostly structural and should not change the test shape yet.
+The first implementation should not attempt:
 
-### Phase 2: Add Harness-Backed Tests
+- full deep cloning of `GameState`,
+- snapshotting the whole world graph,
+- hidden reset of arbitrary bundle state.
 
-Introduce a test helper that boots the harness once for the file and exposes `runScenario(...)` to tests.
+Those approaches are more complex than the problem requires.
 
-Validation target:
+## Guardrails
 
-- one or two low-risk tests migrated first,
-- confirm cleanup model works,
-- measure runtime improvement.
+These constraints matter because they protect the speedup from turning into accidental scope expansion.
 
-### Phase 3: Migrate Low-Risk Majority
+### Preserve the CLI contract
 
-Move the obvious low-risk scenario assertions to the shared harness path.
+The refactor must not change the public CLI behavior of `util/scenario-runner.js` unless explicitly approved.
 
-Validation target:
+### Keep the harness repo-level, not bundle-hardwired
 
-- suite remains deterministic,
-- no new ordering sensitivity,
-- noticeable wall-clock reduction.
+The harness should remain a `ranviermud`-level utility rather than a `bundle-rantamuta` helper.
 
-### Phase 4: Review Medium-Risk Scenarios
+That means the core harness should not require `bundle-rantamuta` parser code in order to execute scenarios.
 
-For each remaining subprocess scenario:
+### Discover capabilities from the booted runtime
 
-- decide whether it can be cleaned up explicitly,
-- migrate it if cleanup is simple and trustworthy,
-- otherwise leave it as subprocess coverage.
+The harness must discover scenario capabilities only by inspecting the booted runtime after booting the configured bundle set.
 
-This keeps scope controlled and avoids forcing all scenarios into one model.
+This keeps the harness honest with respect to configured bundle loading and avoids inventing a new discovery model.
 
-## Suggested Result Contract for Harness Runs
+### Optional enrichments stay optional
 
-To keep tests easy to read, the per-run result should be stable and simple.
+If richer parse or telemetry enrichment depends on bundle-specific surfaces, those enrichments should remain optional and must not block baseline harness execution.
 
-Suggested shape:
+## Compatibility Posture
+
+This design needs only a small compatibility model.
+
+### Baseline runnable runtime
+
+The harness can execute scenarios when:
+
+- the configured bundles boot successfully, and
+- the booted runtime provides a playable input-event surface.
+
+### Reduced-capability runtime
+
+If optional parse-enrichment surfaces are absent, the harness should still run baseline scenarios and simply omit the extra enrichment.
+
+### Non-playable runtime
+
+If the booted runtime does not expose a playable scenario surface, the harness should fail clearly rather than pretending support.
+
+This is enough for the speedup goal. The document does not need a broader compatibility taxonomy than that.
+
+## Suggested Result Shape
+
+To keep migrated tests simple, the harness should return a result shape close to what subprocess tests already assert against:
 
 ```js
 {
@@ -511,139 +255,61 @@ Suggested shape:
 }
 ```
 
-Notes:
+This keeps migration costs low and preserves the current style of assertions.
 
-- `status` should mirror current scenario-runner success/failure semantics.
-- `stdout` should preserve the current textual output shape used by assertions.
-- `stderr` may remain empty for most in-process runs, but keeping the field makes migration easier.
-- `events` should be present for JSON-style assertions.
+## Migration Plan
 
-The goal is to let migrated tests keep roughly the same assertion style they use today.
+### Phase 1: extract shared logic
 
-For enriched runs, additional fields may be present. For baseline runs, tests should not assume adapter-specific fields exist unless the test explicitly targets that adapter.
+Refactor `util/scenario-runner.js` into:
 
-## Why This Design Over Alternatives
+- shared reusable execution logic,
+- thin CLI wrapper with no intended behavior change.
 
-### Option A: Keep current subprocess-per-test model
+Validation target:
 
-Pros:
+- existing subprocess-based scenario tests still pass.
 
-- highest CLI realism,
-- easiest isolation story.
+### Phase 2: add the harness and migrate a few low-risk tests
 
-Cons:
+Introduce a harness-backed helper and migrate a small first set of low-risk scenario tests.
 
-- worst performance,
-- repeated bootstrap dominates wall-clock time,
-- expensive default for narrow gameplay assertions.
+Validation target:
 
-### Option B: Shared in-process harness plus thin CLI smoke layer
+- cleanup model works,
+- no ordering sensitivity appears,
+- runtime reduction is measurable.
 
-Pros:
+### Phase 3: migrate the low-risk majority
 
-- largest likely performance win,
-- preserves most behavioral coverage,
-- keeps CLI coverage where it matters,
-- keeps the harness viable as a repo-level utility instead of a `bundle-rantamuta` helper,
-- incremental migration is possible.
+Move the obvious high-payoff scenario assertions to the shared harness path.
 
-Cons:
+Validation target:
 
-- requires explicit cleanup discipline,
-- introduces a new helper boundary,
-- some scenarios will still need subprocess coverage.
+- the scenario suite is materially faster,
+- remaining subprocess coverage is intentional and small.
 
-### Option C: Batch-mode subprocess runner
+### Phase 4: review the remaining subprocess scenarios
 
-This would keep the process boundary but execute multiple cases in one child process.
+For each remaining subprocess scenario:
 
-Pros:
+- migrate it if cleanup is straightforward and worth the runtime savings,
+- otherwise leave it as subprocess coverage.
 
-- preserves more CLI realism than direct harness usage,
-- avoids some repeated process startup.
-
-Cons:
-
-- more awkward test authoring,
-- more awkward failure reporting,
-- cleanup and test isolation become a custom protocol problem,
-- less natural fit for the current test structure than direct harness reuse.
-
-Recommendation:
-
-Choose Option B first.
-
-It is the best balance of speed, readability, and controlled risk.
-
-## Validation Plan
-
-Because this is a behavior-adjacent test refactor, validation should prove both correctness and performance benefit.
-
-Expected validation commands for implementation work:
-
-- `npm test`
-- `npm run ci:local`
-
-Additional focused checks that are likely useful during development:
-
-- targeted execution of scenario-runner tests before and after migration,
-- direct timing of representative scenario runs,
-- reruns to look for order-dependent flakiness.
-
-The implementation summary should include:
-
-- before/after wall-clock observations,
-- which scenarios remained subprocess-based and why,
-- any cleanup assumptions introduced by the harness.
-
-## Risks
-
-- Hidden shared state in bundle scripts may leak between harness-backed tests.
-- A cleanup path may appear to work while silently missing one mutated field.
-- Tests may become order-sensitive if migration is too aggressive too early.
-- The shared module boundary could drift into becoming a second, test-only runtime if not kept narrow.
-- A supposedly generic harness could accidentally reintroduce `bundle-rantamuta` assumptions through convenience imports or JSON field contracts.
+Stop once the runtime improvement is good enough. This design does not require migrating every scenario.
 
 ## Open Questions
 
-1. Should the shared reusable module live under `util/` or under `tests/helpers/`?
+1. Which exact scenario tests belong in the first low-risk migration slice?
 
-Current recommendation: `util/`, because the CLI should depend on the same core logic.
+2. How much CLI subprocess coverage is enough after the first migration pass?
 
-2. How should optional parse-enrichment adapters be discovered?
+3. Are any currently slow authored scenarios worth keeping subprocess-based permanently because their cleanup risk outweighs their runtime cost?
 
-Likely options:
+## Acceptance Criteria
 
-- explicit registration by the CLI or tests,
-- runtime feature detection,
-- config-based opt-in.
-
-Current recommendation: prefer runtime detection plus explicit adapter selection only when needed for targeted tests.
-
-3. Should authored multi-step scenarios with door-state mutation migrate in the first pass or remain subprocess-based initially?
-
-Current recommendation: keep them subprocess-based until low-risk migration proves the cleanup model.
-
-4. Should the harness return current CLI-shaped text only, or a more structured result object?
-
-Current recommendation: return a structured result object that still includes `stdout` and `stderr` for easy test migration.
-
-5. Which JSON fields belong to the generic core contract versus the optional adapter contract?
-
-Current recommendation: keep the core contract small and stable, and treat parse-artifact fields as adapter-owned unless they can be derived generically from runtime surfaces.
-
-6. Should `node:test` scenario files continue to coexist under the broad Mocha glob, or should test-runner separation be handled independently?
-
-This is related but not required for the harness refactor itself. It should be treated as a separate follow-up decision.
-
-## Recommended First Implementation Slice
-
-The safest first slice is:
-
-1. extract shared scenario-runner logic into a reusable module,
-2. keep `util/scenario-runner.js` behavior unchanged,
-3. add a harness-backed test helper,
-4. migrate only low-risk scenario tests,
-5. leave CLI parsing/help/error-path tests and higher-risk scenarios as subprocess tests.
-
-This gives us measurable speedup without betting the whole suite on a broad isolation mechanism on day one.
+- The design remains clearly centered on reducing `npm test` wall-clock time.
+- The design preserves the existing scenario-runner CLI contract.
+- The design defines a first migration slice that targets high-payoff, low-risk scenario tests.
+- The design keeps only the minimum harness generality needed to avoid hardwiring `bundle-rantamuta` into the core.
+- The design preserves deterministic test isolation through explicit per-run cleanup.
