@@ -71,6 +71,12 @@ We want to keep a small number of true CLI smoke tests, but most narrow scenario
 
 The first implementation slice should migrate the highest-payoff, lowest-risk tests first.
 
+Interpretation for the first harness slice:
+
+- `C03` defines the test-facing harness contract: once-per-file boot semantics, once-per-test scenario execution, stable result shape, and explicit per-run cleanup requirements.
+- `C04` chooses the process boundary for that contract. Given the observed cross-suite contamination from booting Ranvier inside the Mocha process, the preferred implementation path is a long-lived child-process harness rather than broad in-process global-state reset.
+- `C05` keeps that boundary repo-level and capability-based so the shared harness does not become hardwired to `bundle-rantamuta` parser code for baseline execution.
+
 Preferred first migrated cases:
 
 - room look assertions,

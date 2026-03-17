@@ -31,6 +31,12 @@
   - The full `npm test` command becomes materially faster in local execution, with the scenario-runner suite providing the primary reduction.
   - Remaining subprocess tests are intentional and limited to cases where CLI realism or cleanup risk still justifies them.
 
+## C03-C05 Interpretation
+
+- `C03` defines the harness contract that tests call: once-per-file boot semantics, once-per-test scenario execution, stable result shape, and explicit per-run cleanup.
+- `C04` chooses the process boundary for that contract. Given the observed cross-suite contamination from booting Ranvier inside the Mocha process, the intended execution path is a long-lived child-process harness rather than broad in-process global-state reset.
+- `C05` keeps that boundary repo-level and capability-based so baseline scenario execution does not become hardwired to `bundle-rantamuta` parser code.
+
 ## Checklist
 
 - [x] `C00` [timing] Establish and record baseline timing observations for the full `npm test` command before refactor work begins.
