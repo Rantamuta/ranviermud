@@ -3,12 +3,12 @@
 ## Status
 
 - Status: active
-- Scope: speed up `npm test` by reducing repeated scenario-runner bootstrap cost
+- Scope: speed up full `npm test` execution by reducing repeated scenario-runner bootstrap cost
 - Type: design note for review
 
 ## Goal
 
-Reduce `npm test` wall-clock time by removing most repeated full-engine bootstrap work from scenario-runner tests, while preserving confidence in command-path behavior and keeping the existing `util/scenario-runner.js` CLI contract intact.
+Reduce full `npm test` wall-clock time by removing most repeated full-engine bootstrap work from scenario-runner tests, while preserving confidence in command-path behavior and keeping the existing `util/scenario-runner.js` CLI contract intact.
 
 ## Problem Statement
 
@@ -29,9 +29,9 @@ That is a good fit for CLI realism, but it is a poor default for fast local feed
 
 ## Why This Matters
 
-This design exists to speed up the test suite.
+This design exists to speed up the full test suite.
 
-The purpose is not to design a new general scenario framework. The purpose is to reduce repeated boot cost enough that `npm test` becomes noticeably faster while preserving a small amount of subprocess coverage where it still carries value.
+The purpose is not to design a new general scenario framework. The purpose is to reduce repeated boot cost enough that the full `npm test` command becomes noticeably faster while preserving a small amount of subprocess coverage where it still carries value.
 
 ## Desired Outcome
 
@@ -41,7 +41,7 @@ We want a test structure where:
 - each individual test still gets isolated player/session state,
 - a smaller subprocess smoke layer still covers the CLI path,
 - the existing scenario-runner CLI behavior remains stable,
-- the first implementation slice produces a noticeable reduction in scenario-suite wall-clock time.
+- the first implementation slice produces a noticeable reduction in full `npm test` wall-clock time.
 
 ## Non-Goals
 
@@ -70,7 +70,7 @@ That file currently:
 - captures output and optional JSON events,
 - exits with CLI-appropriate status.
 
-This makes the file useful as a smoke-test CLI, but it also makes the test suite use the most expensive possible path for every scenario assertion.
+This makes the file useful as a smoke-test CLI, but it also makes the full test suite use the most expensive possible path for every scenario assertion in that file.
 
 The current file also contains one explicit `bundle-rantamuta` coupling:
 
@@ -164,7 +164,7 @@ These should remain subprocess-based initially:
 
 The first slice should aim for:
 
-- a visible reduction in scenario-suite runtime,
+- a visible reduction in full `npm test` runtime,
 - no change in CLI behavior,
 - no new ordering-sensitive flakiness,
 - a clear basis for deciding whether more authored scenarios are worth migrating.

@@ -3,7 +3,7 @@
 ## Status
 
 - Status: active
-- Scope: reduce `npm test` runtime by reusing scenario-runner bootstrap work across low-risk scenario tests
+- Scope: reduce full `npm test` runtime by reusing scenario-runner bootstrap work across low-risk scenario tests
 - Source plan: `docs/drafts/ScenarioRunnerHarnessPlan.md`
 
 ## Locked Scope
@@ -27,14 +27,15 @@
   - The refactor preserves the current external behavior of `util/scenario-runner.js` for the retained CLI smoke cases.
   - The first migration slice moves a meaningful set of low-risk scenario assertions off per-test subprocess execution.
   - The migrated tests reuse one booted runtime per file and maintain deterministic isolation through explicit cleanup.
-  - The scenario-runner test hotspot becomes materially faster in local execution.
+  - The full `npm test` command becomes materially faster in local execution, with the scenario-runner suite providing the primary reduction.
   - Remaining subprocess tests are intentional and limited to cases where CLI realism or cleanup risk still justifies them.
 
 ## Checklist
 
-- [x] `C00` [timing] Establish and record baseline timing observations for the scenario-runner hotspot before refactor work begins.
+- [x] `C00` [timing] Establish and record baseline timing observations for the full `npm test` command before refactor work begins.
   - Trace:
-    - "baseline timing for the scenario-runner hotspot should be recorded before the refactor work begins." (`Validation Strategy`)
+    - "baseline timing for the full `npm test` command should be recorded before the refactor work begins." (`Validation Strategy`)
+    - "baseline timing for the scenario-runner suite may also be recorded to explain where the reduction comes from." (`Validation Strategy`)
   - Validation handoff: `S1`, `non-functional timing evidence`
   - Recorded baseline:
     - `npm test` completed green before refactor work.
@@ -87,11 +88,11 @@
     - "reuse runtime only per file, create fresh player/session state per test, and track explicit cleanup of created entities and placements." (`Risks and Mitigations`)
   - Validation handoff: `S4`, `deterministic isolation evidence`
 
-- [ ] `C08` [timing] Record post-change timing observations for the same scenario-runner hotspot after the first migration slice and compare them against the baseline in the implementation summary.
+- [ ] `C08` [timing] Record post-change timing observations for the full `npm test` command after the first migration slice and compare them against the baseline in the implementation summary.
   - Trace:
-    - "the same hotspot should be measured again after the first migration slice." (`Validation Strategy`)
-    - "the implementation summary should compare the post-change timing against the baseline." (`Validation Strategy`)
-    - "The scenario-runner test hotspot becomes materially faster in local execution." (`Acceptance Criteria`)
+    - "the full `npm test` command should be measured again after the first migration slice." (`Validation Strategy`)
+    - "the implementation summary should compare the post-change full-suite timing against the baseline and may include scenario-suite timing as supporting evidence." (`Validation Strategy`)
+    - "The full `npm test` command becomes materially faster in local execution, with the scenario-runner suite providing the primary reduction." (`Acceptance Criteria`)
   - Validation handoff: `S4`, `non-functional timing evidence`
 
 - [x] `C09` [docs] Update the task artifacts to reflect implementation-ready execution state as required by the working-artifact lifecycle policy once implementation begins.
@@ -107,7 +108,7 @@
 ## Behavior Slices
 
 - `S1`
-  - Goal: establish baseline timing evidence before refactor work begins.
+  - Goal: establish full-suite timing evidence before refactor work begins.
   - Items: `C00`.
   - Type: mechanical
 
@@ -127,7 +128,7 @@
   - Type: behavior
 
 - `S5`
-  - Goal: prove harness-backed scenario tests remain deterministic and that the hotspot runtime improves.
+  - Goal: prove harness-backed scenario tests remain deterministic and that full-suite runtime improves.
   - Items: `C07`, `C08`.
   - Type: behavior
 
