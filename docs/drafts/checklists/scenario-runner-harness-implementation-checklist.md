@@ -61,7 +61,7 @@
     - "The refactor preserves the current external behavior of `util/scenario-runner.js` for the retained CLI smoke cases." (`Acceptance Criteria`)
   - Validation handoff: `S2`, `integration/smoke`
 
-- [ ] `C03` [harness] Add a harness-backed test helper that boots the configured runtime once per file, creates fresh per-test player/session state, returns a stable scenario result shape, and performs explicit per-run cleanup.
+- [x] `C03` [harness] Add a harness-backed test helper that boots the configured runtime once per file, creates fresh per-test player/session state, returns a stable scenario result shape, and performs explicit per-run cleanup.
   - Trace:
     - "Add a shared harness for tests that can boot the configured runtime once per file and run multiple scenario assertions against it." (`In Scope`)
     - "Preserve explicit cleanup so harness-backed tests remain deterministic." (`In Scope`)

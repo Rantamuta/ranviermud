@@ -427,8 +427,11 @@ function createSeedItem(GameState, itemRef) {
 }
 
 function applySeeds(GameState, player, seedRefs, emitEvent) {
+  const createdItems = [];
+
   for (const itemRef of seedRefs.seedInventoryRefs) {
     const item = createSeedItem(GameState, itemRef);
+    createdItems.push(item);
     player.addItem(item);
     emitEvent({
       type: 'seed',
@@ -444,6 +447,7 @@ function applySeeds(GameState, player, seedRefs, emitEvent) {
     }
 
     const item = createSeedItem(GameState, itemRef);
+    createdItems.push(item);
     player.room.addItem(item);
     emitEvent({
       type: 'seed',
@@ -453,6 +457,8 @@ function applySeeds(GameState, player, seedRefs, emitEvent) {
       room: player.room.entityReference,
     });
   }
+
+  return createdItems;
 }
 
 function flushOutput(output, emitOutput, writeOutput = process.stdout.write.bind(process.stdout)) {
@@ -660,23 +666,34 @@ function getHelpText() {
   ].join('\n');
 }
 
-async function runScenarioCli(args, options = {}) {
-  const root = options.root || process.cwd();
+function cleanupScenarioRun(GameState, player, createdItems) {
+  for (let i = createdItems.length - 1; i >= 0; i -= 1) {
+    const item = createdItems[i];
+    if (!item || item.__pruned) {
+      continue;
+    }
+
+    GameState.ItemManager.remove(item);
+  }
+
+  if (player && !player.__pruned && GameState && GameState.PlayerManager) {
+    GameState.PlayerManager.removePlayer(player, false);
+  }
+}
+
+async function executeScenarioRequest(GameState, request, options = {}) {
+  const parseInput = options.parseInput;
+  const captureLogs = !!options.captureLogs;
   const stdout = options.stdout || process.stdout;
   const stderr = options.stderr || process.stderr;
-  const parseInput = options.parseInput;
-
-  if (args.includes('--help')) {
-    stdout.write(`${getHelpText()}\n`);
-    return 0;
-  }
-
-  if (typeof parseInput !== 'function') {
-    throw new TypeError('runScenarioCli requires options.parseInput');
-  }
-
-  const request = parseRunnerArgs(args, root);
+  const output = [];
+  const stdoutChunks = [];
+  const stderrChunks = [];
   const events = [];
+  let player = null;
+  let createdItems = [];
+  let logCapture = null;
+
   const emitEvent = (event) => {
     if (request.jsonOutput) {
       events.push(event);
@@ -691,13 +708,19 @@ async function runScenarioCli(args, options = {}) {
       emitEvent({ type: 'output', text: line });
     }
     : null;
-  const logCapture = request.jsonOutput ? createLogCapture(emitEvent, stdout, stderr) : null;
+  const writeStdout = (text) => {
+    stdoutChunks.push(String(text));
+  };
+  const writeStderr = (text) => {
+    stderrChunks.push(String(text));
+  };
 
   try {
-    const config = loadConfig(root);
-    const GameState = await bootEngine(root, config);
-    const output = [];
-    const player = createFakePlayer(output, GameState);
+    if (request.jsonOutput && captureLogs) {
+      logCapture = createLogCapture(emitEvent, stdout, stderr);
+    }
+
+    player = createFakePlayer(output, GameState);
     const inputListeners = getMainInputListeners(GameState);
     if (inputListeners.length === 0) {
       throw new Error('No input-event listeners are registered for "main"');
@@ -707,11 +730,15 @@ async function runScenarioCli(args, options = {}) {
     if (request.roomRef) {
       const room = GameState.RoomManager.getRoom(request.roomRef);
       if (!room) {
-        if (logCapture) {
-          logCapture.restore();
-        }
-        stderr.write(`[error] room not found: ${request.roomRef}\n`);
-        return 1;
+        writeStderr(`[error] room not found: ${request.roomRef}\n`);
+        return {
+          status: 1,
+          stdout: '',
+          stderr: stderrChunks.join(''),
+          payload: null,
+          events: [],
+          unknown: 0,
+        };
       }
 
       player.room = room;
@@ -724,17 +751,18 @@ async function runScenarioCli(args, options = {}) {
       player.hydrate(GameState);
     }
 
-    applySeeds(GameState, player, request.seedRefs, emitEvent);
+    createdItems = applySeeds(GameState, player, request.seedRefs, emitEvent);
 
     if (request.jsonOutput) {
       emitEvent({ type: 'start', commands: request.parsedCommands.length });
     }
+
     let unknownCount = 0;
 
     for (let i = 0; i < request.parsedCommands.length; i += 1) {
       const commandSpec = request.parsedCommands[i];
       if (!request.jsonOutput) {
-        stdout.write(`${commandSpec.raw}\n`);
+        writeStdout(`${commandSpec.raw}\n`);
       }
 
       let runEvent = null;
@@ -778,11 +806,20 @@ async function runScenarioCli(args, options = {}) {
             },
           });
         }
-        flushOutput(output, emitOutput, stdout.write.bind(stdout));
+        flushOutput(output, emitOutput, writeStdout);
         continue;
       }
 
-      const parsedInput = parseInput(commandSpec.raw);
+      const parsedInput = typeof parseInput === 'function'
+        ? parseInput(commandSpec.raw)
+        : {
+          intentToken: null,
+          canonicalInput: commandSpec.raw,
+          normalizedInput: commandSpec.raw,
+          primaryTargetSpan: null,
+          relationToken: null,
+          secondaryTargetSpan: null,
+        };
       const intentToken = typeof parsedInput.intentToken === 'string'
         ? parsedInput.intentToken
         : resolveCanonicalIntent(parsedInput, commandSpec.raw);
@@ -810,18 +847,19 @@ async function runScenarioCli(args, options = {}) {
         unknownCount += 1;
       }
 
-      flushOutput(output, emitOutput, stdout.write.bind(stdout));
+      flushOutput(output, emitOutput, writeStdout);
     }
 
     const failed = request.failOnUnknown && unknownCount > 0 ? 1 : 0;
-    flushOutput(output, emitOutput, stdout.write.bind(stdout));
+    flushOutput(output, emitOutput, writeStdout);
 
+    let payload = null;
     if (request.jsonOutput) {
       emitEvent({ type: 'complete' });
       if (logCapture) {
         logCapture.flush();
       }
-      const payload = {
+      payload = {
         meta: {
           commands: request.parsedCommands.length,
           unknown: unknownCount,
@@ -831,28 +869,98 @@ async function runScenarioCli(args, options = {}) {
       };
       if (logCapture) {
         logCapture.writeStdoutRaw(`${JSON.stringify(payload, null, 2)}\n`);
-        logCapture.restore();
       } else {
-        stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+        writeStdout(`${JSON.stringify(payload, null, 2)}\n`);
       }
     }
 
-    return failed;
-  } catch (error) {
+    return {
+      status: failed,
+      stdout: stdoutChunks.join(''),
+      stderr: stderrChunks.join(''),
+      payload,
+      events,
+      unknown: unknownCount,
+    };
+  } finally {
     if (logCapture) {
       logCapture.restore();
     }
-    throw error;
+    cleanupScenarioRun(GameState, player, createdItems);
   }
+}
+
+async function createScenarioRuntimeHarness(options = {}) {
+  const root = options.root || process.cwd();
+  const config = options.config || loadConfig(root);
+  const GameState = options.GameState || await bootEngine(root, config);
+  const parseInput = options.parseInput;
+
+  return {
+    GameState,
+    async runArgs(args, runOptions = {}) {
+      const request = parseRunnerArgs(args, root);
+      return executeScenarioRequest(GameState, request, {
+        parseInput: typeof runOptions.parseInput === 'function' ? runOptions.parseInput : parseInput,
+        captureLogs: runOptions.captureLogs,
+        stdout: runOptions.stdout,
+        stderr: runOptions.stderr,
+      });
+    },
+    async runRequest(request, runOptions = {}) {
+      return executeScenarioRequest(GameState, request, {
+        parseInput: typeof runOptions.parseInput === 'function' ? runOptions.parseInput : parseInput,
+        captureLogs: runOptions.captureLogs,
+        stdout: runOptions.stdout,
+        stderr: runOptions.stderr,
+      });
+    },
+    async close() {
+      return undefined;
+    },
+  };
+}
+
+async function runScenarioCli(args, options = {}) {
+  const root = options.root || process.cwd();
+  const stdout = options.stdout || process.stdout;
+  const stderr = options.stderr || process.stderr;
+  const parseInput = options.parseInput;
+
+  if (args.includes('--help')) {
+    stdout.write(`${getHelpText()}\n`);
+    return 0;
+  }
+
+  if (typeof parseInput !== 'function') {
+    throw new TypeError('runScenarioCli requires options.parseInput');
+  }
+
+  const request = parseRunnerArgs(args, root);
+  const harness = await createScenarioRuntimeHarness({ root, parseInput });
+  const result = await harness.runRequest(request, {
+    captureLogs: true,
+    stdout,
+    stderr,
+  });
+  if (result.stdout && !request.jsonOutput) {
+    stdout.write(result.stdout);
+  }
+  if (result.stderr) {
+    stderr.write(result.stderr);
+  }
+  return result.status;
 }
 
 module.exports = {
   applySeeds,
   bootEngine,
   collectScenarioConfig,
+  createScenarioRuntimeHarness,
   createFakePlayer,
   createInGameSession,
   createLogCapture,
+  executeScenarioRequest,
   flushOutput,
   getHelpText,
   getMainInputListeners,
