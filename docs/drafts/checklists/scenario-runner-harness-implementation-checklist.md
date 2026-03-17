@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: planning
+- Status: active
 - Scope: reduce `npm test` runtime by reusing scenario-runner bootstrap work across low-risk scenario tests
 - Source plan: `docs/drafts/ScenarioRunnerHarnessPlan.md`
 
@@ -90,7 +90,7 @@
     - "The scenario-runner test hotspot becomes materially faster in local execution." (`Acceptance Criteria`)
   - Validation handoff: `S4`, `non-functional timing evidence`
 
-- [ ] `C09` [docs] Update the task artifacts to reflect implementation-ready execution state as required by the working-artifact lifecycle policy once implementation begins.
+- [x] `C09` [docs] Update the task artifacts to reflect implementation-ready execution state as required by the working-artifact lifecycle policy once implementation begins.
   - Trace:
     - "Status: planning" (`Status`)
   - Validation handoff: `S5`, `contract/parity`
