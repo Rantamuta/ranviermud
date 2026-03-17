@@ -15,6 +15,8 @@ This directory contains the normative contracts and workflow rules for this repo
   - Defines the phase model (`Receive Input` through `Render/Dispatch`), including deterministic input canonicalization before parse.
 - `EntityResolution.md`
   - Defines read-only entity binding, deterministic scope/disambiguation behavior, and resolver failure ownership.
+- `ArtifactLifecycle.md`
+  - Defines the required lifecycle vocabulary and transition rules for non-normative working artifacts such as plans, checklists, and implementation working documents.
 - `checklist.md`
   - Defines the checklist-authoring phase between approved planning and checklist execution.
 - `plan.md`

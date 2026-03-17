@@ -23,6 +23,7 @@ Related policies:
 - `AGENTS.md` (approval, validation, and stop-rule guardrails)
 - `docs/ADR_POLICY.md` (decision-record requirements)
 - `docs/CHANGELOG_POLICY.md` (user-visible change logging)
+- `docs/normative/ArtifactLifecycle.md` (working-artifact lifecycle vocabulary and transitions)
 
 ## Setup
 
@@ -45,6 +46,24 @@ Check out a new git branch with a name that reflects the goal of the implementat
 - Prefer names that describe the behavior or contract being implemented rather than an internal codename.
 
 If the working tree is dirty at this stage, `git add . && git commit -m "Init <implementation>"` where implementation is suitably descriptive.
+
+## Artifact Lifecycle Handling
+
+Checklist execution is governed by `docs/normative/ArtifactLifecycle.md`.
+
+Before starting the first checklist item:
+
+- update the related task artifacts, including the approved checklist and its source plan, to `Status: active`
+- treat the approved checklist as the execution tracker for the task while keeping lifecycle status synchronized across the related task artifacts
+- any task-specific implementation working document created during execution MUST use `Status: active` when it enters the task artifact set
+
+For task-completion archival:
+
+- the executed checklist, its source plan, and any task-specific implementation working artifacts MUST all be updated to `Status: archived`
+- any related design or working document that is fully represented by the completed task artifacts and is no longer needed for later phases MUST also be archived with that task artifact set
+- related design or working documents that remain intended for later phases MAY remain outside the archive
+- those archived artifacts MUST all be moved into appropriate locations under `docs/archive/**`
+- the status updates and archive moves for those artifacts MUST be committed together in one commit
 
 ## Validation selection
 
@@ -106,7 +125,11 @@ After all checklist items are complete:
 - For docs-only or information-gathering checklist execution, validation commands MAY be skipped only when the skip rationale is recorded.
 - If `ci:local` is blocked by dirty-tree checks during in-progress work, `npm run ci:local -- --force` MAY be used for interim validation.
 - Before final completion, validation SHOULD be re-run from a clean tree when practical.
-- MUST move the completed checklist file from `docs/drafts/checklists/` to `docs/archive/implementations/`.
+- MUST archive the task's working artifacts per `ArtifactLifecycle.md`:
+  - update the executed checklist, source plan, and any task-specific implementation working artifacts to `Status: archived`
+  - archive any related design or working document that is fully represented by the completed task artifacts and no longer needed for later phases
+  - move those archived artifacts into appropriate locations under `docs/archive/**`
+  - commit those status changes and archive moves together in one commit
 - MUST report results and stop when requested scope is complete.
 
 ## Pull request
