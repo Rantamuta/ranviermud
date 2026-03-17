@@ -1,6 +1,6 @@
 # Combat System Design Plan
 
-Status: `draft-v1`
+Status: draft
 Binding: Proposed (non-normative)
 Scope: Bundle-layer combat as a deterministic command producer integrated into the existing command pipeline and semantic messaging model.
 

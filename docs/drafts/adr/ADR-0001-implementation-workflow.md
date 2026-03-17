@@ -1,6 +1,6 @@
 # ADR-0001: Standardize Implementation Workflow
 
-- Status: proposed
+- Authority: non-normative
 - Date: 2026-02-22
 - Owner: maintainers
 

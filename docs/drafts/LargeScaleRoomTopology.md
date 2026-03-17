@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: exploratory
+- Status: draft
 - Scope: bundle-layer and runtime room lifecycle
 - Binding: informational
 - Audience: engine maintainers

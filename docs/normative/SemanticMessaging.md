@@ -2,8 +2,7 @@
 
 ## Status
 
-- Status: `draft-v1`
-- Binding: Proposed (in review)
+- Authority: normative
 - Scope: Bundle-layer semantic event rendering and audience dispatch
 - Related:
   - [CommandArchitecture.md](CommandArchitecture.md)

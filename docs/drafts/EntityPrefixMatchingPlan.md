@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: draft-v1
+- Status: draft
 - Scope: bundle-layer entity resolution behavior (`bundle-rantamuta`)
 - Type: implementation plan for review (not yet implemented)
 

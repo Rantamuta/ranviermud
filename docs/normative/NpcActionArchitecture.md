@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `proposed-v1`
+- Authority: normative
 - Scope: NPC action execution model (runtime-level)
 - Binding: Proposed (in review)
 - Related:

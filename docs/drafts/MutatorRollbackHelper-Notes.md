@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `draft-stub`
+- Status: draft
 - Type: design bookmark
 - Scope: rollback safety for metadata mutators
 - Intent: capture problem and options for a later implementation pass

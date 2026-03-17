@@ -1,6 +1,6 @@
 # ADR-0002: Enforce NPC Script Mutation Boundary
 
-- Status: proposed
+- Authority: non-normative
 - Date: 2026-02-23
 - Owner: maintainers
 

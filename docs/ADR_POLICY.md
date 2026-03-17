@@ -59,8 +59,8 @@ Recommended:
 
 ## ADR lifecycle
 
-- Drafts start in `docs/drafts/adr/` with `Status: proposed`.
-- Accepted ADRs move to `docs/adr/` with `Status: accepted`.
+- Drafts start in `docs/drafts/adr/` with `Authority: non-normative`.
+- Accepted ADRs move to `docs/adr/` with `Authority: normative`.
 - Superseded decisions are recorded in a newer ADR; older ADR content is preserved.
 
 ## Permanence and supersession

@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `stub`
+- Status: draft
 - Scope: bundle-layer runtime and tests in `bundle-rantamuta`
 - Posture: deferred cleanup plan; do not treat this as implementation approval
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: draft-v1
+- Status: draft
 - Scope: bundle-layer command parsing, syntax-rule selection, and command migration in `bundles/bundle-rantamuta`
 - Type: implementation plan for review (not yet implemented)
 
