@@ -4,7 +4,7 @@
 
 - Status: archived
 - Scope: implement verb-local syntax matching for bundle-layer diegetic commands in `bundles/bundle-rantamuta`
-- Source plan: `docs/drafts/VerbLocalSyntaxMatchingPlan.md`
+- Source plan: `docs/archive/VerbLocalSyntaxMatchingPlan.md`
 - In Scope:
   - replace global relation-word structural inference with verb-local ordered syntax matching
   - keep `Receive Input` limited to canonicalization, tokenization or lexing, source-span preservation, and exact verb resolution

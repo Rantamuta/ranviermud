@@ -2,7 +2,7 @@
 
 ## Status
 
-* Status: draft
+* Status: archived
 * Scope: bundle-layer command parsing and rule selection
 * Binding: no (planning artifact)
 

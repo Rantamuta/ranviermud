@@ -2,9 +2,9 @@
 
 ## Status
 
-- Status: draft
+- Status: archived
 - Scope: bundle-layer command parsing, syntax-rule selection, and command migration in `bundles/bundle-rantamuta`
-- Type: implementation plan for review (not yet implemented)
+- Type: archived implementation plan
 
 ## Goal
 
