@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: active
+- Status: archived
 - Scope: speed up full `npm test` execution by reducing repeated scenario-runner bootstrap cost
 - Type: design note for review
 

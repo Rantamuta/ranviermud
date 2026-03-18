@@ -2,9 +2,9 @@
 
 ## Status
 
-- Status: active
+- Status: archived
 - Scope: reduce full `npm test` runtime by reusing scenario-runner bootstrap work across low-risk scenario tests
-- Source plan: `docs/drafts/ScenarioRunnerHarnessPlan.md`
+- Source plan: `docs/archive/implementations/ScenarioRunnerHarnessPlan.md`
 
 ## Locked Scope
 
@@ -117,7 +117,7 @@
     - "Status: planning" (`Status`)
   - Validation handoff: `S6`, `contract/parity`
 
-- [ ] `C11` [docs] Update the task artifacts to `Status: archived` and move the completed checklist under `docs/archive/**` when the implementation workstream is complete.
+- [x] `C11` [docs] Update the task artifacts to `Status: archived` and move the completed checklist under `docs/archive/**` when the implementation workstream is complete.
   - Trace:
     - "when the task is complete and the related working artifacts are archived, the plan MUST be updated to `Status: archived` and moved to `docs/archive/**`" ([plan.md](/mnt/c/workspace/mud/ranviermud/docs/normative/plan.md#L65))
   - Validation handoff: `S6`, `contract/parity`

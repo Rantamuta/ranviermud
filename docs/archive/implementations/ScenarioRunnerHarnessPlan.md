@@ -2,10 +2,10 @@
 
 ## Status
 
-- Status: active
+- Status: archived
 - Scope: reduce full `npm test` runtime by reusing scenario-runner bootstrap work across low-risk scenario tests
 - Type: implementation plan for review (not yet implemented)
-- Source design: `docs/drafts/ScenarioRunnerHarnessDesign.md`
+- Source design: `docs/archive/implementations/ScenarioRunnerHarnessDesign.md`
 
 ## Goal
 
