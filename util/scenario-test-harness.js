@@ -3,8 +3,7 @@
 const path = require('path');
 const { fork } = require('child_process');
 
-function createScenarioHarness(options = {}) {
-  const root = options.root || process.cwd();
+function createHarnessChild(root) {
   const hostPath = path.join(__dirname, 'scenario-harness-host.js');
   const child = fork(hostPath, [], {
     cwd: root,
@@ -115,6 +114,41 @@ function createScenarioHarness(options = {}) {
         child.once('exit', () => resolve());
         child.send({ type: 'close' });
       });
+    },
+  };
+}
+
+function createScenarioHarness(options = {}) {
+  const root = options.root || process.cwd();
+  const isolated = !!options.isolated;
+
+  if (isolated) {
+    return {
+      async runScenario(args) {
+        const oneShotHarness = createHarnessChild(root);
+        try {
+          return await oneShotHarness.runScenario(args);
+        } finally {
+          await oneShotHarness.close();
+        }
+      },
+      async close() {
+        return undefined;
+      },
+    };
+  }
+
+  const sharedHarness = createHarnessChild(root);
+
+  return {
+    get pid() {
+      return sharedHarness.pid;
+    },
+    async runScenario(args) {
+      return sharedHarness.runScenario(args);
+    },
+    async close() {
+      return sharedHarness.close();
     },
   };
 }
