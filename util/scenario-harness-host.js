@@ -1,9 +1,11 @@
 'use strict';
 
+const { loadScenarioParseInput } = require('./load-scenario-parse-input');
 const { createScenarioRuntimeHarness } = require('./scenario-runner-lib');
 
 const root = process.env.SCENARIO_HARNESS_ROOT || process.cwd();
-const harnessPromise = createScenarioRuntimeHarness({ root });
+const parseInput = loadScenarioParseInput(root);
+const harnessPromise = createScenarioRuntimeHarness({ root, parseInput });
 
 function serializeError(error) {
   return {

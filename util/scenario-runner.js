@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 'use strict';
 
-const { parseInput } = require('../bundles/bundle-rantamuta/lib/parse-input');
+const { loadScenarioParseInput } = require('./load-scenario-parse-input');
 const { runScenarioCli } = require('./scenario-runner-lib');
+
+const parseInput = loadScenarioParseInput(process.cwd());
 
 runScenarioCli(process.argv.slice(2), {
   root: process.cwd(),
