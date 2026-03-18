@@ -4,7 +4,7 @@
 
 - Status: archived
 - Scope: add additive actor-side Capture and Plan hooks to the bundle-layer command pipeline
-- Source plan: `docs/plans/actorCommandArchitecturePlan.md`
+- Source plan: `docs/archive/actorCommandArchitecturePlan.md`
 - In Scope:
   - define `canActor` and `planActor` in the normative command architecture
   - add runtime support in `bundles/bundle-rantamuta/lib/session/command-dispatch.js`
