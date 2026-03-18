@@ -101,12 +101,16 @@
     - "reuse runtime only per file, create fresh player/session state per test, and track explicit cleanup of created entities and placements." (`Risks and Mitigations`)
   - Validation handoff: `S5`, `deterministic isolation evidence`
 
-- [ ] `C09` [timing] Record post-change timing observations for the full `npm test` command after the first migration slice and compare them against the baseline in the implementation summary.
+- [x] `C09` [timing] Record post-change timing observations for the full `npm test` command after the first migration slice and compare them against the baseline in the implementation summary.
   - Trace:
     - "the full `npm test` command should be measured again after the first migration slice." (`Validation Strategy`)
     - "the implementation summary should compare the post-change full-suite timing against the baseline and may include scenario-suite timing as supporting evidence." (`Validation Strategy`)
     - "The full `npm test` command becomes materially faster in local execution, with the scenario-runner suite providing the primary reduction." (`Acceptance Criteria`)
   - Validation handoff: `S5`, `non-functional timing evidence`
+  - Recorded post-change:
+    - `npm test` completed green after the first migration slice in `161.68s` end-to-end.
+    - The remaining `node:test` bucket reported `duration_ms 136607.328266`.
+    - Compared with the recorded baseline (`duration_ms 226028.901605` and roughly 4 to 6 minutes end-to-end), the full suite is materially faster after moving the scenario-runner hotspot onto the shared harness path.
 
 - [x] `C10` [docs] Update the task artifacts to reflect implementation-ready execution state as required by the working-artifact lifecycle policy once implementation begins.
   - Trace:
