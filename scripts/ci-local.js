@@ -4,7 +4,12 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { spawnSync } = require('child_process');
+const {
+  createDetachedWorktree,
+  ensureCleanWorkingTree: ensureGitClean,
+  removeDetachedWorktree,
+  runCommands,
+} = require('./lib/worktree-runner');
 
 const repoRoot = path.resolve(__dirname, '..');
 const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
@@ -18,154 +23,21 @@ const forceMode = argv.includes('--force');
 let workRoot = repoRoot;
 let worktreePath = null;
 
-function runCommand(command) {
-  const result = spawnSync(command.bin, command.args, {
-    cwd: command.cwd || workRoot,
-    stdio: command.captureStdoutTo ? ['ignore', 'pipe', 'inherit'] : 'inherit',
-    env: { ...process.env },
-    encoding: command.captureStdoutTo ? 'utf8' : undefined,
-  });
-
-  if (result.error) {
-    console.error(result.error.message);
-    return result.status || 1;
-  }
-
-  if (command.captureStdoutTo) {
-    const output = typeof result.stdout === 'string' ? result.stdout : '';
-    fs.writeFileSync(command.captureStdoutTo, output);
-  }
-
-  if (result.signal) {
-    console.error(`Command terminated by signal ${result.signal}`);
-    return 1;
-  }
-
-  if (!command.allowFailure && typeof result.status === 'number' && result.status !== 0) {
-    return result.status;
-  }
-
-  return 0;
-}
-
-function runCommands(commands) {
-  for (const command of commands) {
-    const exitCode = runCommand(command);
-    if (exitCode !== 0) {
-      return exitCode;
-    }
-  }
-  return 0;
-}
-
 function ensureCleanWorkingTree() {
-  const result = spawnSync('git', ['status', '--porcelain'], {
+  return ensureGitClean({
     cwd: workRoot,
-    env: { ...process.env },
-    encoding: 'utf8',
+    forceMode,
+    dirtyMessage: 'Working tree is not clean.',
   });
-
-  if (result.error) {
-    console.error(result.error.message);
-    return result.status || 1;
-  }
-
-  if (result.stdout) {
-    process.stdout.write(result.stdout);
-  }
-
-  if (typeof result.status === 'number' && result.status !== 0) {
-    return result.status;
-  }
-
-  if (result.stdout.trim()) {
-    if (forceMode) {
-      console.warn('Warning: working tree is not clean. Continuing because --force was provided.');
-      return 0;
-    }
-    console.error('Working tree is not clean.');
-    return 1;
-  }
-
-  return 0;
 }
 
 function ensureRepoCleanBeforeWorktree() {
-  const result = spawnSync('git', ['status', '--porcelain'], {
+  return ensureGitClean({
     cwd: repoRoot,
-    env: { ...process.env },
-    encoding: 'utf8',
+    forceMode,
+    dirtyMessage: 'Working tree has uncommitted changes.',
+    preface: 'Commit your changes before running ci:local.',
   });
-
-  if (result.error) {
-    console.error(result.error.message);
-    return result.status || 1;
-  }
-
-  if (typeof result.status === 'number' && result.status !== 0) {
-    return result.status;
-  }
-
-  if (result.stdout.trim()) {
-    if (forceMode) {
-      console.warn('Warning: repository has uncommitted changes. Continuing because --force was provided.');
-      return 0;
-    }
-    console.error('Working tree has uncommitted changes.');
-    console.error('Commit your changes before running ci:local.');
-    return 1;
-  }
-
-  return 0;
-}
-
-function createWorktree() {
-  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ranviermud-ci-local-'));
-  const result = spawnSync('git', ['worktree', 'add', '--detach', tempRoot, 'HEAD'], {
-    cwd: repoRoot,
-    stdio: 'inherit',
-    env: { ...process.env },
-  });
-
-  if (result.error) {
-    console.error(result.error.message);
-    return { exitCode: result.status || 1 };
-  }
-
-  if (result.signal) {
-    console.error(`Command terminated by signal ${result.signal}`);
-    return { exitCode: 1 };
-  }
-
-  if (typeof result.status === 'number' && result.status !== 0) {
-    return { exitCode: result.status };
-  }
-
-  return { exitCode: 0, path: tempRoot };
-}
-
-function removeWorktree(pathToRemove) {
-  const result = spawnSync('git', ['worktree', 'remove', '--force', pathToRemove], {
-    cwd: repoRoot,
-    stdio: 'inherit',
-    env: { ...process.env },
-  });
-
-  if (result.error) {
-    console.error(result.error.message);
-    return result.status || 1;
-  }
-
-  if (result.signal) {
-    console.error(`Command terminated by signal ${result.signal}`);
-    return 1;
-  }
-
-  if (typeof result.status === 'number' && result.status !== 0) {
-    return result.status;
-  }
-
-  return 0;
 }
 
 function buildSteps() {
@@ -240,7 +112,7 @@ function buildSteps() {
 function runSteps(steps) {
   for (const step of steps) {
     console.log(`\n==> ${step.label}`);
-    const exitCode = step.run ? step.run() : runCommands(step.commands);
+    const exitCode = step.run ? step.run() : runCommands(step.commands, { workRoot });
     if (exitCode !== 0) {
       return exitCode;
     }
@@ -258,7 +130,7 @@ function main() {
         return preflightCode;
       }
       console.log('\n==> Create isolated worktree');
-      const result = createWorktree();
+      const result = createDetachedWorktree(repoRoot, 'ranviermud-ci-local-');
       if (result.exitCode !== 0) {
         return result.exitCode;
       }
@@ -273,7 +145,7 @@ function main() {
   } finally {
     if (worktreePath && !keepWorktree) {
       console.log('\n==> Remove isolated worktree');
-      const cleanupCode = removeWorktree(worktreePath);
+      const cleanupCode = removeDetachedWorktree(repoRoot, worktreePath);
       if (cleanupCode !== 0 && exitCode === 0) {
         exitCode = cleanupCode;
       }

@@ -18,6 +18,7 @@
     "remove-bundle": "node ./util/remove-bundle.js",
     "install-bundle": "node ./util/install-bundle.js",
     "smoke:login": "node ./scripts/smoke-login.js",
+    "test:wsl": "node ./scripts/test-wsl.js",
     "typecheck": "tsc --project tsconfig.json --pretty false",
     "test": "mocha \"**/*.test.js\" --ignore \"**/node_modules/**\" && npm run typecheck",
     "bundle:install": "node util/install-bundle.js",
