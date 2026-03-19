@@ -622,6 +622,28 @@ emit actor menu
 
 ---
 
+### 14.1 Canonical Execution Trace
+
+The conversation runtime should expose a stable execution-trace shape for tests, previews, and debugging.
+
+A canonical trace should record:
+
+- source state
+- resolved input
+- selected transition
+- condition result
+- transition effects
+- destination state
+- `onEntry` effects
+- engagement or menu result
+
+This trace model is intended to make conversation execution inspectable without letting command-surface quirks become the semantic authority.
+
+The trace is descriptive of machine execution.
+It is not a second source of truth.
+
+---
+
 ## 15. Failure Behavior
 
 Conversation commands must produce deterministic outcomes when preconditions are not met.
