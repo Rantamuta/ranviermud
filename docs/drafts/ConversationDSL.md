@@ -40,6 +40,21 @@ In general, the DSL should try to mirror existing mutation ops and render instru
 
 Requests from designers to expose additional existing mutation ops or render instructions through the DSL should be considered on their merits, especially when doing so avoids unnecessary duplication between authored conversation behavior and runtime capability.
 
+The DSL should not use raw command execution as its general effect mechanism.
+
+That means authored effects should not take the form:
+
+```yaml
+- command: give silver coin to player
+```
+
+Reason:
+
+- commands are actor-driven command surfaces, not pure effect primitives
+- command execution bundles parsing, resolution, policy, planning, mutation, and rendering in ways that are less explicit for authored conversation behavior
+- using raw commands as effects would make the DSL harder to reason about deterministically
+- if designers repeatedly need a command-like behavior, the better answer is usually to expose an explicit declarative op or shorthand that lowers cleanly to the runtime's existing mutation and render model
+
 ## SCXML Profile v1
 
 ### Supported semantics
@@ -135,21 +150,21 @@ This draft is intentionally minimal and regular.
 
 ```yaml
 id: blacksmith_conversation
-initial: idle
+initial: idling
 
 states:
-  idle:
+  idling:
     entry:
       effects:
-        - say: "Ah, a traveler. What do you need?"
+        - messageRoom: "Ah, a traveler. What do you need?"
     actions:
-      - id: greet
+      greet:
         label: "Hello."
         to: greeting
 
-      - id: ask_work
+      ask_work:
         label: "Need any help?"
-        to: work_offer
+        to: discussing_work
 ```
 
 ### State shape
@@ -161,7 +176,8 @@ states:
       - <effect>
   terminal: true|false            # optional, default false
   actions:                        # optional if terminal
-    - <transition>
+    <action_id>:
+      <transition>
 ```
 
 ### Entry shape
@@ -173,7 +189,7 @@ The regular form is:
 ```yaml
 entry:
   effects:
-    - say: "Here you go."
+    - messageRoom: "Here you go."
     - transferItem:
         item: widget
         from: inventory
@@ -183,12 +199,14 @@ entry:
 
 Entry operations may include:
 
-- NPC speech ops such as `say`
+- NPC speech/render ops such as `messageRoom`
 - mutation ops such as `transferItem` or `setPlayerMetadata`
 - render ops such as actor-targeted feedback
 
 Likely convenience render shorthands include:
 
+- `messagePlayer`
+- `messageRoom`
 - `broadcastToPlayer`
 - `broadcastToRoom`
 
@@ -201,23 +219,31 @@ Broader broadcast scopes such as area-level variants may be possible later if de
 `entry` is state-entry behavior only.
 It runs when the state is entered, not merely because the state exists.
 
+Semantic discipline rule:
+
+- transition effects = effects of the player's choice
+- entry effects = effects of arriving in that state regardless of path
+
+Placement rule:
+
+- if an effect depends on which action was taken, it belongs on the transition
+- if it depends only on the destination state, it belongs on entry
+
 ### Transition shape
 
 ```yaml
-- id: <action_id>                 # required, stable event id
+<action_id>:
   label: <menu text>              # required for UI surfaces
   to: <state_id>                  # required unless terminal routing model changes
   guard: <predicate ref>          # optional
-  say: <player utterance>         # optional override
   effects:                        # optional
     - <effect>
 ```
 
 Notes:
 
-- `id` is the canonical event id
+- the action key is the canonical event id
 - `label` is UI-facing
-- `say` overrides player transcript rendering
 - `effects` are transition-time operations
 - `to` names the destination state
 
@@ -227,9 +253,24 @@ They are not interchangeable:
 - transition `effects` run because the edge was taken
 - state `entry` runs because the destination state was entered
 
+### Naming convention
+
+By default:
+
+- actions should use imperative names such as `greet`, `ask_work`, or `leave`
+- states should describe conditions, modes, or situations such as `idling`, `greeting`, or `discussing_old_mine`
+
+This convention is intended to make the machine read naturally:
+
+- state `idling`
+- action `greet`
+- state `greeting`
+
+Authors may deviate when there is a strong reason, but this is the preferred style.
+
 ### Player transcript rules
 
-- if `say` is present, use it
+- if transition `effects` include an authored player transcript/render override such as `messageRoom`, use it
 - otherwise, fall back to command-surface rendering
 
 ### Terminal states
@@ -238,7 +279,7 @@ They are not interchangeable:
 goodbye:
   entry:
     effects:
-      - say: "Safe travels."
+      - messageRoom: "Safe travels."
   terminal: true
 ```
 
@@ -254,7 +295,7 @@ DSL:
 idle:
   entry:
     effects:
-      - say: "..."
+      - messageRoom: "..."
 ```
 
 SCXML analogue:
@@ -276,7 +317,7 @@ Restriction:
 DSL:
 
 ```yaml
-- id: greet
+greet:
   to: greeting
 ```
 
@@ -335,6 +376,8 @@ Restriction:
 The intent is not to invent a DSL-only effect engine.
 Conversation effects should lower to the same underlying runtime mutation operations and render instructions already used elsewhere in the system.
 
+For the same reason, raw `command:` execution is intentionally not the default effect surface for the DSL.
+
 Audience-targeted render helpers such as `broadcastToPlayer` and `broadcastToRoom` may be appropriate initial DSL-facing convenience forms if they lower cleanly to the same runtime render instructions.
 
 ### Entry utterance
@@ -344,7 +387,7 @@ DSL:
 ```yaml
 entry:
   effects:
-    - say: "Hello."
+    - messageRoom: "Hello."
 ```
 
 SCXML analogue:
@@ -355,9 +398,22 @@ SCXML analogue:
 
 Restriction:
 
-- string shorthand is allowed for simple NPC output
+- conversation-authored speech may be expressed through render shorthand rather than a special `say` field
 - richer entry behavior may use additional declarative ops
 - no embedded arbitrary logic
+
+### Render shorthand mapping
+
+Author-facing shorthands may map to existing runtime render instructions directly.
+
+Examples:
+
+- `messagePlayer: "..."` -> render instruction using player-only audience
+- `messageRoom: "..."` -> render instruction using room transcript audience
+- `broadcastToPlayer: "..."` -> `broadcast` instruction targeting player
+- `broadcastToRoom: "..."` -> `broadcast` instruction targeting room
+
+More explicit render instruction shapes may still be needed for advanced authored cases, but the common DSL surface should prefer ergonomic shorthand where it lowers cleanly to the existing runtime model.
 
 ### Terminal
 
@@ -395,11 +451,11 @@ Restriction:
 
 ### Transition rules
 
-- `id` is required and unique per state
+- action keys are required and unique per state
 - `to` must reference an existing state
 - `label` is required
-- duplicate `id` within the same state is forbidden
-- the same `id` across different states is allowed
+- duplicate action keys within the same state are forbidden
+- the same action key across different states is allowed
 
 ### Determinism rules
 
@@ -425,12 +481,12 @@ Unreachable states may warn rather than hard fail in early tooling.
 ### Greeting from idle
 
 ```yaml
-idle:
+idling:
   entry:
     effects:
-      - say: "Ah, a traveler."
+      - messageRoom: "Ah, a traveler."
   actions:
-    - id: greet
+    greet:
       label: "Hello."
       to: greeting
 ```
@@ -441,13 +497,13 @@ idle:
 greeting:
   entry:
     effects:
-      - say: "What do you need?"
+      - messageRoom: "What do you need?"
   actions:
-    - id: buy
+    buy:
       label: "Show me your wares."
       to: shop
 
-    - id: leave
+    leave:
       label: "Nothing."
       to: goodbye
 ```
@@ -462,7 +518,9 @@ Input surfaces:
 Both resolve to:
 
 ```yaml
-id: buy
+buy:
+  label: "Show me your wares."
+  to: shop
 ```
 
 The machine sees only event `buy`.
@@ -470,16 +528,17 @@ The machine sees only event `buy`.
 ### Transition with player override
 
 ```yaml
-- id: greet
+greet:
   label: "Hello."
-  say: "Hello there."
+  effects:
+    - messageRoom: "Hello there."
   to: greeting
 ```
 
 ### Transition fallback rendering
 
 ```yaml
-- id: greet
+greet:
   label: "Hello."
   to: greeting
 ```
@@ -492,7 +551,7 @@ Player transcript is derived from the command surface.
 goodbye:
   entry:
     effects:
-      - say: "Safe travels."
+      - messageRoom: "Safe travels."
   terminal: true
 ```
 
