@@ -71,7 +71,7 @@ Typical interaction:
 
 Players may interrupt conversations at any time by issuing other commands.
 
-Conversation may begin either through `talk <npc>` or through another supported command surface that resolves to an event available from the NPC's opening `idle` state for that actor.
+Conversation may begin either through `talk <npc>` or through another supported command surface that resolves to an event available from the NPC's declared initial state for that actor.
 
 ---
 
@@ -387,7 +387,7 @@ conversation: squirrel
 
 The runtime loads the definition when interaction begins.
 
-If a player uses a supported opener command surface that resolves to an event available from the opening `idle` state, the runtime may begin the conversation by taking that transition immediately.
+If a player uses a supported opener command surface that resolves to an event available from the declared initial state, the runtime may begin the conversation by taking that transition immediately.
 
 ---
 
@@ -395,13 +395,7 @@ If a player uses a supported opener command surface that resolves to an event av
 
 Conversations are authored as **finite state machines**.
 
-Every conversation must define the state:
-
-```
-idle
-```
-
-as the entry state.
+Every conversation must declare its entry state through `initial`.
 
 ### State Structure
 
@@ -901,7 +895,7 @@ This section resolves the remaining **determinism coverage gap** identified in t
 
 Conversation definitions must validate:
 
-- missing `idle`
+- missing `initial`
 - invalid `to`
 - unreachable states
 - duplicate events

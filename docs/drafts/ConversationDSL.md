@@ -62,7 +62,7 @@ Reason:
 This profile adopts a strict subset of SCXML semantics:
 
 - flat atomic states only
-- single initial state (`idle`)
+- single declared initial state via `initial`
 - event-triggered transitions
 - exact event matching
 - optional explicit fallback transition via `default`
@@ -343,7 +343,7 @@ see_you_later:
 DSL:
 
 ```yaml
-idle:
+greeting:
   entry:
     effects:
       - messageRoom: "..."
@@ -352,7 +352,7 @@ idle:
 SCXML analogue:
 
 ```xml
-<state id="idle">
+<state id="greeting">
   <onentry>execute ordered entry behavior</onentry>
 </state>
 ```
@@ -544,7 +544,7 @@ Unreachable states may warn rather than hard fail in early tooling.
 
 ## Worked Examples
 
-### Greeting from idle
+### Greeting from initial state
 
 ```yaml
 idling:
