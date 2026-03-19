@@ -426,7 +426,7 @@ Fields:
 
 - action key — stable authored transition identifier and directed action token
 - `label` — menu-facing text for the action
-- `guard` — condition controlling action visibility
+- `condition` — read-only condition controlling action visibility
 - `effects` — transition-time operations applied because this edge was taken
 - `to` — destination conversation state
 
@@ -463,7 +463,7 @@ Menu numbers are generated automatically.
 
 ---
 
-## 10. Guards and Effects
+## 10. Conditions and Effects
 
 Actions separate three concerns:
 
@@ -471,12 +471,12 @@ Actions separate three concerns:
 - gating
 - mutation
 
-Guards determine action availability.
+Conditions determine action availability.
 
 Example:
 
 ```yaml
-guard:
+condition:
   hasItem: silver_coin
 ```
 
@@ -492,8 +492,8 @@ effects:
 
 Rules:
 
-- guards are read-only
-- guards must not use render predicates
+- conditions are read-only
+- conditions must not use render predicates
 - effects apply only during Commit
 
 ---
@@ -525,7 +525,7 @@ Purpose:
 
 Rules:
 
-- actions failing guards are hidden
+- actions failing conditions are hidden
 - remaining actions are renumbered
 
 Example:
@@ -615,7 +615,7 @@ validate menu revision
 validate engagement
 
 Plan
-evaluate guard
+evaluate condition
 compute next state
 
 Commit
@@ -810,7 +810,7 @@ Determinism requirements apply to **conversation logic, menu generation, command
 For identical committed state:
 
 - the same conversation state must be selected
-- guard evaluation must produce the same visible action set
+- condition evaluation must produce the same visible action set
 - the same actions must be hidden or visible
 
 Guards must therefore depend only on deterministic read surfaces.
@@ -946,7 +946,7 @@ Guards read authoritative metadata but remain separate from render predicates.
 Example:
 
 ```yaml
-guard:
+condition:
   worldMetaEquals:
     key: shrine.open
     value: true
@@ -987,7 +987,7 @@ Tests should verify:
 2. numeric selection works
 3. stale menu rejection
 4. directed action speech progression
-5. guard filtering
+5. condition filtering
 6. menu renumbering
 7. movement clears engagement
 8. NPC despawn invalidates session
@@ -1046,9 +1046,9 @@ This option is intentionally deferred until the design team decides whether the 
 
 Potential future features:
 
-- richer guards
+- richer conditions
 - reusable fragments
 - editor tooling
-- party-aware guards
+- party-aware conditions
 
 These are intentionally deferred for v1.

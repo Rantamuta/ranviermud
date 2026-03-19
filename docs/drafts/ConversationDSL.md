@@ -66,7 +66,7 @@ This profile adopts a strict subset of SCXML semantics:
 - event-triggered transitions
 - exact event matching
 - optional explicit fallback transition via `default`
-- guards (boolean, read-only)
+- conditions (boolean, read-only)
 - deterministic transition selection by authored order
 - state entry behavior
 - transition-time effects
@@ -99,10 +99,10 @@ Evaluation:
 1. Collect authored actions in order from state `S`.
 2. For each transition `T`:
    - if `T.event != E`, skip
-   - if `T.guard` exists and evaluates false, skip
+   - if `T.condition` exists and evaluates false, skip
    - first matching transition is selected
 3. If no transition matches:
-   - if state `S` defines `actions.default` and its guard passes, select `actions.default`
+   - if state `S` defines `actions.default` and its condition passes, select `actions.default`
    - otherwise, no state change
 
 Determinism rule:
@@ -187,12 +187,12 @@ states:
       <transition>
     default:                      # optional unmatched-input fallback
       to: <state_id>
-      guard: <predicate ref>      # optional
+      condition: <predicate ref>  # optional
       effects:
         - <effect>
   auto:                           # optional routing-only block
     - to: <state_id>
-      guard: <predicate ref>      # optional
+      condition: <predicate ref>  # optional
 ```
 
 ### Entry shape
@@ -252,7 +252,7 @@ Placement rule:
 <action_id>:
   label: <menu text>              # required for UI surfaces
   to: <state_id>                  # required unless terminal routing model changes
-  guard: <predicate ref>          # optional
+  condition: <predicate ref>      # optional
   effects:                        # optional
     - <effect>
 ```
@@ -276,7 +276,7 @@ They are not interchangeable:
 actions:
   default:
     to: <state_id>
-    guard: <predicate ref>        # optional
+    condition: <predicate ref>    # optional
     effects:                      # optional
       - <effect>
 ```
@@ -361,7 +361,8 @@ Restriction:
 
 - no `<onexit>`
 - no nested `<state>`
-- entry behavior remains declarative rather than arbitrary script
+- entry behavior is a restricted declarative subset of SCXML `onentry`, not a general executable-content surface
+- the restriction is deliberate and remains within the requirement that the DSL be, in principle, compilable to SCXML
 
 ### Transition
 
@@ -383,12 +384,12 @@ Restriction:
 - single target only
 - exact event match only
 
-### Guard
+### Condition
 
 DSL:
 
 ```yaml
-guard: player.hasQuest("forge")
+condition: player.hasQuest("forge")
 ```
 
 SCXML analogue:
@@ -401,6 +402,7 @@ Restriction:
 
 - not arbitrary script
 - must resolve through a predefined predicate system
+- `condition` is the DSL's more ergonomic author-facing spelling of SCXML `cond`, not a semantic divergence
 
 ### Effects
 
@@ -415,7 +417,7 @@ SCXML analogue:
 
 ```xml
 <transition>
-  <assign/>
+  <!-- restricted declarative transition actions -->
 </transition>
 ```
 
@@ -423,6 +425,8 @@ Restriction:
 
 - declarative effect vocabulary only
 - executed at commit time only
+- transition effects are a restricted declarative subset of SCXML transition executable content, not a general executable-content surface
+- the restriction is deliberate and remains within the requirement that the DSL be, in principle, compilable to SCXML
 
 The intent is not to invent a DSL-only effect engine.
 Conversation effects should lower to the same underlying runtime mutation operations and render instructions already used elsewhere in the system.
@@ -452,6 +456,7 @@ Restriction:
 - conversation-authored speech may be expressed through render shorthand rather than a special `say` field
 - richer entry behavior may use additional declarative ops
 - no embedded arbitrary logic
+- `entry.effects` is intentionally narrower than full SCXML `onentry`
 
 ### Render shorthand mapping
 
@@ -651,10 +656,10 @@ greeting_router:
       - messageRoom: "The blacksmith studies {actor} for a moment."
   auto:
     - to: friendly
-      guard: npc.isFriendly
+      condition: npc.isFriendly
 
     - to: hostile
-      guard: npc.isHostile
+      condition: npc.isHostile
 ```
 
 ## Eventless Transition Decision
@@ -672,7 +677,7 @@ Risks:
 
 - duplication of guarded transitions
 - pressure to add ad hoc routing features later
-- routing logic may leak into runtime or guard structure
+- routing logic may leak into runtime or condition structure
 
 Authoring impact:
 

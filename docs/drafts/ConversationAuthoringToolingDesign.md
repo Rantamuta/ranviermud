@@ -51,7 +51,7 @@ However, the DSL is constrained, not free-form.
 
 It must be designed so that:
 
-- states, transitions, events, guards, hierarchy, and execution flow remain coherent in statechart terms
+- states, transitions, events, conditions, hierarchy, and execution flow remain coherent in statechart terms
 - convenience features do not quietly introduce incompatible semantics
 - growth happens by design rather than by patching in one-off exceptions
 
@@ -80,7 +80,7 @@ The intended relationship is:
 - designers author the YAML DSL
 - the DSL remains constrained by statechart semantics
 - new DSL features must be evaluated against SCXML rather than added ad hoc
-- the DSL must not contradict SCXML's model of states, transitions, events, guards, hierarchy, and execution flow unless the divergence is explicit, justified, and documented as a deliberate deviation
+- the DSL must not contradict SCXML's model of states, transitions, events, conditions, hierarchy, and execution flow unless the divergence is explicit, justified, and documented as a deliberate deviation
 
 The practical bar is:
 
