@@ -288,6 +288,8 @@ Some author-facing YAML terms remain deliberate ergonomic wrappers rather than r
 
 These are acceptable as long as they remain explainable in SCXML terms and do not introduce divergent semantics.
 
+In the classification language above, these are deliberate divergences or constrained subsets rather than direct analogues.
+
 Current deliberate wrappers include:
 
 - `effects`
@@ -369,6 +371,17 @@ see_you_later:
 
 ## DSL to SCXML Mapping
 
+### Classification legend
+
+Each DSL construct should be understood in one of these categories:
+
+- `direct analogue`
+  - the DSL construct corresponds directly to an SCXML concept, even if the YAML surface is friendlier
+- `constrained subset`
+  - the DSL construct corresponds to an SCXML concept, but deliberately exposes only a smaller declarative subset
+- `deliberate divergence`
+  - the DSL construct is a repo-local convenience that is not a native SCXML concept and must be documented as such
+
 ### State
 
 DSL:
@@ -390,6 +403,7 @@ SCXML analogue:
 
 Restriction:
 
+- classification: `direct analogue`
 - no `<onexit>`
 - no nested `<state>`
 - `onEntry` behavior is a restricted declarative subset of SCXML `onentry`, not a general executable-content surface
@@ -412,6 +426,7 @@ SCXML analogue:
 
 Restriction:
 
+- classification: `direct analogue`
 - single target only
 - exact event match only
 
@@ -431,6 +446,7 @@ SCXML analogue:
 
 Restriction:
 
+- classification: `direct analogue`
 - not arbitrary script
 - must resolve through a predefined predicate system
 - `condition` is the DSL's more ergonomic author-facing spelling of SCXML `cond`, not a semantic divergence
@@ -454,6 +470,7 @@ SCXML analogue:
 
 Restriction:
 
+- classification: `constrained subset`
 - declarative effect vocabulary only
 - executed at commit time only
 - transition effects are a restricted declarative subset of SCXML transition executable content, not a general executable-content surface
@@ -484,6 +501,7 @@ SCXML analogue:
 
 Restriction:
 
+- classification: `constrained subset`
 - conversation-authored speech may be expressed through render shorthand rather than a special `say` field
 - richer `onEntry` behavior may use additional declarative ops
 - no embedded arbitrary logic
