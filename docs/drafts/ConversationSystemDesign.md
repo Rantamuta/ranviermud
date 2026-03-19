@@ -62,16 +62,19 @@ Typical interaction:
 
 Players may interrupt conversations at any time by issuing other commands.
 
+Conversation may begin either through `talk <npc>` or through another supported command surface that resolves to an action available from the NPC's opening `idle` state for that actor.
+
 ---
 
 ## 4. Command Model
 
 ### Conversation Entry
 
-Canonical command:
+Canonical command forms:
 
 ```
 talk <npc>
+talk to <npc>
 ```
 
 Behavior:
@@ -90,6 +93,11 @@ talk
 may resume the most recent NPC conversation if the NPC is still present.
 
 Aliases such as `speak`, `greet`, or `speak to` may be added later.
+
+`talk <npc>` is one player-facing command surface for entering conversation.
+It is not the only possible input surface.
+
+Other command surfaces may later map to the same authored opening action as long as they resolve deterministically to the same conversation action.
 
 ---
 
@@ -150,31 +158,36 @@ This mechanism may also be reused for other short-lived prompts such as **yes/no
 
 ---
 
-### Directed Intent Speech
+### Directed Action Speech
 
-Conversation actions may define **keywords** representing player intent.
+Conversation states expose **actions** that are invoked through directed speech.
+
+The player-facing command surface and the conversation action surface are separate.
+
+Player commands such as `say <action> to <npc>` are input surfaces.
+The conversation machine itself cares about whether the current state for that actor exposes a matching action.
 
 Canonical command form:
 
 ```
-say <keyword> to <npc>
+say <action> to <npc>
 ```
 
 Example:
 
 ```
-say location to Foo
+say mine to Foo
 ```
 
 #### Normative rules
 
-- directed keyword speech is a valid way to select a visible conversation action
-- the keyword must match an action currently visible in the actor’s conversation state
-- the directed target must match the NPC associated with the engagement
-- arbitrary speech does not advance the conversation
-- keywords have meaning only within the current conversation state
+- directed action speech is a valid way to select a visible conversation action
+- the action must match an action currently visible in the actor’s conversation state
+- if directed speech resolves to an action in the current state, it may advance the conversation
+- if directed speech does not resolve to an action in the current state, it does not advance the conversation unless some other authored behavior explicitly handles it
+- actions have meaning only within the current conversation state
 
-In FSM terms the keyword identifies the **action edge** that moves the conversation from one state to the next.
+In FSM terms the action identifies the **transition edge** that moves the conversation from one state to the next.
 
 #### Relationship to numeric selection
 
@@ -189,53 +202,35 @@ Example menu:
 If the action defines:
 
 ```
-keywords: [location]
+action: mine
 ```
 
 Then both inputs select the same action:
 
 ```
 1
-say location to Foo
+say mine to Foo
 ```
 
 The runtime may resolve these through the same internal action selection path.
 
 #### Transcript behavior
 
-The spoken transcript uses the action’s authored dialogue line rather than the keyword.
+If directed action speech is intercepted successfully, the player's rendered utterance may be supplied either by the conversation or by the invoking command surface.
 
-Example:
+If the conversation supplies a richer player utterance for the selected action, that authored rendering should be used.
 
-```yaml
-- id: ask_location
-  keywords: [location]
-  say: "Where is the old mine?"
-  goto: mine_location
-```
+If the conversation does not supply such a rendering, the invoking command surface may fall back to its default semantic render.
 
-Possible player inputs:
+The NPC's spoken reply is emitted when entering the destination state.
 
-```
-1
-say location to Foo
-```
-
-Transcript output:
-
-```
-Bar says to Foo, "Where is the old mine?"
-```
-
-Keywords are **input tokens**, not rendered dialogue.
+The NPC's utterance is not the conversation state itself.
 
 #### Determinism requirements
 
 For identical committed state:
 
-- the same actions must expose the same keywords
-- the same keyword must resolve to the same action
-- numeric selection and keyword speech must resolve to the same action
+- numeric selection and directed action speech must resolve to the same action
 - the same action must produce the same transition, effects, transcript, and next menu
 
 ---
@@ -379,6 +374,8 @@ conversation: squirrel
 
 The runtime loads the definition when interaction begins.
 
+If a player uses a supported opener command surface that resolves to an action available from the opening `idle` state, the runtime may begin the conversation by taking that transition immediately.
+
 ---
 
 ## 9. Authoring Model
@@ -397,35 +394,40 @@ as the entry state.
 
 States contain:
 
-- NPC entry text
+- NPC entry utterance emitted when entering the state
 - available actions
+
+The state's utterance is emitted on transition into that state.
+The utterance is not the state itself.
 
 ### Action Structure
 
-Actions define transitions between states and separate three responsibilities:
+Actions define transitions between states and separate two responsibilities:
 
-- **intent input** via `keywords`
-- **spoken transcript** via `say`
+- **transition input** via `action`
 - **state progression** via `goto`
 
 Fields:
 
 - `id` — stable authoring identifier
-- `keywords` — directed intent tokens valid for this action in the current state
-- `say` — spoken line rendered in transcript
+- `action` — directed action token valid for this transition in the current state
 - `guard` — condition controlling action visibility
 - `effects` — mutations applied during Commit
 - `goto` — destination conversation state
 
-Multiple keywords may map to a single action.
+One action corresponds to one transition out of the current state.
 
 Example:
 
 ```yaml
-- id: ask_mine
-  keyword: [mine]
-  say: "Tell me about the old mine."
-  goto: mine
+- id: chatting
+    action: mine
+      menu: Ask about the old mine.
+      message: "{actor} {verb:say}, \"Tell me about the old mine, Old Miner!\""
+      goto: mine
+
+    action: foo
+    ...
 ```
 
 Menu numbers are generated automatically.
@@ -537,7 +539,11 @@ No periodic cleanup mechanism is required for correctness.
 
 Conversation commands follow the standard command pipeline.
 
-Conversation-specific validation occurs during the **Capture** phase, including engagement validation and intent keyword eligibility.
+Conversation-specific veto behavior occurs during the **Capture** phase.
+
+Determining whether player input resolves to a conversation action is a routing concern that happens before or alongside conversation-specific Capture checks.
+
+Capture remains the phase for refusal, invalidation, or veto, not for inventing a conversation action where none was resolved.
 
 ---
 
@@ -683,26 +689,30 @@ Room transcript must not be produced.
 
 ---
 
-### 15.3 Directed intent speech behavior
+### 15.3 Directed action speech behavior
 
 Directed speech of the form:
 
 ```
-say <keyword> to <npc>
+say <action> to <npc>
 ```
 
-may be intercepted by the conversation system when the addressed NPC hosts a conversation whose current actor-specific state can receive that keyword.
+may be intercepted by the conversation system when the addressed NPC hosts a conversation whose current actor-specific state can receive that action.
 
 Rules:
 
-- directed keyword speech is a first-class conversation input path, not merely a shortcut for an already-open menu
-- directed keyword speech may either initiate a conversation or continue an existing one
+- directed action speech is a first-class conversation input path, not merely a shortcut for an already-open menu
+- directed action speech may either initiate a conversation or continue an existing one
 - interception is based on the addressed NPC's conversation state for that actor, not on the existence of an active menu or prior engagement
-- a keyword is eligible when it matches an action the current state can receive for that actor
-- if the addressed NPC does not host a conversation, or the current actor-specific state cannot receive that keyword, the conversation system does not intercept the command and speech proceeds through normal speech handling
-- when directed keyword speech is intercepted successfully, the conversation runtime may establish or refresh engagement/menu state as needed
+- an action is eligible when it matches an action the current state can receive for that actor
+- if the addressed NPC does not host a conversation, or the current actor-specific state cannot receive that action, the conversation system does not intercept the command and speech proceeds through normal speech handling
+- when directed action speech is intercepted successfully, the conversation runtime may establish or refresh engagement/menu state as needed
 
 This preserves the diegetic meaning of speech commands.
+
+If directed speech does not advance the conversation, an authored fall-through reaction may still respond without changing state when such behavior is supported by the conversation spec.
+
+Such a fall-through reaction is distinct from state progression.
 
 ---
 
@@ -803,8 +813,8 @@ Intent resolution must be deterministic.
 For identical committed state and input:
 
 - the same selector number must resolve to the same action
-- the same keyword must resolve to the same action
-- numeric selection and directed intent speech must resolve to the same action
+- numeric selection and directed action speech must resolve to the same action
+- equivalent player-facing command surfaces must resolve to the same action when they represent the same authored conversation action
 
 ---
 
@@ -870,7 +880,6 @@ Conversation definitions must validate:
 - invalid `goto`
 - unreachable states
 - duplicate actions
-- duplicate keywords
 - terminal states with actions
 
 ---
@@ -941,7 +950,7 @@ Tests should verify:
 1. talk loads progress
 2. numeric selection works
 3. stale menu rejection
-4. keyword speech progression
+4. directed action speech progression
 5. guard filtering
 6. menu renumbering
 7. movement clears engagement
@@ -951,7 +960,53 @@ Tests should verify:
 
 ---
 
-### 23. Future Extensions
+### 23. Speculative Option: Delayed NPC-Driven Transition
+
+This section is speculative and must be weighed before adoption.
+
+Current mainline design assumes that a player's conversation action advances the conversation directly through the standard command pipeline.
+
+A possible alternative is to make the exchange explicitly two-step and delayed by one or more ticks, as a timeout effect:
+
+1. player command resolves to a conversation action
+2. commit stores a pending response intent on the NPC
+3. on the NPC's next eligible tick, the NPC consumes that pending response
+4. the NPC commits a player-targeted conversation transition
+5. that later player-targeted mutation advances conversation state, emits the NPC response, and installs the next menu
+
+In that model, the symmetry would be:
+
+- player command -> commit stores pending conversation response on NPC
+- NPC timeout/tick -> commit stores player-targeted conversation transition
+
+Possible pros:
+
+- gives conversational pacing real gameplay time rather than treating delay as render-only
+- preserves stronger actor separateness between player input and NPC response
+- creates meaningful interruption windows before the NPC responds
+- makes the next menu feel like part of the NPC's later reply rather than an immediate UI expansion
+- may align better with future NPC pacing and response systems
+
+Possible cons:
+
+- significantly increases conversation-system complexity
+- introduces cancellation and invalidation rules that must be specified precisely
+- complicates ownership boundaries because player progress is player-owned while pending response timing would live on the NPC
+- raises concurrency questions for multiple players engaging the same NPC close together
+- may be more architecture than v1 needs
+
+Questions to weigh if this option is pursued:
+
+- should the NPC store a pre-resolved pending transition, or re-resolve the action at response time?
+- what cancels the pending response: movement, despawn, disconnect, new input, state mismatch, or all of the above?
+- should pending responses queue, replace one another, or be forbidden concurrently per player/NPC pair?
+- should menu installation occur only with the delayed NPC reply, or earlier?
+
+This option is intentionally deferred until the design team decides whether the pacing benefits justify the added complexity.
+
+---
+
+### 24. Future Extensions
 
 Potential future features:
 
