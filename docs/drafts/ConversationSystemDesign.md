@@ -49,6 +49,11 @@ Receive Input → (Parse & Entity Resolution) → Capture → Plan → Commit �
 
 All mutation occurs **before Render/Dispatch**.
 
+Vocabulary:
+
+- `terminal` means a persisted permanent end to an authored conversation path, not merely "goodbye for now"
+- ordinary session exit or farewell should not be assumed to be terminal unless the authored conversation is genuinely complete
+
 ---
 
 ## 3. Conversation Lifecycle
@@ -186,9 +191,10 @@ say mine to Foo
 #### Normative rules
 
 - directed action speech is a valid way to select a visible conversation action
-- the action must match an action currently visible in the actor’s conversation state
-- if directed speech resolves to an action in the current state, it may advance the conversation
-- if directed speech does not resolve to an action in the current state, it does not advance the conversation unless some other authored behavior explicitly handles it
+- the action may resolve either to an exact visible action in the actor’s current conversation state or to an authored hidden `default` fallback
+- if directed speech resolves to an exact action or an authored `default` fallback in the current state, it may advance the conversation
+- if directed speech does not resolve to an exact action in the current state, an authored `default` fallback may still handle it when defined
+- if directed speech resolves to neither an exact action nor an authored `default` fallback, it does not advance the conversation
 - actions have meaning only within the current conversation state
 
 In FSM terms the action identifies the **transition edge** that moves the conversation from one state to the next.
@@ -206,7 +212,10 @@ Example menu:
 If the action defines:
 
 ```
-action: mine
+actions:
+  mine:
+    label: "Where is the mine?"
+    to: discussing_old_mine
 ```
 
 Then both inputs select the same action:
@@ -411,15 +420,15 @@ Entry behavior may include NPC speech, mutation, and render operations as long a
 Actions define transitions between states and separate two responsibilities:
 
 - **transition input** via `action`
-- **state progression** via `goto`
+- **state progression** via `to`
 
 Fields:
 
-- `id` — stable authoring identifier
-- `action` — directed action token valid for this transition in the current state
+- action key — stable authored transition identifier and directed action token
+- `label` — menu-facing text for the action
 - `guard` — condition controlling action visibility
 - `effects` — transition-time operations applied because this edge was taken
-- `goto` — destination conversation state
+- `to` — destination conversation state
 
 One action corresponds to one transition out of the current state.
 
@@ -437,14 +446,17 @@ Placement rule:
 Example:
 
 ```yaml
-- id: chatting
-    action: mine
-      menu: Ask about the old mine.
-      message: "{actor} {verb:say}, \"Tell me about the old mine, Old Miner!\""
-      goto: mine
+chatting:
+  actions:
+    mine:
+      label: "Ask about the old mine."
+      effects:
+        - messageRoom: "{actor} {verb:say}, \"Tell me about the old mine, Old Miner!\""
+      to: discussing_old_mine
 
-    action: foo
-    ...
+    ask_work:
+      label: "Ask about work."
+      to: discussing_work
 ```
 
 Menu numbers are generated automatically.
@@ -721,15 +733,11 @@ Rules:
 - directed action speech is a first-class conversation input path, not merely a shortcut for an already-open menu
 - directed action speech may either initiate a conversation or continue an existing one
 - interception is based on the addressed NPC's conversation state for that actor, not on the existence of an active menu or prior engagement
-- an action is eligible when it matches an action the current state can receive for that actor
-- if the addressed NPC does not host a conversation, or the current actor-specific state cannot receive that action, the conversation system does not intercept the command and speech proceeds through normal speech handling
+- an action is eligible when the current state can receive it through an exact action match or an authored `default` fallback
+- if the addressed NPC does not host a conversation, or the current actor-specific state can receive neither that exact action nor an authored `default` fallback, the conversation system does not intercept the command and speech proceeds through normal speech handling
 - when directed action speech is intercepted successfully, the conversation runtime may establish or refresh engagement/menu state as needed
 
 This preserves the diegetic meaning of speech commands.
-
-If directed speech does not advance the conversation, an authored fall-through reaction may still respond without changing state when such behavior is supported by the conversation spec.
-
-Such a fall-through reaction is distinct from state progression.
 
 ---
 
@@ -894,10 +902,12 @@ This section resolves the remaining **determinism coverage gap** identified in t
 Conversation definitions must validate:
 
 - missing `idle`
-- invalid `goto`
+- invalid `to`
 - unreachable states
 - duplicate actions
 - terminal states with actions
+- states with `auto` and `actions`
+- states with `auto` and `terminal`
 
 ---
 

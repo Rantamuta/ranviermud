@@ -65,6 +65,7 @@ This profile adopts a strict subset of SCXML semantics:
 - single initial state (`idle`)
 - event-triggered transitions
 - exact event matching
+- optional explicit fallback transition via `default`
 - guards (boolean, read-only)
 - deterministic transition selection by authored order
 - state entry behavior
@@ -95,18 +96,19 @@ Given:
 
 Evaluation:
 
-1. Collect transitions in authored order from state `S`.
+1. Collect authored actions in order from state `S`.
 2. For each transition `T`:
    - if `T.event != E`, skip
    - if `T.guard` exists and evaluates false, skip
    - first matching transition is selected
 3. If no transition matches:
-   - no state change
-   - optional reaction behavior is outside the core profile
+   - if state `S` defines `default` and its guard passes, select `default`
+   - otherwise, no state change
 
 Determinism rule:
 
 - authored order is the only priority mechanism
+- `default` is considered only after exact action matching fails
 
 ### Entry behavior
 
@@ -114,7 +116,8 @@ When a state is entered:
 
 1. state becomes current
 2. state entry behavior executes in authored order
-3. available actions are enumerated if the state is non-terminal
+3. if the state defines `auto`, automatic routing is evaluated
+4. available actions are enumerated if the state is non-terminal and does not define `auto`
 
 No exit actions in v1.
 
@@ -138,9 +141,13 @@ A terminal state:
 - has no outgoing transitions
 - may produce an entry utterance
 - clears engagement after entry
-- ends the conversation
+- is a valid persisted progress state
+- represents a permanent end to that authored conversation
 
 No implicit transitions out of terminal states.
+
+In this DSL, `terminal` does not mean "goodbye for now" or ordinary session closure.
+It means the conversation has genuinely reached its authored end unless some separate system later resets or replaces that progress.
 
 ## YAML DSL v1
 
@@ -171,13 +178,21 @@ states:
 
 ```yaml
 <state_id>:
-  entry:                                # optional but typical
+  entry:                                # optional
     effects:
       - <effect>
   terminal: true|false            # optional, default false
-  actions:                        # optional if terminal
+  actions:                        # optional unless terminal or auto
     <action_id>:
       <transition>
+  default:                        # optional unmatched-input fallback
+    to: <state_id>
+    guard: <predicate ref>        # optional
+    effects:
+      - <effect>
+  auto:                           # optional routing-only block
+    - to: <state_id>
+      guard: <predicate ref>      # optional
 ```
 
 ### Entry shape
@@ -219,6 +234,8 @@ Broader broadcast scopes such as area-level variants may be possible later if de
 `entry` is state-entry behavior only.
 It runs when the state is entered, not merely because the state exists.
 
+If a state defines both `entry` and `auto`, `entry.effects` run first and `auto` is evaluated afterward.
+
 Semantic discipline rule:
 
 - transition effects = effects of the player's choice
@@ -253,6 +270,23 @@ They are not interchangeable:
 - transition `effects` run because the edge was taken
 - state `entry` runs because the destination state was entered
 
+### Default fallback shape
+
+```yaml
+default:
+  to: <state_id>
+  guard: <predicate ref>          # optional
+  effects:                        # optional
+    - <effect>
+```
+
+Notes:
+
+- `default` is optional and singular per state
+- `default` is evaluated only when no exact action in the current state matches the incoming input
+- `default` is not menu-visible and does not define `label`
+- `default` follows the same placement rule as other transition effects
+
 ### Naming convention
 
 By default:
@@ -276,14 +310,29 @@ Authors may deviate when there is a strong reason, but this is the preferred sty
 ### Terminal states
 
 ```yaml
-goodbye:
+goodbye_forever:
   entry:
     effects:
-      - messageRoom: "Safe travels."
+      - messageRoom: "Goodbye for ever."
   terminal: true
 ```
 
 Terminal states define no `actions`.
+
+Ordinary exit or "goodbye for now" states should usually be modeled as non-terminal resting states rather than `terminal: true`.
+
+For example:
+
+```yaml
+see_you_later:
+  entry:
+    effects:
+      - messageRoom: "See you later."
+  actions:
+    greet:
+      label: "Hello again."
+      to: greeting
+```
 
 ## DSL to SCXML Mapping
 
@@ -447,7 +496,11 @@ Restriction:
 
 - state ids must be unique
 - terminal states must not define `actions`
-- non-terminal states should define `actions` and may warn if not
+- terminal states must not define `default`
+- states with `auto` must not define `actions`
+- states with `auto` must not define `default`
+- states with `auto` must not define `terminal: true`
+- non-terminal states without `auto` should define `actions` and may warn if not
 
 ### Transition rules
 
@@ -456,6 +509,8 @@ Restriction:
 - `label` is required
 - duplicate action keys within the same state are forbidden
 - the same action key across different states is allowed
+- `default.to` must reference an existing state when `default` is present
+- `default` must not define `label`
 
 ### Determinism rules
 
@@ -465,8 +520,12 @@ Restriction:
 ### Forbidden combinations
 
 - `terminal: true` with `actions`
+- `terminal: true` with `default`
+- `auto` with `actions`
+- `auto` with `default`
+- `auto` with `terminal: true`
 - missing `to`
-- empty `actions` on non-terminal states may warn
+- empty `actions` on non-terminal states without `auto` may warn
 
 ### Reachability
 
@@ -545,21 +604,48 @@ greet:
 
 Player transcript is derived from the command surface.
 
+### Default fallback transition
+
+```yaml
+idling:
+  default:
+    effects:
+      - messageRoom: "The old miner squints at {actor}."
+    to: idling
+```
+
+If no exact action matches in `idling`, the machine takes `default`.
+
 ### Terminal conversation
 
 ```yaml
-goodbye:
+goodbye_forever:
   entry:
     effects:
-      - messageRoom: "Safe travels."
+      - messageRoom: "Goodbye forever."
   terminal: true
+```
+
+### Non-terminal farewell resting state
+
+```yaml
+see_you_later:
+  entry:
+    effects:
+      - messageRoom: "See you later."
+  actions:
+    greet:
+      label: "Hello again."
+      to: greeting
 ```
 
 ### Auto-routing example if allowed
 
 ```yaml
 greeting_router:
-  entry: ""
+  entry:
+    effects:
+      - messageRoom: "The blacksmith studies {actor} for a moment."
   auto:
     - to: friendly
       guard: npc.isFriendly
@@ -603,8 +689,10 @@ Preview impact:
 Definition:
 
 - allowed only as `auto` block
-- evaluated immediately on entry
-- no effects allowed
+- evaluated after `entry.effects`, if any
+- states with `auto` may not also define `actions`
+- states with `auto` may not also define `default`
+- states with `auto` may not also define `terminal: true`
 - no chaining beyond one hop, if enforced
 
 Benefits:
@@ -628,7 +716,7 @@ Validation impact:
 
 - must detect cycles
 - must enforce no long chains, if that rule is adopted
-- must enforce no effects
+- must enforce `auto` exclusivity against `actions`, `default`, and `terminal`
 
 Preview implications:
 
