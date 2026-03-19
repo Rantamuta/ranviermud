@@ -877,6 +877,12 @@ Conversation definitions must validate:
 
 ### 19. Preview Generation
 
+Preview artifacts are generated from the conversation DSL.
+
+They are review and inspection surfaces only.
+
+Diagrams are derived preview artifacts, not authored or authoritative behavior definitions.
+
 Source:
 
 ```
