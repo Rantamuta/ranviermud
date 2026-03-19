@@ -398,11 +398,13 @@ as the entry state.
 
 States contain:
 
-- NPC entry utterance emitted when entering the state
+- entry behavior emitted or executed when entering the state
 - available actions
 
-The state's utterance is emitted on transition into that state.
-The utterance is not the state itself.
+State entry behavior runs on transition into that state.
+It is not the state itself.
+
+Entry behavior may include NPC speech, mutation, and render operations as long as their execution point is unambiguous: they run because the state was entered.
 
 ### Action Structure
 
@@ -416,10 +418,21 @@ Fields:
 - `id` — stable authoring identifier
 - `action` — directed action token valid for this transition in the current state
 - `guard` — condition controlling action visibility
-- `effects` — mutations applied during Commit
+- `effects` — transition-time operations applied because this edge was taken
 - `goto` — destination conversation state
 
 One action corresponds to one transition out of the current state.
+
+Transition-local effects and destination-state entry behavior are both valid.
+They answer different questions:
+
+- transition effects describe what happens when the player chooses that action
+- state entry behavior describes what happens when the machine arrives in the next state
+
+Placement rule:
+
+- if an effect depends on which action was taken, it belongs on the transition
+- if it depends only on the destination state, it belongs on entry
 
 Example:
 
@@ -455,7 +468,7 @@ guard:
   hasItem: silver_coin
 ```
 
-Effects apply mutations during Commit.
+Effects apply on transition commit because the action edge was taken.
 
 Example:
 
