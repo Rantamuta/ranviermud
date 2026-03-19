@@ -691,13 +691,16 @@ Directed speech of the form:
 say <keyword> to <npc>
 ```
 
-is intercepted by the conversation system **only when all of the following are true**:
+may be intercepted by the conversation system when the addressed NPC hosts a conversation whose current actor-specific state can receive that keyword.
 
-- the actor has a valid active engagement
-- the target NPC matches the engagement
-- the keyword matches a visible action for the current state
+Rules:
 
-If any of these conditions are not met, the conversation system **does not intercept the command** and the speech proceeds through normal speech handling.
+- directed keyword speech is a first-class conversation input path, not merely a shortcut for an already-open menu
+- directed keyword speech may either initiate a conversation or continue an existing one
+- interception is based on the addressed NPC's conversation state for that actor, not on the existence of an active menu or prior engagement
+- a keyword is eligible when it matches an action the current state can receive for that actor
+- if the addressed NPC does not host a conversation, or the current actor-specific state cannot receive that keyword, the conversation system does not intercept the command and speech proceeds through normal speech handling
+- when directed keyword speech is intercepted successfully, the conversation runtime may establish or refresh engagement/menu state as needed
 
 This preserves the diegetic meaning of speech commands.
 
@@ -952,4 +955,3 @@ Potential future features:
 - party-aware guards
 
 These are intentionally deferred for v1.
-
