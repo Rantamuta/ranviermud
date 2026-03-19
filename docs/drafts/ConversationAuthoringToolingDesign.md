@@ -47,6 +47,11 @@ That choice is deliberate:
 - it allows a conversation machine to live alongside other authored game content
 - it avoids asking designers to write raw SCXML
 
+Even though the DSL is YAML-authored, it should prefer SCXML vocabulary wherever that remains readable and ergonomic.
+
+That is not cosmetic.
+It is part of how the project stays honest to the semantic north star and preserves the requirement that the DSL remain, in principle, compilable to SCXML.
+
 However, the DSL is constrained, not free-form.
 
 It must be designed so that:

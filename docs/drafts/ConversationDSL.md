@@ -32,6 +32,17 @@ This DSL is not:
 - a diagram format
 - a generic executable scripting surface
 
+Even though this DSL is authored in YAML rather than XML, it should prefer SCXML vocabulary wherever that remains readable for authors.
+
+That preference is deliberate:
+
+- it keeps the authored model close to the semantic north star
+- it reduces unnecessary local translation between the DSL and SCXML concepts
+- it makes later review, validation, and future compilation to SCXML easier to reason about
+
+The goal is not to mimic SCXML syntax mechanically.
+The goal is to keep the DSL semantically close enough that a valid authored machine remains, in principle, compilable to SCXML.
+
 The DSL should lower directly to the runtime's existing mutation operations and render instructions rather than inventing a separate execution model for conversation effects.
 
 Where practical, author-facing constructs may mirror those underlying runtime instruction shapes closely.
@@ -81,6 +92,7 @@ Explicitly not supported in v1:
 - hierarchical (compound) states
 - parallel states
 - history states
+- `onExit` / state-exit behavior
 - `invoke`, `send`, or external event queues
 - wildcard or prefix event matching
 - arbitrary executable content
@@ -269,6 +281,25 @@ They are not interchangeable:
 
 - transition `effects` run because the edge was taken
 - state `onEntry` runs because the destination state was entered
+
+### Intentional DSL terms
+
+Some author-facing YAML terms remain deliberate ergonomic wrappers rather than raw SCXML vocabulary.
+
+These are acceptable as long as they remain explainable in SCXML terms and do not introduce divergent semantics.
+
+Current deliberate wrappers include:
+
+- `effects`
+  - author-facing shorthand for restricted declarative executable content on transitions or `onEntry`
+- `default`
+  - explicit unmatched-input fallback represented as a reserved event key
+- `auto`
+  - author-facing shorthand for a constrained eventless-routing construct, if adopted
+- `label`
+  - author-facing menu/presentation metadata rather than a core SCXML statechart term
+
+These terms are intentional conveniences, not permission to drift away from SCXML semantics.
 
 ### Default fallback shape
 
