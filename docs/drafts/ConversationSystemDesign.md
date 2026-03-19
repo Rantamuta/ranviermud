@@ -90,7 +90,7 @@ Behavior:
 
 - resolves NPC
 - determines conversation progress state
-- shows NPC entry line
+- shows NPC `onEntry` line
 - displays private event menu
 
 Typing:
@@ -401,13 +401,13 @@ Every conversation must declare its entry state through `initial`.
 
 States contain:
 
-- entry behavior emitted or executed when entering the state
+- `onEntry` behavior emitted or executed when entering the state
 - available events
 
-State entry behavior runs on transition into that state.
+State `onEntry` behavior runs on transition into that state.
 It is not the state itself.
 
-Entry behavior may include NPC speech, mutation, and render operations as long as their execution point is unambiguous: they run because the state was entered.
+`onEntry` behavior may include NPC speech, mutation, and render operations as long as their execution point is unambiguous: they run because the state was entered.
 
 ### Event Structure
 
@@ -426,16 +426,16 @@ Fields:
 
 One event corresponds to one transition out of the current state.
 
-Transition-local effects and destination-state entry behavior are both valid.
+Transition-local effects and destination-state `onEntry` behavior are both valid.
 They answer different questions:
 
 - transition effects describe what happens when the player chooses that event
-- state entry behavior describes what happens when the machine arrives in the next state
+- state `onEntry` behavior describes what happens when the machine arrives in the next state
 
 Placement rule:
 
 - if an effect depends on which event was taken, it belongs on the transition
-- if it depends only on the destination state, it belongs on entry
+- if it depends only on the destination state, it belongs on `onEntry`
 
 Example:
 
@@ -590,7 +590,7 @@ Commit
 persist engagement
 
 Render/Dispatch
-emit NPC entry line
+emit NPC `onEntry` line
 emit actor menu
 
 ---

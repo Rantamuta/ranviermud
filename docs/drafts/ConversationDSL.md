@@ -68,7 +68,7 @@ This profile adopts a strict subset of SCXML semantics:
 - optional explicit fallback transition via `default`
 - conditions (boolean, read-only)
 - deterministic transition selection by authored order
-- state entry behavior
+- state `onEntry` behavior
 - transition-time effects
 - final states
 
@@ -110,12 +110,12 @@ Determinism rule:
 - authored order is the only priority mechanism
 - `default` is considered only after exact event matching fails
 
-### Entry behavior
+### onEntry behavior
 
 When a state is entered:
 
 1. state becomes current
-2. state entry behavior executes in authored order
+2. state `onEntry` behavior executes in authored order
 3. if the state defines `auto`, automatic routing is evaluated
 4. available events are enumerated if the state is non-final and does not define `auto`
 
@@ -124,13 +124,13 @@ No exit actions in v1.
 This profile distinguishes clearly between:
 
 - transition-time behavior attached to the chosen event
-- entry behavior attached to the destination state
+- `onEntry` behavior attached to the destination state
 
 Transition behavior answers:
 
 - what happens when this event is taken
 
-Entry behavior answers:
+`onEntry` behavior answers:
 
 - what happens when the machine arrives in this state
 
@@ -161,7 +161,7 @@ initial: idling
 
 states:
   idling:
-    entry:
+    onEntry:
       effects:
         - messageRoom: "Ah, a traveler. What do you need?"
     events:
@@ -178,7 +178,7 @@ states:
 
 ```yaml
 <state_id>:
-  entry:                                # optional
+  onEntry:                              # optional
     effects:
       - <effect>
   final: true|false               # optional, default false
@@ -195,14 +195,14 @@ states:
       condition: <predicate ref>  # optional
 ```
 
-### Entry shape
+### onEntry shape
 
-`entry` contains entry-time behavior.
+`onEntry` contains state-entry behavior.
 
 The regular form is:
 
 ```yaml
-entry:
+onEntry:
   effects:
     - messageRoom: "Here you go."
     - transferItem:
@@ -231,20 +231,20 @@ These shorthands are intended as author-facing sugar over the existing render-in
 
 Broader broadcast scopes such as area-level variants may be possible later if designer use cases justify exposing them.
 
-`entry` is state-entry behavior only.
+`onEntry` is state-entry behavior only.
 It runs when the state is entered, not merely because the state exists.
 
-If a state defines both `entry` and `auto`, `entry.effects` run first and `auto` is evaluated afterward.
+If a state defines both `onEntry` and `auto`, `onEntry.effects` run first and `auto` is evaluated afterward.
 
 Semantic discipline rule:
 
 - transition effects = effects of the player's choice
-- entry effects = effects of arriving in that state regardless of path
+- `onEntry` effects = effects of arriving in that state regardless of path
 
 Placement rule:
 
 - if an effect depends on which event was taken, it belongs on the transition
-- if it depends only on the destination state, it belongs on entry
+- if it depends only on the destination state, it belongs on `onEntry`
 
 ### Transition shape
 
@@ -264,11 +264,11 @@ Notes:
 - `effects` are transition-time operations
 - `to` names the destination state
 
-Transition-local `effects` and state `entry` are both allowed.
+Transition-local `effects` and state `onEntry` are both allowed.
 They are not interchangeable:
 
 - transition `effects` run because the edge was taken
-- state `entry` runs because the destination state was entered
+- state `onEntry` runs because the destination state was entered
 
 ### Default fallback shape
 
@@ -313,7 +313,7 @@ Authors may deviate when there is a strong reason, but this is the preferred sty
 
 ```yaml
 goodbye_forever:
-  entry:
+  onEntry:
     effects:
       - messageRoom: "Goodbye for ever."
   final: true
@@ -327,7 +327,7 @@ For example:
 
 ```yaml
 see_you_later:
-  entry:
+  onEntry:
     effects:
       - messageRoom: "See you later."
   events:
@@ -344,7 +344,7 @@ DSL:
 
 ```yaml
 greeting:
-  entry:
+  onEntry:
     effects:
       - messageRoom: "..."
 ```
@@ -353,7 +353,7 @@ SCXML analogue:
 
 ```xml
 <state id="greeting">
-  <onentry>execute ordered entry behavior</onentry>
+  <onentry>execute ordered on-entry behavior</onentry>
 </state>
 ```
 
@@ -361,7 +361,7 @@ Restriction:
 
 - no `<onexit>`
 - no nested `<state>`
-- entry behavior is a restricted declarative subset of SCXML `onentry`, not a general executable-content surface
+- `onEntry` behavior is a restricted declarative subset of SCXML `onentry`, not a general executable-content surface
 - the restriction is deliberate and remains within the requirement that the DSL be, in principle, compilable to SCXML
 
 ### Transition
@@ -435,12 +435,12 @@ For the same reason, raw `command:` execution is intentionally not the default e
 
 Audience-targeted render helpers such as `broadcastToPlayer` and `broadcastToRoom` may be appropriate initial DSL-facing convenience forms if they lower cleanly to the same runtime render instructions.
 
-### Entry utterance
+### onEntry utterance
 
 DSL:
 
 ```yaml
-entry:
+onEntry:
   effects:
     - messageRoom: "Hello."
 ```
@@ -454,9 +454,9 @@ SCXML analogue:
 Restriction:
 
 - conversation-authored speech may be expressed through render shorthand rather than a special `say` field
-- richer entry behavior may use additional declarative ops
+- richer `onEntry` behavior may use additional declarative ops
 - no embedded arbitrary logic
-- `entry.effects` is intentionally narrower than full SCXML `onentry`
+- `onEntry.effects` is intentionally narrower than full SCXML `onentry`
 
 ### Render shorthand mapping
 
@@ -548,7 +548,7 @@ Unreachable states may warn rather than hard fail in early tooling.
 
 ```yaml
 idling:
-  entry:
+  onEntry:
     effects:
       - messageRoom: "Ah, a traveler."
   events:
@@ -561,7 +561,7 @@ idling:
 
 ```yaml
 greeting:
-  entry:
+  onEntry:
     effects:
       - messageRoom: "What do you need?"
   events:
@@ -628,7 +628,7 @@ If no exact event matches in `idling`, the machine takes `default`.
 
 ```yaml
 goodbye_forever:
-  entry:
+  onEntry:
     effects:
       - messageRoom: "Goodbye forever."
   final: true
@@ -638,7 +638,7 @@ goodbye_forever:
 
 ```yaml
 see_you_later:
-  entry:
+  onEntry:
     effects:
       - messageRoom: "See you later."
   events:
@@ -651,7 +651,7 @@ see_you_later:
 
 ```yaml
 greeting_router:
-  entry:
+  onEntry:
     effects:
       - messageRoom: "The blacksmith studies {actor} for a moment."
   auto:
@@ -697,7 +697,7 @@ Preview impact:
 Definition:
 
 - allowed only as `auto` block
-- evaluated after `entry.effects`, if any
+- evaluated after `onEntry.effects`, if any
 - states with `auto` may not also define `events`
 - states with `auto` may not also define `events.default`
 - states with `auto` may not also define `final: true`
