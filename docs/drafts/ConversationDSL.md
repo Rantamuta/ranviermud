@@ -451,6 +451,21 @@ Restriction:
 - must resolve through a predefined predicate system
 - `condition` is the DSL's more ergonomic author-facing spelling of SCXML `cond`, not a semantic divergence
 
+### Condition purity
+
+Conditions are part of the deterministic machine contract, not merely a content convention.
+
+Condition evaluation must not depend on:
+
+- wall-clock time
+- random values
+- iteration over unordered collections
+- ambient mutable globals
+- current menu numbering
+- transcript or render-only context
+
+Conditions may read only declared deterministic game-state surfaces exposed to the conversation machine.
+
 ### Effects
 
 DSL:
@@ -567,6 +582,7 @@ Restriction:
 - the same event key across different states is allowed
 - `events.default.target` must reference an existing state when `events.default` is present
 - `events.default` must not define `label`
+- condition purity violations must be rejected
 
 ### Determinism rules
 
