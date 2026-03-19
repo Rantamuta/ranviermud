@@ -24,6 +24,10 @@ Implement a conversation system that:
 - allows conversations to be previewed visually
 - remains bundle-layer functionality rather than engine-level behavior
 
+This document is scoped to conversation flow only.
+
+General NPC internal state, autonomous NPC behavior, and external environmental event handling are explicitly out of scope unless later adopted through a separate design decision.
+
 The system should be implementable by Codex with minimal ambiguity.
 
 ---
@@ -930,6 +934,15 @@ guard:
 ### 21. Conversation vs NPC State
 
 Conversation state and NPC internal state are separate.
+
+This design document is scoped to conversation state only.
+
+The following are explicitly out of scope here:
+
+- general NPC internal state
+- autonomous NPC behavior such as seeking shelter, fleeing danger, or patrol logic
+- environmental or ambient events as conversation triggers
+- broader NPC behavior orchestration outside player-engaged conversation
 
 Initial implementation assumes **NPCs have no internal state**.
 
