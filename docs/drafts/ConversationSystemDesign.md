@@ -41,7 +41,7 @@ Conversation behavior follows these principles:
 7. All output is rendered through **semantic messaging**.
 8. Conversations follow the **standard command architecture phases**:
 
-Receive → Resolve → Capture → Plan → Commit → Render/Dispatch
+Receive Input → (Parse & Entity Resolution) → Capture → Plan → Commit → Render/Dispatch
 
 All mutation occurs **before Render/Dispatch**.
 
@@ -423,7 +423,7 @@ Example:
 
 ```yaml
 - id: ask_mine
-  keywords: [mine]
+  keyword: [mine]
   say: "Tell me about the old mine."
   goto: mine
 ```
@@ -478,7 +478,6 @@ conversationActive:
   npcId: squirrel_01
   conversationId: squirrel
   state: greeting
-  menuRevision: 3
   menu:
     1: ask_mine
     2: leave
@@ -536,39 +535,49 @@ No periodic cleanup mechanism is required for correctness.
 
 ## 14. Command Phase Integration
 
+Conversation commands follow the standard command pipeline.
+
+Conversation-specific validation occurs during the **Capture** phase, including engagement validation and intent keyword eligibility.
+
+---
+
 ### talk <npc>
 
-Receive
+Receive Input
 parse command
 
-Resolve
+Entity Resolution
 resolve NPC
 
 Capture
 validate conversable
 
 Plan
-resolve state
-compute actions
+resolve conversation state
+compute visible actions
+prepare engagement
 
 Commit
 persist engagement
 
-Render
-output NPC text and menu
+Render/Dispatch
+emit NPC entry line
+emit actor menu
 
 ---
 
 ### numeric selection
 
-Receive
-capture integer input
+Receive Input
+check active menu interception
+capture numeric selector
 
-Resolve
-resolve action from menu
+Entity Resolution
+resolve action from engagement menu
 
 Capture
 validate menu revision
+validate engagement
 
 Plan
 evaluate guard
@@ -578,8 +587,9 @@ Commit
 persist state
 apply effects
 
-Render
-output NPC reply and new menu
+Render/Dispatch
+emit NPC reply
+emit actor menu
 
 ---
 
@@ -591,9 +601,9 @@ Failures occur during the **Resolve** or **Capture** phases of the command pipel
 
 Rules:
 
-* failure must not mutate conversation progress
-* failure must not mutate engagement state unless explicitly specified
-* identical committed state and identical input must produce identical outcomes
+- failure must not mutate conversation progress
+- failure must not mutate engagement state unless explicitly specified
+- identical committed state and identical input must produce identical outcomes
 
 Render/Dispatch is responsible for presenting any actor-visible feedback.
 
@@ -617,9 +627,9 @@ If the target resolves but does not host a conversation definition, the command 
 
 Behavior:
 
-* no engagement is created
-* no conversation progress mutates
-* actor receives an actor-visible refusal message
+- no engagement is created
+- no conversation progress mutates
+- actor receives an actor-visible refusal message
 
 ---
 
@@ -629,9 +639,9 @@ If the resolved NPC becomes invalid before Commit (for example despawn or remova
 
 Behavior:
 
-* no engagement is created
-* no conversation progress mutates
-* actor receives an actor-visible message indicating the interaction cannot proceed
+- no engagement is created
+- no conversation progress mutates
+- actor receives an actor-visible message indicating the interaction cannot proceed
 
 ---
 
@@ -649,10 +659,10 @@ If the selected number does not correspond to a visible action in the current me
 
 Behavior:
 
-* command fails
-* engagement remains active
-* conversation state does not change
-* actor receives an actor-only error message
+- command fails
+- engagement remains active
+- conversation state does not change
+- actor receives an actor-only error message
 
 Room transcript must not be produced.
 
@@ -664,10 +674,10 @@ If the selector references an outdated menu revision:
 
 Behavior:
 
-* command fails
-* engagement remains active
-* conversation state does not change
-* actor receives an actor-only message
+- command fails
+- engagement remains active
+- conversation state does not change
+- actor receives an actor-only message
 
 Room transcript must not be produced.
 
@@ -683,9 +693,9 @@ say <keyword> to <npc>
 
 is intercepted by the conversation system **only when all of the following are true**:
 
-* the actor has a valid active engagement
-* the target NPC matches the engagement
-* the keyword matches a visible action for the current state
+- the actor has a valid active engagement
+- the target NPC matches the engagement
+- the keyword matches a visible action for the current state
 
 If any of these conditions are not met, the conversation system **does not intercept the command** and the speech proceeds through normal speech handling.
 
@@ -699,17 +709,17 @@ If conversation input is intercepted but the engagement becomes invalid before t
 
 Possible causes include:
 
-* NPC despawn
-* room change
-* engagement cleared by another command
-* engagement replaced by a new conversation
+- NPC despawn
+- room change
+- engagement cleared by another command
+- engagement replaced by a new conversation
 
 Behavior:
 
-* command fails
-* engagement is cleared
-* conversation state does not mutate
-* actor receives an actor-only message indicating the conversation has ended
+- command fails
+- engagement is cleared
+- conversation state does not mutate
+- actor receives an actor-only message indicating the conversation has ended
 
 No room transcript must be produced.
 
@@ -719,10 +729,10 @@ No room transcript must be produced.
 
 For identical committed state and identical input:
 
-* the same failure condition must occur
-* the same failure handling path must be taken
-* the same actor-visible output must be produced
-* no conversation progress must mutate
+- the same failure condition must occur
+- the same failure handling path must be taken
+- the same actor-visible output must be produced
+- no conversation progress must mutate
 
 ---
 
@@ -748,10 +758,10 @@ For **identical committed game state and identical input**, the system must prod
 
 Determinism is required so that:
 
-* command execution remains reproducible
-* debugging and replay are reliable
-* automated testing is stable
-* conversation authoring behaves predictably
+- command execution remains reproducible
+- debugging and replay are reliable
+- automated testing is stable
+- conversation authoring behaves predictably
 
 Determinism requirements apply to **conversation logic, menu generation, command resolution, and output routing**.
 
@@ -761,9 +771,9 @@ Determinism requirements apply to **conversation logic, menu generation, command
 
 For identical committed state:
 
-* the same conversation state must be selected
-* guard evaluation must produce the same visible action set
-* the same actions must be hidden or visible
+- the same conversation state must be selected
+- guard evaluation must produce the same visible action set
+- the same actions must be hidden or visible
 
 Guards must therefore depend only on deterministic read surfaces.
 
@@ -775,9 +785,9 @@ Menu construction must be deterministic.
 
 For identical committed state:
 
-* visible actions must appear in the same order
-* menu numbering must be identical
-* selector numbers must map to the same actions
+- visible actions must appear in the same order
+- menu numbering must be identical
+- selector numbers must map to the same actions
 
 Menu ordering must not depend on nondeterministic factors such as iteration order.
 
@@ -789,9 +799,9 @@ Intent resolution must be deterministic.
 
 For identical committed state and input:
 
-* the same selector number must resolve to the same action
-* the same keyword must resolve to the same action
-* numeric selection and directed intent speech must resolve to the same action
+- the same selector number must resolve to the same action
+- the same keyword must resolve to the same action
+- numeric selection and directed intent speech must resolve to the same action
 
 ---
 
@@ -799,9 +809,9 @@ For identical committed state and input:
 
 For identical committed state and resolved action:
 
-* the same effects must be produced
-* the same state transition must occur
-* the same conversation progress must be persisted
+- the same effects must be produced
+- the same state transition must occur
+- the same conversation progress must be persisted
 
 State transitions must occur during **Commit** only.
 
@@ -813,10 +823,10 @@ Conversation output routing must be deterministic.
 
 For identical committed state:
 
-* the same participants must be considered actively conversing
-* the same audiences must receive transcript vs aggregate output
-* aggregate participant ordering must be deterministic
-* actor-only menu visibility must be identical
+- the same participants must be considered actively conversing
+- the same audiences must receive transcript vs aggregate output
+- aggregate participant ordering must be deterministic
+- actor-only menu visibility must be identical
 
 ---
 
@@ -826,10 +836,10 @@ Failure behavior must also be deterministic.
 
 For identical committed state and input:
 
-* the same failure condition must occur
-* the same failure handling path must execute
-* the same actor-visible message must be produced
-* conversation state must not mutate
+- the same failure condition must occur
+- the same failure handling path must execute
+- the same actor-visible message must be produced
+- conversation state must not mutate
 
 ---
 
@@ -839,9 +849,9 @@ Conversation definitions must not introduce nondeterminism.
 
 Authors must not rely on:
 
-* nondeterministic iteration
-* random ordering
-* mutable external state
+- nondeterministic iteration
+- random ordering
+- mutable external state
 
 Any nondeterministic mechanics must be introduced through explicit systems outside the conversation FSM.
 
@@ -942,9 +952,4 @@ Potential future features:
 - party-aware guards
 
 These are intentionally deferred for v1.
-
----
-
-If you'd like, the next step would be **#4 (explicit failure behavior)**.
-That section is currently the **largest remaining gap compared to the old document**, and fixing it will also tighten the command-phase integration.
 
