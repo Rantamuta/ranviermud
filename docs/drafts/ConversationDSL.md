@@ -282,27 +282,6 @@ They are not interchangeable:
 - transition `effects` run because the edge was taken
 - state `onEntry` runs because the destination state was entered
 
-### Intentional DSL terms
-
-Some author-facing YAML terms remain deliberate ergonomic wrappers rather than raw SCXML vocabulary.
-
-These are acceptable as long as they remain explainable in SCXML terms and do not introduce divergent semantics.
-
-In the classification language above, these are deliberate divergences or constrained subsets rather than direct analogues.
-
-Current deliberate wrappers include:
-
-- `effects`
-  - author-facing shorthand for restricted declarative executable content on transitions or `onEntry`
-- `default`
-  - explicit unmatched-input fallback represented as a reserved event key
-- `auto`
-  - author-facing shorthand for a constrained eventless-routing construct, if adopted
-- `label`
-  - author-facing menu/presentation metadata rather than a core SCXML statechart term
-
-These terms are intentional conveniences, not permission to drift away from SCXML semantics.
-
 ### Default fallback shape
 
 ```yaml
@@ -371,17 +350,6 @@ see_you_later:
 
 ## DSL to SCXML Mapping
 
-### Classification legend
-
-Each DSL construct should be understood in one of these categories:
-
-- `direct analogue`
-  - the DSL construct corresponds directly to an SCXML concept, even if the YAML surface is friendlier
-- `constrained subset`
-  - the DSL construct corresponds to an SCXML concept, but deliberately exposes only a smaller declarative subset
-- `deliberate divergence`
-  - the DSL construct is a repo-local convenience that is not a native SCXML concept and must be documented as such
-
 ### State
 
 DSL:
@@ -403,11 +371,8 @@ SCXML analogue:
 
 Restriction:
 
-- classification: `direct analogue`
 - no `<onexit>`
 - no nested `<state>`
-- `onEntry` behavior is a restricted declarative subset of SCXML `onentry`, not a general executable-content surface
-- the restriction is deliberate and remains within the requirement that the DSL be, in principle, compilable to SCXML
 
 ### Transition
 
@@ -426,7 +391,6 @@ SCXML analogue:
 
 Restriction:
 
-- classification: `direct analogue`
 - single target only
 - exact event match only
 
@@ -446,7 +410,6 @@ SCXML analogue:
 
 Restriction:
 
-- classification: `direct analogue`
 - not arbitrary script
 - must resolve through a predefined predicate system
 - `condition` is the DSL's more ergonomic author-facing spelling of SCXML `cond`, not a semantic divergence
@@ -485,11 +448,8 @@ SCXML analogue:
 
 Restriction:
 
-- classification: `constrained subset`
 - declarative effect vocabulary only
 - executed at commit time only
-- transition effects are a restricted declarative subset of SCXML transition executable content, not a general executable-content surface
-- the restriction is deliberate and remains within the requirement that the DSL be, in principle, compilable to SCXML
 
 The intent is not to invent a DSL-only effect engine.
 Conversation effects should lower to the same underlying runtime mutation operations and render instructions already used elsewhere in the system.
@@ -516,11 +476,9 @@ SCXML analogue:
 
 Restriction:
 
-- classification: `constrained subset`
 - conversation-authored speech may be expressed through render shorthand rather than a special `say` field
 - richer `onEntry` behavior may use additional declarative ops
 - no embedded arbitrary logic
-- `onEntry.effects` is intentionally narrower than full SCXML `onentry`
 
 ### Render shorthand mapping
 
@@ -553,6 +511,65 @@ Restriction:
 
 - no `done.state.*` propagation
 - no parent semantics
+
+## SCXML Conformance and Lowering
+
+This DSL is not raw SCXML, but valid authored machines should remain, in principle, compilable to SCXML.
+
+Invariant:
+
+- this DSL is intended to remain a constrained subset of SCXML
+- a valid DSL machine should remain, in principle, compilable to SCXML
+- the reverse is not a goal: arbitrary SCXML machines are not expected to map back into this DSL
+- future DSL growth should preserve this one-way subset relationship unless a deliberate divergence is documented
+
+The relationship for each construct should be understood in one of these categories:
+
+- `direct subset of SCXML`
+  - the DSL construct maps directly to an SCXML concept while intentionally remaining within a narrower supported profile
+- `sugar over SCXML`
+  - the DSL construct is an author-facing convenience that can be lowered cleanly to SCXML concepts without changing the machine model
+- `deliberate divergence`
+  - the DSL construct is a repo-local convenience that is not a native SCXML concept and must be documented together with its intended lowering strategy
+
+The current profile is intended to stay coherent under those terms:
+
+- `state`
+  - classification: `direct subset of SCXML`
+  - flat atomic states only
+  - no nested `<state>`
+- `transition`
+  - classification: `direct subset of SCXML`
+  - single target only
+  - exact event matching only
+- `condition`
+  - classification: `direct subset of SCXML`
+  - `condition` is the DSL's more ergonomic author-facing spelling of SCXML `cond`
+  - the expression surface is intentionally restricted to deterministic predicate evaluation
+- `effects`
+  - classification: `sugar over SCXML`
+  - author-facing shorthand for restricted declarative executable content on transitions
+  - lowers to the same underlying mutation and render model already used by the runtime
+- `onEntry.effects`
+  - classification: `sugar over SCXML`
+  - restricted declarative subset of SCXML `onentry`
+  - not a general executable-content surface
+- `auto`
+  - classification: `sugar over SCXML`
+  - author-facing shorthand for constrained eventless routing
+  - the SCXML lowering model is an eventless transition with the same ordered condition evaluation
+- `default`
+  - classification: `deliberate divergence`
+  - explicit unmatched-input fallback represented as the reserved event key `events.default`
+  - this is not a native SCXML transition kind
+  - one plausible lowering strategy is a wildcard catch-all transition such as `event="*"` placed after exact event transitions for that state
+- `final`
+  - classification: `direct subset of SCXML`
+  - within the flat-state profile, `final: true` maps cleanly to SCXML `<final>`
+  - because hierarchy is out of scope, this profile intentionally excludes parent completion semantics and `done.state.*`
+- `label`
+  - classification: `deliberate divergence`
+  - author-facing menu/presentation metadata rather than a core SCXML statechart term
 
 ## Validation Rules
 
