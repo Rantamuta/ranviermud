@@ -167,11 +167,11 @@ states:
     events:
       greet:
         label: "Hello."
-        to: greeting
+        target: greeting
 
       ask_work:
         label: "Need any help?"
-        to: discussing_work
+        target: discussing_work
 ```
 
 ### State shape
@@ -186,12 +186,12 @@ states:
     <event_id>:
       <transition>
     default:                      # optional unmatched-input fallback
-      to: <state_id>
+      target: <state_id>
       condition: <predicate ref>  # optional
       effects:
         - <effect>
   auto:                           # optional routing-only block
-    - to: <state_id>
+    - target: <state_id>
       condition: <predicate ref>  # optional
 ```
 
@@ -251,7 +251,7 @@ Placement rule:
 ```yaml
 <event_id>:
   label: <menu text>              # required for UI surfaces
-  to: <state_id>                  # required unless final routing model changes
+  target: <state_id>              # required unless final routing model changes
   condition: <predicate ref>      # optional
   effects:                        # optional
     - <effect>
@@ -262,7 +262,7 @@ Notes:
 - the event key is the canonical event id
 - `label` is UI-facing
 - `effects` are transition-time operations
-- `to` names the destination state
+- `target` names the destination state
 
 Transition-local `effects` and state `onEntry` are both allowed.
 They are not interchangeable:
@@ -275,7 +275,7 @@ They are not interchangeable:
 ```yaml
 events:
   default:
-    to: <state_id>
+    target: <state_id>
     condition: <predicate ref>    # optional
     effects:                      # optional
       - <effect>
@@ -333,7 +333,7 @@ see_you_later:
   events:
     greet:
       label: "Hello again."
-      to: greeting
+      target: greeting
 ```
 
 ## DSL to SCXML Mapping
@@ -370,7 +370,7 @@ DSL:
 
 ```yaml
 greet:
-  to: greeting
+  target: greeting
 ```
 
 SCXML analogue:
@@ -512,11 +512,11 @@ Restriction:
 ### Transition rules
 
 - event keys are required and unique per state
-- `to` must reference an existing state
+- `target` must reference an existing state
 - `label` is required
 - duplicate event keys within the same state are forbidden
 - the same event key across different states is allowed
-- `events.default.to` must reference an existing state when `events.default` is present
+- `events.default.target` must reference an existing state when `events.default` is present
 - `events.default` must not define `label`
 
 ### Determinism rules
@@ -531,7 +531,7 @@ Restriction:
 - `auto` with `events`
 - `auto` with `events.default`
 - `auto` with `final: true`
-- missing `to`
+- missing `target`
 - empty `events` on non-final states without `auto` may warn
 
 ### Reachability
@@ -554,7 +554,7 @@ idling:
   events:
     greet:
       label: "Hello."
-      to: greeting
+      target: greeting
 ```
 
 ### Menu-driven branch
@@ -567,11 +567,11 @@ greeting:
   events:
     buy:
       label: "Show me your wares."
-      to: shop
+      target: shop
 
     leave:
       label: "Nothing."
-      to: goodbye
+      target: goodbye
 ```
 
 ### Directed `say <event> to <npc>`
@@ -586,7 +586,7 @@ Both resolve to:
 ```yaml
 buy:
   label: "Show me your wares."
-  to: shop
+  target: shop
 ```
 
 The machine sees only event `buy`.
@@ -598,7 +598,7 @@ greet:
   label: "Hello."
   effects:
     - messageRoom: "Hello there."
-  to: greeting
+  target: greeting
 ```
 
 ### Transition fallback rendering
@@ -606,7 +606,7 @@ greet:
 ```yaml
 greet:
   label: "Hello."
-  to: greeting
+  target: greeting
 ```
 
 Player transcript is derived from the command surface.
@@ -619,7 +619,7 @@ idling:
     default:
       effects:
         - messageRoom: "The old miner squints at {actor}."
-      to: idling
+      target: idling
 ```
 
 If no exact event matches in `idling`, the machine takes `default`.
@@ -644,7 +644,7 @@ see_you_later:
   events:
     greet:
       label: "Hello again."
-      to: greeting
+      target: greeting
 ```
 
 ### Auto-routing example if allowed
@@ -655,10 +655,10 @@ greeting_router:
     effects:
       - messageRoom: "The blacksmith studies {actor} for a moment."
   auto:
-    - to: friendly
+    - target: friendly
       condition: npc.isFriendly
 
-    - to: hostile
+    - target: hostile
       condition: npc.isHostile
 ```
 
