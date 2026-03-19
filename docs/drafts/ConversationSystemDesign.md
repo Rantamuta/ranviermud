@@ -471,7 +471,7 @@ Example:
 
 ```yaml
 condition:
-  hasItem: silver_coin
+  actorHasItem: "codex:silver_coin"
 ```
 
 Effects apply on transition commit because the event edge was taken.
@@ -487,7 +487,9 @@ effects:
 Rules:
 
 - conditions are read-only
-- conditions must not use render predicates
+- conditions must lower to the existing read-only query surface
+- conditions must not use render predicates or predicate-registry scripts
+- new condition reads should be added to the shared query facade, not as conversation-local helpers
 - effects apply only during Commit
 
 ---
@@ -957,15 +959,15 @@ May include:
 
 ### 20. Condition Read Surface
 
-Conditions read authoritative metadata but remain separate from render predicates.
+Conditions read authoritative metadata through the existing query surface and remain separate from render predicates or predicate-registry scripts.
+
+When new read capabilities are needed for conversations, they should be added to the shared `q` facade rather than introduced as a conversation-specific side channel. In the current runtime that means extending `createQueryFacade(...)` in `bundles/bundle-rantamuta/lib/helpers/predicate-runtime.js`.
 
 Example:
 
 ```yaml
 condition:
-  worldMetaEquals:
-    key: shrine.open
-    value: true
+  actorQuestActive: "codex:blacksmithIntro"
 ```
 
 ---

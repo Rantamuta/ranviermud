@@ -49,6 +49,14 @@ Where practical, author-facing constructs may mirror those underlying runtime in
 
 In general, the DSL should try to mirror existing mutation ops and render instructions rather than creating parallel conversation-only forms for the same underlying behavior.
 
+The same principle applies to `condition` evaluation.
+
+Conversation conditions should lower to the runtime's existing read-only query surface rather than inventing a separate predicate or expression engine for conversations.
+
+When new condition reads are needed, they should be added to the shared `q` query facade rather than introduced as conversation-local helpers.
+
+In the current runtime, that means expanding `createQueryFacade(...)` in `bundles/bundle-rantamuta/lib/helpers/predicate-runtime.js` and exposing the new read there alongside the existing `q.*` surface.
+
 Requests from designers to expose additional existing mutation ops or render instructions through the DSL should be considered on their merits, especially when doing so avoids unnecessary duplication between authored conversation behavior and runtime capability.
 
 The DSL should not use raw command execution as its general effect mechanism.
@@ -199,12 +207,12 @@ states:
       <transition>
     default:                      # optional unmatched-input fallback
       target: <state_id>
-      condition: <predicate ref>  # optional
+      condition: <query object>   # optional
       effects:
         - <effect>
   auto:                           # optional routing-only block
     - target: <state_id>
-      condition: <predicate ref>  # optional
+      condition: <query object>   # optional
 ```
 
 ### onEntry shape
@@ -264,7 +272,7 @@ Placement rule:
 <event_id>:
   label: <menu text>              # required for UI surfaces
   target: <state_id>              # required unless final routing model changes
-  condition: <predicate ref>      # optional
+  condition: <query object>       # optional
   effects:                        # optional
     - <effect>
 ```
@@ -288,7 +296,7 @@ They are not interchangeable:
 events:
   default:
     target: <state_id>
-    condition: <predicate ref>    # optional
+    condition: <query object>     # optional
     effects:                      # optional
       - <effect>
 ```
@@ -399,7 +407,8 @@ Restriction:
 DSL:
 
 ```yaml
-condition: player.hasQuest("forge")
+condition:
+  actorQuestActive: "test:predicateQuestActive"
 ```
 
 SCXML analogue:
@@ -411,7 +420,8 @@ SCXML analogue:
 Restriction:
 
 - not arbitrary script
-- must resolve through a predefined predicate system
+- must resolve through a predefined declarative query-object surface
+- should lower to the runtime's existing read-only `q.*` query facade rather than to predicate registry scripts
 - `condition` is the DSL's more ergonomic author-facing spelling of SCXML `cond`, not a semantic divergence
 
 ### Condition purity
@@ -428,6 +438,17 @@ Condition evaluation must not depend on:
 - transcript or render-only context
 
 Conditions may read only declared deterministic game-state surfaces exposed to the conversation machine.
+
+Where practical, the DSL should mirror the existing query facade directly. For example, a condition such as:
+
+```yaml
+condition:
+  actorQuestActive: "test:predicateQuestActive"
+```
+
+is intended to lower to a read against the existing query surface parallel to `q.actorQuestActive('test:predicateQuestActive')`.
+
+If future authored conversations need additional reads such as NPC-scoped metadata, those reads should be added to the shared query facade and then mirrored into the DSL condition surface, rather than introduced as a separate conversation-only query mechanism.
 
 ### Effects
 
@@ -545,7 +566,7 @@ The current profile is intended to stay coherent under those terms:
 - `condition`
   - classification: `direct subset of SCXML`
   - `condition` is the DSL's more ergonomic author-facing spelling of SCXML `cond`
-  - the expression surface is intentionally restricted to deterministic predicate evaluation
+  - the expression surface is intentionally restricted to deterministic query objects that lower to the existing read-only `q.*` facade
 - `effects`
   - classification: `sugar over SCXML`
   - author-facing shorthand for restricted declarative executable content on transitions
@@ -737,11 +758,11 @@ greeting_router:
     effects:
       - messageRoom: "The blacksmith studies {actor} for a moment."
   auto:
-    - target: friendly
-      condition: npc.isFriendly
+    - target: returning_customer
+      condition:
+        actorQuestCompleted: "codex:blacksmithIntro"
 
-    - target: hostile
-      condition: npc.isHostile
+    - target: first_meeting
 ```
 
 ## Eventless Transition Decision
