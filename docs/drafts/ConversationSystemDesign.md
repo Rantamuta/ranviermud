@@ -41,7 +41,7 @@ Conversation behavior follows these principles:
 3. Conversations are **non-modal**.
 4. Conversation content may be private while the **social context is visible**.
 5. Menu UI is **private to the actor**.
-6. Progression is driven by **actions**, not raw text parsing.
+6. Progression is driven by **events**, not raw text parsing.
 7. All output is rendered through **semantic messaging**.
 8. Conversations follow the **standard command architecture phases**:
 
@@ -63,15 +63,15 @@ Typical interaction:
 1. Player initiates conversation.
 2. System determines the player’s current progress state.
 3. NPC produces an opening line.
-4. Player receives a private menu of actions.
-5. Player selects an action.
+4. Player receives a private menu of events.
+5. Player selects an event.
 6. Conversation FSM transitions.
 7. NPC produces reply.
 8. New menu appears or conversation ends.
 
 Players may interrupt conversations at any time by issuing other commands.
 
-Conversation may begin either through `talk <npc>` or through another supported command surface that resolves to an action available from the NPC's opening `idle` state for that actor.
+Conversation may begin either through `talk <npc>` or through another supported command surface that resolves to an event available from the NPC's opening `idle` state for that actor.
 
 ---
 
@@ -91,7 +91,7 @@ Behavior:
 - resolves NPC
 - determines conversation progress state
 - shows NPC entry line
-- displays private action menu
+- displays private event menu
 
 Typing:
 
@@ -106,7 +106,7 @@ Aliases such as `speak`, `greet`, or `speak to` may be added later.
 `talk <npc>` is one player-facing command surface for entering conversation.
 It is not the only possible input surface.
 
-Other command surfaces may later map to the same authored opening action as long as they resolve deterministically to the same conversation action.
+Other command surfaces may later map to the same authored opening event as long as they resolve deterministically to the same conversation event.
 
 ---
 
@@ -120,7 +120,7 @@ When the most recent output is a conversation menu:
 3) Goodbye.
 ```
 
-may be typed directly to select actions.
+may be typed directly to select events.
 
 ```
 > 1
@@ -130,7 +130,7 @@ may be typed directly to select actions.
 
 - numeric input selects the corresponding visible menu option
 - numeric input is interpreted as a selector only when a valid active conversation menu exists
-- selector numbers map only to currently visible actions
+- selector numbers map only to currently visible events
 - selectors apply only to the actor’s own engagement
 - stale menus must be rejected
 
@@ -138,7 +138,7 @@ may be typed directly to select actions.
 
 Numeric selection is **not speech**.
 
-Entering a number represents selecting a visible action from the conversation menu rather than speaking the number aloud.
+Entering a number represents selecting a visible event from the conversation menu rather than speaking the number aloud.
 
 If no conversation menu is active, numeric input is handled through normal command resolution.
 
@@ -148,7 +148,7 @@ For identical committed state:
 
 - menu entry ordering must be identical
 - numbering must be identical
-- selector-to-action mapping must be identical
+- selector-to-event mapping must be identical
 
 #### Input interception
 
@@ -167,19 +167,19 @@ This mechanism may also be reused for other short-lived prompts such as **yes/no
 
 ---
 
-### Directed Action Speech
+### Directed Event Speech
 
-Conversation states expose **actions** that are invoked through directed speech.
+Conversation states expose **events** that are invoked through directed speech.
 
-The player-facing command surface and the conversation action surface are separate.
+The player-facing command surface and the conversation event surface are separate.
 
-Player commands such as `say <action> to <npc>` are input surfaces.
-The conversation machine itself cares about whether the current state for that actor exposes a matching action.
+Player commands such as `say <event> to <npc>` are input surfaces.
+The conversation machine itself cares about whether the current state for that actor exposes a matching event.
 
 Canonical command form:
 
 ```
-say <action> to <npc>
+say <event> to <npc>
 ```
 
 Example:
@@ -190,18 +190,18 @@ say mine to Foo
 
 #### Normative rules
 
-- directed action speech is a valid way to select a visible conversation action
-- the action may resolve either to an exact visible action in the actor’s current conversation state or to an authored hidden `actions.default` fallback
-- if directed speech resolves to an exact action or an authored `actions.default` fallback in the current state, it may advance the conversation
-- if directed speech does not resolve to an exact action in the current state, an authored `actions.default` fallback may still handle it when defined
-- if directed speech resolves to neither an exact action nor an authored `actions.default` fallback, it does not advance the conversation
-- actions have meaning only within the current conversation state
+- directed event speech is a valid way to select a visible conversation event
+- the event may resolve either to an exact visible event in the actor’s current conversation state or to an authored hidden `events.default` fallback
+- if directed speech resolves to an exact event or an authored `events.default` fallback in the current state, it may advance the conversation
+- if directed speech does not resolve to an exact event in the current state, an authored `events.default` fallback may still handle it when defined
+- if directed speech resolves to neither an exact event nor an authored `events.default` fallback, it does not advance the conversation
+- events have meaning only within the current conversation state
 
-In FSM terms the action identifies the **transition edge** that moves the conversation from one state to the next.
+In FSM terms the event identifies the **transition edge** that moves the conversation from one state to the next.
 
 #### Relationship to numeric selection
 
-Numeric menu selection is a **convenience** for selecting the same action.
+Numeric menu selection is a **convenience** for selecting the same event.
 
 Example menu:
 
@@ -209,29 +209,29 @@ Example menu:
 1) Where is the mine?
 ```
 
-If the action defines:
+If the event defines:
 
 ```
-actions:
+events:
   mine:
     label: "Where is the mine?"
     to: discussing_old_mine
 ```
 
-Then both inputs select the same action:
+Then both inputs select the same event:
 
 ```
 1
 say mine to Foo
 ```
 
-The runtime may resolve these through the same internal action selection path.
+The runtime may resolve these through the same internal event selection path.
 
 #### Transcript behavior
 
-If directed action speech is intercepted successfully, the player's rendered utterance may be supplied either by the conversation or by the invoking command surface.
+If directed event speech is intercepted successfully, the player's rendered utterance may be supplied either by the conversation or by the invoking command surface.
 
-If the conversation supplies a richer player utterance for the selected action, that authored rendering should be used.
+If the conversation supplies a richer player utterance for the selected event, that authored rendering should be used.
 
 If the conversation does not supply such a rendering, the invoking command surface may fall back to its default semantic render.
 
@@ -243,8 +243,8 @@ The NPC's utterance is not the conversation state itself.
 
 For identical committed state:
 
-- numeric selection and directed action speech must resolve to the same action
-- the same action must produce the same transition, effects, transcript, and next menu
+- numeric selection and directed event speech must resolve to the same event
+- the same event must produce the same transition, effects, transcript, and next menu
 
 ---
 
@@ -387,7 +387,7 @@ conversation: squirrel
 
 The runtime loads the definition when interaction begins.
 
-If a player uses a supported opener command surface that resolves to an action available from the opening `idle` state, the runtime may begin the conversation by taking that transition immediately.
+If a player uses a supported opener command surface that resolves to an event available from the opening `idle` state, the runtime may begin the conversation by taking that transition immediately.
 
 ---
 
@@ -408,46 +408,46 @@ as the entry state.
 States contain:
 
 - entry behavior emitted or executed when entering the state
-- available actions
+- available events
 
 State entry behavior runs on transition into that state.
 It is not the state itself.
 
 Entry behavior may include NPC speech, mutation, and render operations as long as their execution point is unambiguous: they run because the state was entered.
 
-### Action Structure
+### Event Structure
 
-Actions define transitions between states and separate two responsibilities:
+Events define transitions between states and separate two responsibilities:
 
-- **transition input** via `action`
+- **transition input** via `event`
 - **state progression** via `to`
 
 Fields:
 
-- action key — stable authored transition identifier and directed action token
-- `label` — menu-facing text for the action
-- `condition` — read-only condition controlling action visibility
+- event key — stable authored transition identifier and directed event token
+- `label` — menu-facing text for the event
+- `condition` — read-only condition controlling event visibility
 - `effects` — transition-time operations applied because this edge was taken
 - `to` — destination conversation state
 
-One action corresponds to one transition out of the current state.
+One event corresponds to one transition out of the current state.
 
 Transition-local effects and destination-state entry behavior are both valid.
 They answer different questions:
 
-- transition effects describe what happens when the player chooses that action
+- transition effects describe what happens when the player chooses that event
 - state entry behavior describes what happens when the machine arrives in the next state
 
 Placement rule:
 
-- if an effect depends on which action was taken, it belongs on the transition
+- if an effect depends on which event was taken, it belongs on the transition
 - if it depends only on the destination state, it belongs on entry
 
 Example:
 
 ```yaml
 chatting:
-  actions:
+  events:
     mine:
       label: "Ask about the old mine."
       effects:
@@ -465,13 +465,13 @@ Menu numbers are generated automatically.
 
 ## 10. Conditions and Effects
 
-Actions separate three concerns:
+Events separate three concerns:
 
 - display
 - gating
 - mutation
 
-Conditions determine action availability.
+Conditions determine event availability.
 
 Example:
 
@@ -480,7 +480,7 @@ condition:
   hasItem: silver_coin
 ```
 
-Effects apply on transition commit because the action edge was taken.
+Effects apply on transition commit because the event edge was taken.
 
 Example:
 
@@ -516,7 +516,7 @@ conversationActive:
 
 Purpose:
 
-- map numeric input to actions
+- map numeric input to events
 - prevent stale selections
 
 ---
@@ -525,8 +525,8 @@ Purpose:
 
 Rules:
 
-- actions failing conditions are hidden
-- remaining actions are renumbered
+- events failing conditions are hidden
+- remaining events are renumbered
 
 Example:
 
@@ -570,9 +570,9 @@ Conversation commands follow the standard command pipeline.
 
 Conversation-specific veto behavior occurs during the **Capture** phase.
 
-Determining whether player input resolves to a conversation action is a routing concern that happens before or alongside conversation-specific Capture checks.
+Determining whether player input resolves to a conversation event is a routing concern that happens before or alongside conversation-specific Capture checks.
 
-Capture remains the phase for refusal, invalidation, or veto, not for inventing a conversation action where none was resolved.
+Capture remains the phase for refusal, invalidation, or veto, not for inventing a conversation event where none was resolved.
 
 ---
 
@@ -589,7 +589,7 @@ validate conversable
 
 Plan
 resolve conversation state
-compute visible actions
+compute visible events
 prepare engagement
 
 Commit
@@ -608,7 +608,7 @@ check active menu interception
 capture numeric selector
 
 Entity Resolution
-resolve action from engagement menu
+resolve event from engagement menu
 
 Capture
 validate menu revision
@@ -690,7 +690,7 @@ If no active conversation menu exists, numeric input falls through to normal com
 
 #### Selector not present
 
-If the selected number does not correspond to a visible action in the current menu:
+If the selected number does not correspond to a visible event in the current menu:
 
 Behavior:
 
@@ -718,24 +718,24 @@ Room transcript must not be produced.
 
 ---
 
-### 15.3 Directed action speech behavior
+### 15.3 Directed event speech behavior
 
 Directed speech of the form:
 
 ```
-say <action> to <npc>
+say <event> to <npc>
 ```
 
-may be intercepted by the conversation system when the addressed NPC hosts a conversation whose current actor-specific state can receive that action.
+may be intercepted by the conversation system when the addressed NPC hosts a conversation whose current actor-specific state can receive that event.
 
 Rules:
 
-- directed action speech is a first-class conversation input path, not merely a shortcut for an already-open menu
-- directed action speech may either initiate a conversation or continue an existing one
+- directed event speech is a first-class conversation input path, not merely a shortcut for an already-open menu
+- directed event speech may either initiate a conversation or continue an existing one
 - interception is based on the addressed NPC's conversation state for that actor, not on the existence of an active menu or prior engagement
-- an action is eligible when the current state can receive it through an exact action match or an authored `actions.default` fallback
-- if the addressed NPC does not host a conversation, or the current actor-specific state can receive neither that exact action nor an authored `actions.default` fallback, the conversation system does not intercept the command and speech proceeds through normal speech handling
-- when directed action speech is intercepted successfully, the conversation runtime may establish or refresh engagement/menu state as needed
+- an event is eligible when the current state can receive it through an exact event match or an authored `events.default` fallback
+- if the addressed NPC does not host a conversation, or the current actor-specific state can receive neither that exact event nor an authored `events.default` fallback, the conversation system does not intercept the command and speech proceeds through normal speech handling
+- when directed event speech is intercepted successfully, the conversation runtime may establish or refresh engagement/menu state as needed
 
 This preserves the diegetic meaning of speech commands.
 
@@ -805,15 +805,15 @@ Determinism requirements apply to **conversation logic, menu generation, command
 
 ---
 
-### 17.1 Action visibility
+### 17.1 Event visibility
 
 For identical committed state:
 
 - the same conversation state must be selected
-- condition evaluation must produce the same visible action set
-- the same actions must be hidden or visible
+- condition evaluation must produce the same visible event set
+- the same events must be hidden or visible
 
-Guards must therefore depend only on deterministic read surfaces.
+Conditions must therefore depend only on deterministic read surfaces.
 
 ---
 
@@ -823,9 +823,9 @@ Menu construction must be deterministic.
 
 For identical committed state:
 
-- visible actions must appear in the same order
+- visible events must appear in the same order
 - menu numbering must be identical
-- selector numbers must map to the same actions
+- selector numbers must map to the same events
 
 Menu ordering must not depend on nondeterministic factors such as iteration order.
 
@@ -837,15 +837,15 @@ Intent resolution must be deterministic.
 
 For identical committed state and input:
 
-- the same selector number must resolve to the same action
-- numeric selection and directed action speech must resolve to the same action
-- equivalent player-facing command surfaces must resolve to the same action when they represent the same authored conversation action
+- the same selector number must resolve to the same event
+- numeric selection and directed event speech must resolve to the same event
+- equivalent player-facing command surfaces must resolve to the same event when they represent the same authored conversation event
 
 ---
 
 ### 17.4 Conversation transitions
 
-For identical committed state and resolved action:
+For identical committed state and resolved event:
 
 - the same effects must be produced
 - the same state transition must occur
@@ -904,9 +904,9 @@ Conversation definitions must validate:
 - missing `idle`
 - invalid `to`
 - unreachable states
-- duplicate actions
-- terminal states with actions
-- states with `auto` and `actions`
+- duplicate events
+- terminal states with events
+- states with `auto` and `events`
 - states with `auto` and `terminal`
 
 ---
@@ -934,14 +934,14 @@ wizard.conversation.md
 May include:
 
 - readable state descriptions
-- visible actions
+- visible events
 - diagrams
 
 ---
 
-### 20. Guard Read Surface
+### 20. Condition Read Surface
 
-Guards read authoritative metadata but remain separate from render predicates.
+Conditions read authoritative metadata but remain separate from render predicates.
 
 Example:
 
@@ -975,7 +975,7 @@ Internal state may later include:
 - trust
 - fear
 
-Conversation actions may eventually read or modify such metadata.
+Conversation events may eventually read or modify such metadata.
 
 ---
 
@@ -986,7 +986,7 @@ Tests should verify:
 1. talk loads progress
 2. numeric selection works
 3. stale menu rejection
-4. directed action speech progression
+4. directed event speech progression
 5. condition filtering
 6. menu renumbering
 7. movement clears engagement
@@ -1000,11 +1000,11 @@ Tests should verify:
 
 This section is speculative and must be weighed before adoption.
 
-Current mainline design assumes that a player's conversation action advances the conversation directly through the standard command pipeline.
+Current mainline design assumes that a player's conversation event advances the conversation directly through the standard command pipeline.
 
 A possible alternative is to make the exchange explicitly two-step and delayed by one or more ticks, as a timeout effect:
 
-1. player command resolves to a conversation action
+1. player command resolves to a conversation event
 2. commit stores a pending response intent on the NPC
 3. on the NPC's next eligible tick, the NPC consumes that pending response
 4. the NPC commits a player-targeted conversation transition
@@ -1033,7 +1033,7 @@ Possible cons:
 
 Questions to weigh if this option is pursued:
 
-- should the NPC store a pre-resolved pending transition, or re-resolve the action at response time?
+- should the NPC store a pre-resolved pending transition, or re-resolve the event at response time?
 - what cancels the pending response: movement, despawn, disconnect, new input, state mismatch, or all of the above?
 - should pending responses queue, replace one another, or be forbidden concurrently per player/NPC pair?
 - should menu installation occur only with the delayed NPC reply, or earlier?

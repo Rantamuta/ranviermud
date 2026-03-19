@@ -96,19 +96,19 @@ Given:
 
 Evaluation:
 
-1. Collect authored actions in order from state `S`.
+1. Collect authored events in order from state `S`.
 2. For each transition `T`:
    - if `T.event != E`, skip
    - if `T.condition` exists and evaluates false, skip
    - first matching transition is selected
 3. If no transition matches:
-   - if state `S` defines `actions.default` and its condition passes, select `actions.default`
+   - if state `S` defines `events.default` and its condition passes, select `events.default`
    - otherwise, no state change
 
 Determinism rule:
 
 - authored order is the only priority mechanism
-- `default` is considered only after exact action matching fails
+- `default` is considered only after exact event matching fails
 
 ### Entry behavior
 
@@ -117,18 +117,18 @@ When a state is entered:
 1. state becomes current
 2. state entry behavior executes in authored order
 3. if the state defines `auto`, automatic routing is evaluated
-4. available actions are enumerated if the state is non-terminal and does not define `auto`
+4. available events are enumerated if the state is non-terminal and does not define `auto`
 
 No exit actions in v1.
 
 This profile distinguishes clearly between:
 
-- transition-time behavior attached to the chosen action
+- transition-time behavior attached to the chosen event
 - entry behavior attached to the destination state
 
 Transition behavior answers:
 
-- what happens when this action is taken
+- what happens when this event is taken
 
 Entry behavior answers:
 
@@ -164,7 +164,7 @@ states:
     entry:
       effects:
         - messageRoom: "Ah, a traveler. What do you need?"
-    actions:
+    events:
       greet:
         label: "Hello."
         to: greeting
@@ -182,8 +182,8 @@ states:
     effects:
       - <effect>
   terminal: true|false            # optional, default false
-  actions:                        # optional unless terminal or auto
-    <action_id>:
+  events:                         # optional unless terminal or auto
+    <event_id>:
       <transition>
     default:                      # optional unmatched-input fallback
       to: <state_id>
@@ -243,13 +243,13 @@ Semantic discipline rule:
 
 Placement rule:
 
-- if an effect depends on which action was taken, it belongs on the transition
+- if an effect depends on which event was taken, it belongs on the transition
 - if it depends only on the destination state, it belongs on entry
 
 ### Transition shape
 
 ```yaml
-<action_id>:
+<event_id>:
   label: <menu text>              # required for UI surfaces
   to: <state_id>                  # required unless terminal routing model changes
   condition: <predicate ref>      # optional
@@ -259,7 +259,7 @@ Placement rule:
 
 Notes:
 
-- the action key is the canonical event id
+- the event key is the canonical event id
 - `label` is UI-facing
 - `effects` are transition-time operations
 - `to` names the destination state
@@ -273,7 +273,7 @@ They are not interchangeable:
 ### Default fallback shape
 
 ```yaml
-actions:
+events:
   default:
     to: <state_id>
     condition: <predicate ref>    # optional
@@ -284,22 +284,22 @@ actions:
 Notes:
 
 - `default` is optional and singular per state
-- `default` is evaluated only when no exact action in the current state matches the incoming input
+- `default` is evaluated only when no exact event in the current state matches the incoming input
 - `default` is not menu-visible and does not define `label`
-- `default` is a reserved action key rather than a normal authored action name
+- `default` is a reserved event key rather than a normal authored event name
 - `default` follows the same placement rule as other transition effects
 
 ### Naming convention
 
 By default:
 
-- actions should use imperative names such as `greet`, `ask_work`, or `leave`
+- events should use imperative names such as `greet`, `ask_work`, or `leave`
 - states should describe conditions, modes, or situations such as `idling`, `greeting`, or `discussing_old_mine`
 
 This convention is intended to make the machine read naturally:
 
 - state `idling`
-- action `greet`
+- event `greet`
 - state `greeting`
 
 Authors may deviate when there is a strong reason, but this is the preferred style.
@@ -319,7 +319,7 @@ goodbye_forever:
   terminal: true
 ```
 
-Terminal states define no `actions`.
+Terminal states define no `events`.
 
 Ordinary exit or "goodbye for now" states should usually be modeled as non-terminal resting states rather than `terminal: true`.
 
@@ -330,7 +330,7 @@ see_you_later:
   entry:
     effects:
       - messageRoom: "See you later."
-  actions:
+  events:
     greet:
       label: "Hello again."
       to: greeting
@@ -502,22 +502,22 @@ Restriction:
 ### State rules
 
 - state ids must be unique
-- terminal states must not define `actions`
-- terminal states must not define `actions.default`
-- states with `auto` must not define `actions`
-- states with `auto` must not define `actions.default`
+- terminal states must not define `events`
+- terminal states must not define `events.default`
+- states with `auto` must not define `events`
+- states with `auto` must not define `events.default`
 - states with `auto` must not define `terminal: true`
-- non-terminal states without `auto` should define `actions` and may warn if not
+- non-terminal states without `auto` should define `events` and may warn if not
 
 ### Transition rules
 
-- action keys are required and unique per state
+- event keys are required and unique per state
 - `to` must reference an existing state
 - `label` is required
-- duplicate action keys within the same state are forbidden
-- the same action key across different states is allowed
-- `actions.default.to` must reference an existing state when `actions.default` is present
-- `actions.default` must not define `label`
+- duplicate event keys within the same state are forbidden
+- the same event key across different states is allowed
+- `events.default.to` must reference an existing state when `events.default` is present
+- `events.default` must not define `label`
 
 ### Determinism rules
 
@@ -526,13 +526,13 @@ Restriction:
 
 ### Forbidden combinations
 
-- `terminal: true` with `actions`
-- `terminal: true` with `actions.default`
-- `auto` with `actions`
-- `auto` with `actions.default`
+- `terminal: true` with `events`
+- `terminal: true` with `events.default`
+- `auto` with `events`
+- `auto` with `events.default`
 - `auto` with `terminal: true`
 - missing `to`
-- empty `actions` on non-terminal states without `auto` may warn
+- empty `events` on non-terminal states without `auto` may warn
 
 ### Reachability
 
@@ -551,7 +551,7 @@ idling:
   entry:
     effects:
       - messageRoom: "Ah, a traveler."
-  actions:
+  events:
     greet:
       label: "Hello."
       to: greeting
@@ -564,7 +564,7 @@ greeting:
   entry:
     effects:
       - messageRoom: "What do you need?"
-  actions:
+  events:
     buy:
       label: "Show me your wares."
       to: shop
@@ -574,7 +574,7 @@ greeting:
       to: goodbye
 ```
 
-### Directed `say <action> to <npc>`
+### Directed `say <event> to <npc>`
 
 Input surfaces:
 
@@ -615,14 +615,14 @@ Player transcript is derived from the command surface.
 
 ```yaml
 idling:
-  actions:
+  events:
     default:
       effects:
         - messageRoom: "The old miner squints at {actor}."
       to: idling
 ```
 
-If no exact action matches in `idling`, the machine takes `default`.
+If no exact event matches in `idling`, the machine takes `default`.
 
 ### Terminal conversation
 
@@ -641,7 +641,7 @@ see_you_later:
   entry:
     effects:
       - messageRoom: "See you later."
-  actions:
+  events:
     greet:
       label: "Hello again."
       to: greeting
@@ -698,8 +698,8 @@ Definition:
 
 - allowed only as `auto` block
 - evaluated after `entry.effects`, if any
-- states with `auto` may not also define `actions`
-- states with `auto` may not also define `actions.default`
+- states with `auto` may not also define `events`
+- states with `auto` may not also define `events.default`
 - states with `auto` may not also define `terminal: true`
 - no chaining beyond one hop, if enforced
 
@@ -724,11 +724,11 @@ Validation impact:
 
 - must detect cycles
 - must enforce no long chains, if that rule is adopted
-- must enforce `auto` exclusivity against `actions`, `actions.default`, and `terminal`
+- must enforce `auto` exclusivity against `events`, `events.default`, and `terminal`
 
 Preview implications:
 
-- must render automatic routing distinctly from player-selectable actions
+- must render automatic routing distinctly from player-selectable events
 
 Recommendation in this draft:
 
