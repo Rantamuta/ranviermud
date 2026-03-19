@@ -70,7 +70,7 @@ This profile adopts a strict subset of SCXML semantics:
 - deterministic transition selection by authored order
 - state entry behavior
 - transition-time effects
-- terminal states
+- final states
 
 No implicit behavior beyond these.
 
@@ -117,7 +117,7 @@ When a state is entered:
 1. state becomes current
 2. state entry behavior executes in authored order
 3. if the state defines `auto`, automatic routing is evaluated
-4. available events are enumerated if the state is non-terminal and does not define `auto`
+4. available events are enumerated if the state is non-final and does not define `auto`
 
 No exit actions in v1.
 
@@ -134,9 +134,9 @@ Entry behavior answers:
 
 - what happens when the machine arrives in this state
 
-### Terminal state behavior
+### Final state behavior
 
-A terminal state:
+A final state:
 
 - has no outgoing transitions
 - may produce an entry utterance
@@ -144,9 +144,9 @@ A terminal state:
 - is a valid persisted progress state
 - represents a permanent end to that authored conversation
 
-No implicit transitions out of terminal states.
+No implicit transitions out of final states.
 
-In this DSL, `terminal` does not mean "goodbye for now" or ordinary session closure.
+In this DSL, `final` does not mean "goodbye for now" or ordinary session closure.
 It means the conversation has genuinely reached its authored end unless some separate system later resets or replaces that progress.
 
 ## YAML DSL v1
@@ -181,8 +181,8 @@ states:
   entry:                                # optional
     effects:
       - <effect>
-  terminal: true|false            # optional, default false
-  events:                         # optional unless terminal or auto
+  final: true|false               # optional, default false
+  events:                         # optional unless final or auto
     <event_id>:
       <transition>
     default:                      # optional unmatched-input fallback
@@ -251,7 +251,7 @@ Placement rule:
 ```yaml
 <event_id>:
   label: <menu text>              # required for UI surfaces
-  to: <state_id>                  # required unless terminal routing model changes
+  to: <state_id>                  # required unless final routing model changes
   condition: <predicate ref>      # optional
   effects:                        # optional
     - <effect>
@@ -309,19 +309,19 @@ Authors may deviate when there is a strong reason, but this is the preferred sty
 - if transition `effects` include an authored player transcript/render override such as `messageRoom`, use it
 - otherwise, fall back to command-surface rendering
 
-### Terminal states
+### Final states
 
 ```yaml
 goodbye_forever:
   entry:
     effects:
       - messageRoom: "Goodbye for ever."
-  terminal: true
+  final: true
 ```
 
-Terminal states define no `events`.
+Final states define no `events`.
 
-Ordinary exit or "goodbye for now" states should usually be modeled as non-terminal resting states rather than `terminal: true`.
+Ordinary exit or "goodbye for now" states should usually be modeled as non-final resting states rather than `final: true`.
 
 For example:
 
@@ -471,12 +471,12 @@ Examples:
 
 More explicit render instruction shapes may still be needed for advanced authored cases, but the common DSL surface should prefer ergonomic shorthand where it lowers cleanly to the existing runtime model.
 
-### Terminal
+### Final
 
 DSL:
 
 ```yaml
-terminal: true
+final: true
 ```
 
 SCXML analogue:
@@ -502,12 +502,12 @@ Restriction:
 ### State rules
 
 - state ids must be unique
-- terminal states must not define `events`
-- terminal states must not define `events.default`
+- final states must not define `events`
+- final states must not define `events.default`
 - states with `auto` must not define `events`
 - states with `auto` must not define `events.default`
-- states with `auto` must not define `terminal: true`
-- non-terminal states without `auto` should define `events` and may warn if not
+- states with `auto` must not define `final: true`
+- non-final states without `auto` should define `events` and may warn if not
 
 ### Transition rules
 
@@ -526,13 +526,13 @@ Restriction:
 
 ### Forbidden combinations
 
-- `terminal: true` with `events`
-- `terminal: true` with `events.default`
+- `final: true` with `events`
+- `final: true` with `events.default`
 - `auto` with `events`
 - `auto` with `events.default`
-- `auto` with `terminal: true`
+- `auto` with `final: true`
 - missing `to`
-- empty `events` on non-terminal states without `auto` may warn
+- empty `events` on non-final states without `auto` may warn
 
 ### Reachability
 
@@ -624,17 +624,17 @@ idling:
 
 If no exact event matches in `idling`, the machine takes `default`.
 
-### Terminal conversation
+### Final conversation
 
 ```yaml
 goodbye_forever:
   entry:
     effects:
       - messageRoom: "Goodbye forever."
-  terminal: true
+  final: true
 ```
 
-### Non-terminal farewell resting state
+### Non-final farewell resting state
 
 ```yaml
 see_you_later:
@@ -700,7 +700,7 @@ Definition:
 - evaluated after `entry.effects`, if any
 - states with `auto` may not also define `events`
 - states with `auto` may not also define `events.default`
-- states with `auto` may not also define `terminal: true`
+- states with `auto` may not also define `final: true`
 - no chaining beyond one hop, if enforced
 
 Benefits:
@@ -724,7 +724,7 @@ Validation impact:
 
 - must detect cycles
 - must enforce no long chains, if that rule is adopted
-- must enforce `auto` exclusivity against `events`, `events.default`, and `terminal`
+- must enforce `auto` exclusivity against `events`, `events.default`, and `final`
 
 Preview implications:
 

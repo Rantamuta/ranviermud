@@ -51,8 +51,8 @@ All mutation occurs **before Render/Dispatch**.
 
 Vocabulary:
 
-- `terminal` means a persisted permanent end to an authored conversation path, not merely "goodbye for now"
-- ordinary session exit or farewell should not be assumed to be terminal unless the authored conversation is genuinely complete
+- `final` means a persisted permanent end to an authored conversation path, not merely "goodbye for now"
+- ordinary session exit or farewell should not be assumed to be final unless the authored conversation is genuinely complete
 
 ---
 
@@ -899,9 +899,9 @@ Conversation definitions must validate:
 - invalid `to`
 - unreachable states
 - duplicate events
-- terminal states with events
+- final states with events
 - states with `auto` and `events`
-- states with `auto` and `terminal`
+- states with `auto` and `final`
 
 ---
 
