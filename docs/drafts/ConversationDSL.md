@@ -102,7 +102,7 @@ Evaluation:
    - if `T.guard` exists and evaluates false, skip
    - first matching transition is selected
 3. If no transition matches:
-   - if state `S` defines `default` and its guard passes, select `default`
+   - if state `S` defines `actions.default` and its guard passes, select `actions.default`
    - otherwise, no state change
 
 Determinism rule:
@@ -185,11 +185,11 @@ states:
   actions:                        # optional unless terminal or auto
     <action_id>:
       <transition>
-  default:                        # optional unmatched-input fallback
-    to: <state_id>
-    guard: <predicate ref>        # optional
-    effects:
-      - <effect>
+    default:                      # optional unmatched-input fallback
+      to: <state_id>
+      guard: <predicate ref>      # optional
+      effects:
+        - <effect>
   auto:                           # optional routing-only block
     - to: <state_id>
       guard: <predicate ref>      # optional
@@ -273,11 +273,12 @@ They are not interchangeable:
 ### Default fallback shape
 
 ```yaml
-default:
-  to: <state_id>
-  guard: <predicate ref>          # optional
-  effects:                        # optional
-    - <effect>
+actions:
+  default:
+    to: <state_id>
+    guard: <predicate ref>        # optional
+    effects:                      # optional
+      - <effect>
 ```
 
 Notes:
@@ -285,6 +286,7 @@ Notes:
 - `default` is optional and singular per state
 - `default` is evaluated only when no exact action in the current state matches the incoming input
 - `default` is not menu-visible and does not define `label`
+- `default` is a reserved action key rather than a normal authored action name
 - `default` follows the same placement rule as other transition effects
 
 ### Naming convention
@@ -496,9 +498,9 @@ Restriction:
 
 - state ids must be unique
 - terminal states must not define `actions`
-- terminal states must not define `default`
+- terminal states must not define `actions.default`
 - states with `auto` must not define `actions`
-- states with `auto` must not define `default`
+- states with `auto` must not define `actions.default`
 - states with `auto` must not define `terminal: true`
 - non-terminal states without `auto` should define `actions` and may warn if not
 
@@ -509,8 +511,8 @@ Restriction:
 - `label` is required
 - duplicate action keys within the same state are forbidden
 - the same action key across different states is allowed
-- `default.to` must reference an existing state when `default` is present
-- `default` must not define `label`
+- `actions.default.to` must reference an existing state when `actions.default` is present
+- `actions.default` must not define `label`
 
 ### Determinism rules
 
@@ -520,9 +522,9 @@ Restriction:
 ### Forbidden combinations
 
 - `terminal: true` with `actions`
-- `terminal: true` with `default`
+- `terminal: true` with `actions.default`
 - `auto` with `actions`
-- `auto` with `default`
+- `auto` with `actions.default`
 - `auto` with `terminal: true`
 - missing `to`
 - empty `actions` on non-terminal states without `auto` may warn
@@ -608,10 +610,11 @@ Player transcript is derived from the command surface.
 
 ```yaml
 idling:
-  default:
-    effects:
-      - messageRoom: "The old miner squints at {actor}."
-    to: idling
+  actions:
+    default:
+      effects:
+        - messageRoom: "The old miner squints at {actor}."
+      to: idling
 ```
 
 If no exact action matches in `idling`, the machine takes `default`.
@@ -691,7 +694,7 @@ Definition:
 - allowed only as `auto` block
 - evaluated after `entry.effects`, if any
 - states with `auto` may not also define `actions`
-- states with `auto` may not also define `default`
+- states with `auto` may not also define `actions.default`
 - states with `auto` may not also define `terminal: true`
 - no chaining beyond one hop, if enforced
 
@@ -716,7 +719,7 @@ Validation impact:
 
 - must detect cycles
 - must enforce no long chains, if that rule is adopted
-- must enforce `auto` exclusivity against `actions`, `default`, and `terminal`
+- must enforce `auto` exclusivity against `actions`, `actions.default`, and `terminal`
 
 Preview implications:
 

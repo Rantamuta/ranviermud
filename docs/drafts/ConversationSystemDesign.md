@@ -191,10 +191,10 @@ say mine to Foo
 #### Normative rules
 
 - directed action speech is a valid way to select a visible conversation action
-- the action may resolve either to an exact visible action in the actor’s current conversation state or to an authored hidden `default` fallback
-- if directed speech resolves to an exact action or an authored `default` fallback in the current state, it may advance the conversation
-- if directed speech does not resolve to an exact action in the current state, an authored `default` fallback may still handle it when defined
-- if directed speech resolves to neither an exact action nor an authored `default` fallback, it does not advance the conversation
+- the action may resolve either to an exact visible action in the actor’s current conversation state or to an authored hidden `actions.default` fallback
+- if directed speech resolves to an exact action or an authored `actions.default` fallback in the current state, it may advance the conversation
+- if directed speech does not resolve to an exact action in the current state, an authored `actions.default` fallback may still handle it when defined
+- if directed speech resolves to neither an exact action nor an authored `actions.default` fallback, it does not advance the conversation
 - actions have meaning only within the current conversation state
 
 In FSM terms the action identifies the **transition edge** that moves the conversation from one state to the next.
@@ -733,8 +733,8 @@ Rules:
 - directed action speech is a first-class conversation input path, not merely a shortcut for an already-open menu
 - directed action speech may either initiate a conversation or continue an existing one
 - interception is based on the addressed NPC's conversation state for that actor, not on the existence of an active menu or prior engagement
-- an action is eligible when the current state can receive it through an exact action match or an authored `default` fallback
-- if the addressed NPC does not host a conversation, or the current actor-specific state can receive neither that exact action nor an authored `default` fallback, the conversation system does not intercept the command and speech proceeds through normal speech handling
+- an action is eligible when the current state can receive it through an exact action match or an authored `actions.default` fallback
+- if the addressed NPC does not host a conversation, or the current actor-specific state can receive neither that exact action nor an authored `actions.default` fallback, the conversation system does not intercept the command and speech proceeds through normal speech handling
 - when directed action speech is intercepted successfully, the conversation runtime may establish or refresh engagement/menu state as needed
 
 This preserves the diegetic meaning of speech commands.
