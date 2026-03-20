@@ -14,6 +14,8 @@ It is intentionally separate from `ConversationSystemDesign.md`.
 That document is about runtime behavior and player-facing semantics.
 This document is about what designers author, what the tooling validates, what the runtime consumes, and how visual inspection fits into that workflow.
 
+As this project becomes more mature, the conversation authoring model described here must graduate into explicit Designer Manual guidance rather than remaining solely in draft design/tooling documents.
+
 ## Core Position
 
 The authored source of truth is a YAML-based DSL.

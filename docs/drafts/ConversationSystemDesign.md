@@ -30,6 +30,8 @@ General NPC internal state, autonomous NPC behavior, and external environmental 
 
 The system should be implementable by Codex with minimal ambiguity.
 
+As the conversation system matures, this design work must be accompanied by a proper addition to the Designer Manual so authored conversations are documented as an author-facing workflow rather than remaining only in draft design documents.
+
 ---
 
 ## 2. Core Principles
