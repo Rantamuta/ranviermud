@@ -117,11 +117,14 @@ Given:
 Evaluation:
 
 1. Collect authored events in order from state `S`.
-2. For each transition `T`:
-   - if `T.event != E`, skip
-   - if `T.condition` exists and evaluates false, skip
-   - first matching transition is selected
-3. If no transition matches:
+2. Resolve the authored event entry for `E` in state `S`.
+3. If the event uses the single-transition shorthand:
+   - evaluate its `condition` if present
+   - if it passes, that transition is selected
+4. If the event defines ordered `transitions`:
+   - evaluate them in authored order
+   - first transition whose `condition` passes is selected
+5. If no transition matches:
    - if state `S` defines `events.default` and its condition passes, select `events.default`
    - otherwise, no state change
 
@@ -192,6 +195,20 @@ states:
       ask_work:
         label: "Need any help?"
         target: discussing_work
+
+      ask_leave:
+        label: "How do I leave?"
+        transitions:
+          - condition:
+              getActorMetadata:
+                key: death.isDead
+                equals: true
+            effects:
+              - messageRoom: "Cross the river and find your body."
+            target: departing
+          - effects:
+              - messageRoom: "You are not yet our subject."
+            target: idling
 ```
 
 ### State shape
@@ -204,7 +221,7 @@ states:
   final: true|false               # optional, default false
   events:                         # optional unless final or auto
     <event_id>:
-      <transition>
+      <event definition>
     default:                      # optional unmatched-input fallback
       target: <state_id>
       condition: <query object>   # optional
@@ -283,6 +300,28 @@ Notes:
 - `label` is UI-facing
 - `effects` are transition-time operations
 - `target` names the destination state
+- this is shorthand for the common case where one visible event has one outcome
+
+An event may also define ordered guarded outcomes directly:
+
+```yaml
+<event_id>:
+  label: <menu text>
+  transitions:
+    - condition: <query object>   # optional
+      effects:                    # optional
+        - <effect>
+      target: <state_id>
+```
+
+Rules:
+
+- an event may use either the single-transition shorthand or `transitions:`, not both
+- when `transitions:` is present, authored order is semantically significant
+- the first transition whose condition passes is selected
+- if no transition in `transitions:` matches, the event has no matching outcome and normal `events.default` handling may apply
+- if an event should always produce some outcome, its final transition should be unconditional
+- unconditional transitions should appear last
 
 Transition-local `effects` and state `onEntry` are both allowed.
 They are not interchangeable:
@@ -563,6 +602,7 @@ The current profile is intended to stay coherent under those terms:
   - classification: `direct subset of SCXML`
   - single target only
   - exact event matching only
+  - ordered per-event `transitions:` is author-facing sugar for multiple same-event SCXML transitions evaluated in document order
 - `condition`
   - classification: `direct subset of SCXML`
   - `condition` is the DSL's more ergonomic author-facing spelling of SCXML `cond`
@@ -614,10 +654,14 @@ The current profile is intended to stay coherent under those terms:
 ### Transition rules
 
 - event keys are required and unique per state
-- `target` must reference an existing state
+- shorthand `target` must reference an existing state
 - `label` is required
 - duplicate event keys within the same state are forbidden
 - the same event key across different states is allowed
+- an event may not define both shorthand `target`/`condition`/`effects` and `transitions:`
+- every `transitions:` entry must define `target`
+- every `transitions:` target must reference an existing state
+- transitions after an unconditional transition should be rejected or warned as unreachable
 - `events.default.target` must reference an existing state when `events.default` is present
 - `events.default` must not define `label`
 - condition purity violations must be rejected
@@ -625,6 +669,7 @@ The current profile is intended to stay coherent under those terms:
 ### Determinism rules
 
 - transitions evaluate strictly in authored order
+- ordered per-event `transitions:` evaluate strictly in authored order
 - no ambiguity resolution beyond order
 
 ### Forbidden combinations
@@ -675,6 +720,33 @@ greeting:
     leave:
       label: "Nothing."
       target: goodbye
+```
+
+### One event with multiple guarded outcomes
+
+```yaml
+introducing:
+  events:
+    ask_how_to_leave:
+      label: "How do I get out of here?"
+      transitions:
+        - condition:
+            getWorldMetadata:
+              key: isVillageRestored
+              equals: false
+          effects:
+            - messageRoom: "The Realm is unbalanced and I need warriors to set it right."
+          target: departing
+
+        - condition:
+            getActorMetadata:
+              key: death.isDead
+              equals: true
+          target: evaluating
+
+        - effects:
+            - messageRoom: "You are not yet our subject."
+          target: introducing
 ```
 
 ### Directed `say <event> to <npc>`
