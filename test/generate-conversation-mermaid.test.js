@@ -77,11 +77,24 @@ test('buildStateDiagram includes initial, auto, event, and default transitions',
 
 test('generateConversationMermaid writes markdown next to the source by default', () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'conversation-mermaid-'));
-  const inputFile = path.join(tempRoot, 'kingDead.conversation.yml');
-  const source = fs.readFileSync(
-    path.resolve('docs/lore/kingDead.conversation.yml'),
-    'utf8'
-  );
+  const inputFile = path.join(tempRoot, 'sample.conversation.yml');
+  const source = [
+    'id: sample_conversation',
+    'initial: greeting',
+    'states:',
+    '  greeting:',
+    '    auto:',
+    '      - target: introducing',
+    '  introducing:',
+    '    events:',
+    '      ask_name:',
+    '        target: done',
+    '      default:',
+    '        target: introducing',
+    '  done:',
+    '    final: true',
+    '',
+  ].join('\n');
 
   fs.writeFileSync(inputFile, source, 'utf8');
 
@@ -90,13 +103,15 @@ test('generateConversationMermaid writes markdown next to the source by default'
 
   assert.equal(
     path.basename(result.outputFile),
-    'kingDead.conversation.diagram.md'
+    'sample.conversation.diagram.md'
   );
-  assert.match(output, /# king_of_the_dead Diagram/);
+  assert.match(output, /# sample_conversation Diagram/);
+  assert.match(output, /Derived from \[sample\.conversation\.yml\]\(sample\.conversation\.yml\)\./);
   assert.match(output, /```mermaid/);
-  assert.match(output, /\[\*\] --> audience_router/);
-  assert.match(output, /audience_router --> living_intruder: auto \/ death\.isDead = false/);
-  assert.match(output, /waiting_for_petition --> explain_realm: ask_where_am_i/);
+  assert.match(output, /\[\*\] --> greeting/);
+  assert.match(output, /greeting --> introducing: auto \/ default/);
+  assert.match(output, /introducing --> done: ask_name/);
+  assert.match(output, /introducing --> introducing: default/);
 });
 
 test('CLI exits non-zero when input path is missing', () => {
