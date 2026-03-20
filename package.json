@@ -36,7 +36,9 @@
     "bench:all": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-all.js",
     "bench:record": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-record.js",
     "bench:check": "node ./bundles/bundle-rantamuta/tests/benchmarks/bench-check.js",
-    "syntax:cli": "node ./util/verb-local-syntax-cli.js"
+    "syntax:cli": "node ./util/verb-local-syntax-cli.js",
+    "conversation:diagram": "node ./scripts/generate-conversation-mermaid.js",
+    "conversation:watch": "node ./scripts/watch-conversation-mermaid.js"
   },
   "dependencies": {
     "commander": "^2.19.0",
