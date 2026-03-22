@@ -488,7 +488,7 @@ Examples of phase-aligned validation:
 
 ### Phase 1: Conversation state and persistence
 
-Status: draft
+Status: planning
 
 Scope:
 

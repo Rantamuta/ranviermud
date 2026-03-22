@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: draft
+- Status: planning
 - Scope: formal plan for conversation Phase 1 state and persistence
 
 ## Goal
@@ -11,7 +11,9 @@ Establish the persistent and ephemeral state model that the conversation runtime
 
 ## Intent
 
-The system should remember one player's conversation progress separately for each stable NPC, and it should keep temporary interaction state somewhere else so that losing or clearing the temporary state does not erase the player's real progress.
+In this plan, "conversation state" means the persisted per-player, per-NPC conversation record stored in player metadata.
+
+The system should remember one player's conversation state separately for each stable NPC, and it should keep temporary engagement or menu state somewhere else so that losing or clearing the temporary state does not erase the player's real progress.
 
 If a player interacts with a specific NPC again later, the runtime should continue from that NPC's stored conversation state instead of starting over, unless no stored state exists.
 
@@ -22,6 +24,7 @@ For this plan, `npcId` means the area-local authored NPC id, while `npcRef` mean
 - Define the persisted player-owned conversation progress shape as `player.metadata.conversations.<areaId>.<npcId>.state`.
 - Keep the persistent shape extensible for future per-NPC conversation fields such as visited transitions or conversation-local variables.
 - Define the stable NPC identity contract used for persistence lookups.
+- Limit persisted Phase 1 conversation state ownership to player metadata only; room, area, and world metadata are not part of this phase.
 - Add runtime helper surfaces for:
   - resolving a stable `npcRef` into `areaId` and `npcId`,
   - reading persisted conversation state,
@@ -29,7 +32,7 @@ For this plan, `npcId` means the area-local authored NPC id, while `npcRef` mean
   - clearing or replacing ephemeral engagement state without touching persisted progress.
 - Define the ownership model for ephemeral engagement state as non-persistent runtime state, separate from player metadata.
 - Add tests that prove persisted progress and ephemeral engagement are independent.
-- Add tests that prove specific-NPC interaction resumes from persisted state when present and falls back to authored `initial` only when no persisted state exists.
+- Add tests that prove specific-NPC state lookup returns persisted state when present and otherwise signals absence cleanly for later authored-state resolution.
 
 ## Out of Scope
 
@@ -44,6 +47,7 @@ For this plan, `npcId` means the area-local authored NPC id, while `npcRef` mean
 
 ## Acceptance Criteria
 
+- Conversation state is player-owned persisted state stored in player metadata, not in NPC runtime state or ephemeral engagement storage.
 - Persisted conversation progress is stored only under `player.metadata.conversations.<areaId>.<npcId>.state`.
 - The runtime uses one stable NPC identity contract and does not fall back to unstable identifiers such as runtime UUIDs or display names.
 - Same-named NPC ids in different areas do not collide in persistence.
@@ -59,8 +63,9 @@ For this plan, `npcId` means the area-local authored NPC id, while `npcRef` mean
 - Preserve the repository's runtime/content boundary from [AGENTS.md](/mnt/c/workspace/mud/ranviermud/AGENTS.md): runtime infrastructure must remain content-agnostic.
 - Keep the work inside `bundle-rantamuta`; do not change engine internals.
 - Use existing player metadata and mutator mechanisms rather than inventing a second persistence substrate.
-- Treat persisted conversation progress as player-owned state, not NPC-owned state.
+- Treat conversation state as player-owned persisted state in player metadata, not NPC-owned state.
 - Treat ephemeral engagement as session/runtime state, not persistent metadata.
+- Do not introduce room, area, or world metadata ownership for conversation state in this phase.
 - Do not introduce player-visible command behavior in this phase.
 - Do not invent a fallback persistence key based on NPC display name or runtime instance UUID; use authored stable identity that can be decomposed into `areaId` and `npcId`.
 - If runtime surfaces expose that authored identity as `entityReference` or an equivalent `<areaId>:<npcId>` reference, derive metadata path segments from it rather than persisting a raw `a:b` key segment.
@@ -72,6 +77,7 @@ For this plan, `npcId` means the area-local authored NPC id, while `npcRef` mean
 - [mutator.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/mutator.js)
   - Reuse existing `setPlayerMetadata` commit path for persisted conversation writes.
 - New helper surface, likely [conversation-state.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-state.js)
+  - Must remain a thin convenience layer over existing player metadata reads and mutator-backed writes, not a parallel state system.
   - Own stable NPC identity resolution and path derivation.
   - Own non-mutating read helpers.
   - Own write-planning helpers for persisted state.
@@ -128,7 +134,7 @@ Required evidence:
 
 - tests proving that after persisted state is written for a specific NPC, later state resolution for that same NPC returns the stored state
 - tests proving that after persisted state is written for `forest:tomo`, state resolution for `rantamuta:tomo` remains independent
-- tests proving that when no stored state exists, the helper layer signals absence cleanly so later phases can fall back to authored `initial`
+- tests proving that when no stored state exists, the helper layer signals absence cleanly rather than fabricating or writing a default
 - tests proving that clearing temporary engagement does not remove persisted conversation progress
 
 Pass/fail:
