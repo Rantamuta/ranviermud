@@ -475,40 +475,27 @@ Recommended posture:
 
 Examples of phase-aligned validation:
 
-- conversation entry surface: command forms, target failures, conversable failures, and basic success path
 - conversation state and persistence: progress storage, active engagement storage, and non-persistence of ephemeral state
 - authored conversation loading: load failures, unsupported construct failures, and stable definition lookup
 - event evaluation runtime: authored-order transition selection, `default` fallback, `auto`, and `final` behavior
+- directed event speech integration: `say <event> to <npc>` interception, opener behavior, continuation behavior, and correct fallthrough to normal speech
 - menu runtime: deterministic numbering, selector mapping, and stale-menu rejection
-- input interception: numeric interception, addressed-speech interception, and correct fallthrough when no conversation route matches
+- input interception: numeric interception and correct fallthrough when no conversation route matches
 - effect and query lowering: condition evaluation, effect lowering, and failure behavior for unsupported effect/query shapes
 - lifecycle and invalidation: cleanup on disconnect, room change, despawn, and replaced engagement
+- `talk` entry surface: command forms, target failures, conversable failures, and parity with the already-runnable directed speech path
 - multiplayer visibility policy: actor-private menu behavior and transcript visibility rules
 
-### Phase 1: Conversation entry surface
+### Phase 1: Conversation state and persistence
 
 Status: draft
 
 Scope:
 
-- baseline `talk <npc>`
-- baseline `talk to <npc>`
-- optional bare `talk` resume behavior
-- deterministic failure messaging for missing or invalid targets
-
-Why it stands alone:
-
-- this is the player-facing door into the system
-- it can be implemented before richer menu and event-routing behavior
-
-### Phase 2: Conversation state and persistence
-
-Status: draft
-
-Scope:
-
-- persistent `conversationProgress`
-- ephemeral active engagement state
+- persistent player-owned conversation progress
+- conversation progress stored under `conversations.<npcId>.state`
+- extensible per-NPC conversation state shape for future fields such as visited transitions or conversation-local variables
+- ephemeral active engagement state kept separate from persistent progress
 - stable NPC/conversation identity assumptions
 - minimal runtime ownership model for player-owned state
 
@@ -517,7 +504,15 @@ Why it stands alone:
 - this is the state model that the rest of the runtime depends on
 - it should be settled before broader behavior grows around it
 
-### Phase 3: Authored conversation loading
+Illustrative persistent shape:
+
+```yaml
+conversations:
+  <npcId>:
+    state: <stateId>
+```
+
+### Phase 2: Authored conversation loading
 
 Status: draft
 
@@ -533,7 +528,7 @@ Why it stands alone:
 - the runtime needs a real authored source to execute
 - live NPC wiring should not be mixed implicitly into command logic
 
-### Phase 4: Event evaluation runtime
+### Phase 3: Event evaluation runtime
 
 Status: draft
 
@@ -549,7 +544,39 @@ Why it stands alone:
 - this is the actual FSM execution core
 - it should be testable apart from command-surface concerns
 
-### Phase 5: Menu runtime
+### Phase 4: Directed event speech integration
+
+Status: draft
+
+Scope:
+
+- intercept directed speech for `say <event> to <npc>` when the addressed NPC hosts a conversation whose current actor-specific state can receive that event
+- allow directed speech to act as the first executable opener and continuation surface during runtime bring-up
+- support opener behavior such as `say hello to <npc>` when `hello` is an authored event available from that NPC's current conversation state
+- preserve fallback to normal speech when no conversation route matches
+
+Why it stands alone:
+
+- this provides a real player-visible execution surface without depending on `talk`
+- it keeps early runtime testing aligned with the already-existing `say` command path
+
+### Phase 5: Effect and query lowering
+
+Status: draft
+
+Scope:
+
+- lowering authored conditions to the shared query facade
+- lowering authored effects to existing mutation/render primitives
+- expanding query facade only where real authored need requires it
+- supporting the narrow authored subset needed for the first runnable directed-speech conversation slices
+
+Why it stands alone:
+
+- this is the bridge between the drafted DSL and the actual runtime
+- it can easily sprawl if it is not treated as its own bounded workstream
+
+### Phase 6: Menu runtime
 
 Status: draft
 
@@ -565,35 +592,20 @@ Why it stands alone:
 - the menu loop is distinct from the state machine itself
 - menu numbering and stale-menu behavior are major correctness concerns
 
-### Phase 6: Input interception
+### Phase 7: Numeric input interception
 
 Status: draft
 
 Scope:
 
 - numeric selector interception before normal command handling consumes the input
-- directed event speech interception for `say <event> to <npc>`
 - safe fallthrough when no conversation route matches
+- explicit separation between numeric selection and spoken conversation events
 
 Why it stands alone:
 
-- this is where conversation begins to interact with the broader input model
+- this is where menu-driven conversation begins to interact with the broader input model
 - it is the most likely place for dispatch-layer regressions if rushed
-
-### Phase 7: Effect and query lowering
-
-Status: draft
-
-Scope:
-
-- lowering authored conditions to the shared query facade
-- lowering authored effects to existing mutation/render primitives
-- expanding query facade only where real authored need requires it
-
-Why it stands alone:
-
-- this is the bridge between the drafted DSL and the actual runtime
-- it can easily sprawl if it is not treated as its own bounded workstream
 
 ### Phase 8: Lifecycle and invalidation
 
@@ -626,6 +638,22 @@ Why it stands alone:
 - this is a meaningful behavior layer beyond basic conversation correctness
 - it may be appropriate to defer parts of it until after a minimal single-actor loop works
 
+### Phase 10: `talk` entry surface
+
+Status: draft
+
+Scope:
+
+- baseline `talk <npc>`
+- baseline `talk to <npc>`
+- deterministic failure messaging for missing or invalid targets
+- parity with the already-runnable directed speech path instead of introducing a separate conversation bootstrap model
+
+Why it stands alone:
+
+- `talk` is a convenience/player-facing wrapper, not the minimal runtime prerequisite
+- deferring it avoids building a command shell before the underlying conversation execution path exists
+
 ## Phase-Shaped Grouping
 
 If the project shifts toward a phased approach, the implementation phases above group naturally into these broader guidepost phases.
@@ -634,20 +662,22 @@ If the project shifts toward a phased approach, the implementation phases above 
 
 Primary phases:
 
-- Conversation entry surface
 - Conversation state and persistence
 - Authored conversation loading
+- Event evaluation runtime
+- Directed event speech integration
+- Effect and query lowering
 
 Intent:
 
-- prove that a player can enter a real conversation definition through `talk`
+- prove that an authored conversation can load and advance through `say <event> to <npc>` before any menu or `talk` convenience surface exists
 
 ### Phase 2: Core loop
 
 Primary phases:
 
-- Event evaluation runtime
 - Menu runtime
+- Numeric input interception
 - Cross-cutting validation for the core loop
 
 Intent:
@@ -658,18 +688,17 @@ Intent:
 
 Primary phases:
 
-- Input interception
+- `talk` entry surface
 - Cross-cutting validation around interception and fallthrough
 
 Intent:
 
-- integrate conversations cleanly with the wider command/input model
+- add a dedicated conversation entry command only after the underlying runtime already works through directed speech
 
 ### Phase 4: Authored execution expansion
 
 Primary phases:
 
-- Effect and query lowering
 - Query facade expansion driven by real authored need
 
 Intent:
@@ -694,21 +723,22 @@ This is not a final implementation plan.
 
 It is a readiness-informed suggestion for how to keep the work incremental and reversible.
 
-### Slice 1: Minimal runtime skeleton plus `talk`
+### Slice 1: Minimal runtime skeleton plus directed speech
 
 Goal:
 
-- prove that a player can `talk` to a conversable NPC and receive an opening line plus actor-private menu
+- prove that an authored conversation can load and advance through `say <event> to <npc>`
 
 Likely work:
 
-- add baseline `talk` command surface
 - define NPC conversation binding shape
 - load a minimal conversation definition
-- persist minimal `conversationProgress`
-- install minimal active engagement state
+- persist minimal `conversations.<npcId>.state`
+- implement the minimal runtime needed to resolve current state and take one directed event
+- support the narrow condition/effect/render subset required for opening and reply lines
+- intercept directed speech only when a matching event exists and otherwise preserve normal `say`
 
-### Slice 2: Numeric selection loop
+### Slice 2: Menu runtime and numeric selection
 
 Goal:
 
@@ -716,35 +746,12 @@ Goal:
 
 Likely work:
 
+- add actor-private menu generation
 - add menu interception seam
 - implement menu mapping and stale-menu rejection
 - commit next state and render next menu
 
-### Slice 3: Directed event speech interception
-
-Goal:
-
-- allow `say <event> to <npc>` to drive conversation when applicable
-
-Likely work:
-
-- intercept addressed speech only when a matching event exists
-- preserve fallback to normal speech when no conversation event matches
-
-### Slice 4: Condition/effect lowering
-
-Goal:
-
-- make a useful authored subset of the DSL runnable
-
-Likely work:
-
-- support basic event targets
-- support guarded transitions
-- support `onEntry.effects`
-- support a narrow render/effect vocabulary
-
-### Slice 5: Query facade expansion
+### Slice 3: Query facade expansion and richer authored lowering
 
 Goal:
 
@@ -754,8 +761,9 @@ Likely work:
 
 - add actor metadata reads
 - add any additional deterministic reads justified by real authored content
+- support additional guarded transitions and authored effect forms as real content requires
 
-### Slice 6: Richer lifecycle and multiplayer behavior
+### Slice 4: Richer lifecycle and multiplayer behavior
 
 Goal:
 
@@ -764,9 +772,20 @@ Goal:
 Likely work:
 
 - invalidation on room change/despawn/disconnect
-- resume behavior
 - multiplayer transcript visibility rules
 - aggregate social-context line behavior
+
+### Slice 5: `talk` command surface
+
+Goal:
+
+- add `talk` as a dedicated conversation entry command after the runtime is already proven through directed speech
+
+Likely work:
+
+- add baseline `talk <npc>` and `talk to <npc>`
+- keep `talk` behavior aligned with the same conversation runtime used by directed speech
+- validate missing-target, non-conversable-target, and success-path behavior without inventing a second conversation bootstrap flow
 
 ## Risks and Open Questions
 
@@ -822,6 +841,11 @@ Most directly related checklist items:
 - `Implement talk command support for reference-world conversation entry`
 - `Add deterministic tests for talk`
 
+Readiness note:
+
+- even though the current checklist language names `talk`, this readiness document now treats `talk` as a later convenience surface
+- the first runnable/testing surface for conversation runtime bring-up is directed speech via `say <event> to <npc>`
+
 This note also interacts with adjacent checklist work:
 
 - per-player state helpers
@@ -841,9 +865,11 @@ The next planning step should be a dedicated implementation plan that:
 
 Recommended posture:
 
-- start with minimal `talk` plus menu runtime
+- start with minimal directed speech plus the runtime needed to make it real
+- store persistent progress under `conversations.<npcId>.state`
 - avoid full draft-design scope in the first slice
 - use a very small authored conversation for bring-up
+- defer `talk` until the underlying runtime is already working
 - expand query/effect support only in response to real authored need
 
 That approach best matches the current readiness profile of the repository.
