@@ -487,6 +487,8 @@ Examples of phase-aligned validation:
 
 ### Phase 1: Conversation entry surface
 
+Status: draft
+
 Scope:
 
 - baseline `talk <npc>`
@@ -500,6 +502,8 @@ Why it stands alone:
 - it can be implemented before richer menu and event-routing behavior
 
 ### Phase 2: Conversation state and persistence
+
+Status: draft
 
 Scope:
 
@@ -515,6 +519,8 @@ Why it stands alone:
 
 ### Phase 3: Authored conversation loading
 
+Status: draft
+
 Scope:
 
 - loading `.conversation.yml`
@@ -528,6 +534,8 @@ Why it stands alone:
 - live NPC wiring should not be mixed implicitly into command logic
 
 ### Phase 4: Event evaluation runtime
+
+Status: draft
 
 Scope:
 
@@ -543,6 +551,8 @@ Why it stands alone:
 
 ### Phase 5: Menu runtime
 
+Status: draft
+
 Scope:
 
 - actor-private menu generation
@@ -557,6 +567,8 @@ Why it stands alone:
 
 ### Phase 6: Input interception
 
+Status: draft
+
 Scope:
 
 - numeric selector interception before normal command handling consumes the input
@@ -569,6 +581,8 @@ Why it stands alone:
 - it is the most likely place for dispatch-layer regressions if rushed
 
 ### Phase 7: Effect and query lowering
+
+Status: draft
 
 Scope:
 
@@ -583,6 +597,8 @@ Why it stands alone:
 
 ### Phase 8: Lifecycle and invalidation
 
+Status: draft
+
 Scope:
 
 - clearing engagement on room change
@@ -596,6 +612,8 @@ Why it stands alone:
 - this work is easy to defer accidentally even though it matters for correctness
 
 ### Phase 9: Multiplayer visibility policy
+
+Status: draft
 
 Scope:
 
