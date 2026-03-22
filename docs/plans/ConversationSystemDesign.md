@@ -257,7 +257,7 @@ Conversation progress is **stored on the player**.
 Minimal persistence structure:
 
 ```yaml
-conversationProgress:
+conversations:
   <npcId>:
     state: greeting
 ```
@@ -265,7 +265,7 @@ conversationProgress:
 Optional variables:
 
 ```yaml
-conversationProgress:
+conversations:
   <npcId>:
     state: mine
     vars:
