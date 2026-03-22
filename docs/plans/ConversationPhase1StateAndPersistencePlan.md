@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: planning
+- Status: active
 - Scope: formal plan for conversation Phase 1 state and persistence
 
 ## Goal

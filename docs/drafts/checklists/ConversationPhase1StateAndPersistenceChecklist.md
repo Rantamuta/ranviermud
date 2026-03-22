@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: planning
+- Status: active
 - Scope: checklist for conversation Phase 1 state and persistence
 - Source plan: `docs/plans/ConversationPhase1StateAndPersistencePlan.md`
 - In Scope:
