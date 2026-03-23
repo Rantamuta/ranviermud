@@ -1,6 +1,6 @@
 # Conversation Runtime Readiness
 
-Status: draft
+- Status: draft
 
 ## Purpose
 
@@ -488,7 +488,7 @@ Examples of phase-aligned validation:
 
 ### Phase 1: Conversation state and persistence
 
-Status: active
+- Status: archived
 
 Scope:
 
@@ -543,7 +543,7 @@ Validation:
 
 ### Phase 2: Authored conversation loading
 
-Status: draft
+- Status: draft
 
 Scope:
 
@@ -567,7 +567,7 @@ Validation:
 
 ### Phase 3: Event evaluation runtime
 
-Status: draft
+- Status: draft
 
 Scope:
 
@@ -592,7 +592,7 @@ Validation:
 
 ### Phase 4: Directed event speech integration
 
-Status: draft
+- Status: draft
 
 Scope:
 
@@ -618,7 +618,7 @@ Validation:
 
 ### Phase 5: Effect and query lowering
 
-Status: draft
+- Status: draft
 
 Scope:
 
@@ -642,7 +642,7 @@ Validation:
 
 ### Phase 6: Menu runtime
 
-Status: draft
+- Status: draft
 
 Scope:
 
@@ -666,7 +666,7 @@ Validation:
 
 ### Phase 7: Numeric input interception
 
-Status: draft
+- Status: draft
 
 Scope:
 
@@ -689,7 +689,7 @@ Validation:
 
 ### Phase 8: Lifecycle and invalidation
 
-Status: draft
+- Status: draft
 
 Scope:
 
@@ -713,7 +713,7 @@ Validation:
 
 ### Phase 9: Multiplayer visibility policy
 
-Status: draft
+- Status: draft
 
 Scope:
 
@@ -736,7 +736,7 @@ Validation:
 
 ### Phase 10: `talk` entry surface
 
-Status: draft
+- Status: draft
 
 Scope:
 
