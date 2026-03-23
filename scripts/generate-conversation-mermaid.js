@@ -153,11 +153,11 @@ function validateConversation(doc, inputFile) {
   }
 
   if (typeof doc.id !== 'string' || !doc.id.trim()) {
-    throw new Error(`Conversation file "${inputFile}" must define top-level string "id".`);
+    throw new Error(`Conversation file "${inputFile}" must define top-level non-empty string "id".`);
   }
 
   if (typeof doc.initial !== 'string' || !doc.initial.trim()) {
-    throw new Error(`Conversation file "${inputFile}" must define top-level string "initial".`);
+    throw new Error(`Conversation file "${inputFile}" must define top-level non-empty string "initial".`);
   }
 
   if (!isObjectRecord(doc.states)) {
