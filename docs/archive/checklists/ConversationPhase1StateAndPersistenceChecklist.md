@@ -2,9 +2,9 @@
 
 ## Status
 
-- Status: active
+- Status: archived
 - Scope: checklist for conversation Phase 1 state and persistence
-- Source plan: `docs/plans/ConversationPhase1StateAndPersistencePlan.md`
+- Source plan: `docs/archive/plans/ConversationPhase1StateAndPersistencePlan.md`
 - In Scope:
   - define persisted player-owned conversation state under `player.metadata.conversations.<areaId>.<npcId>.state`
   - keep the per-NPC persisted object shape extensible for future conversation fields
