@@ -1,6 +1,6 @@
 # Conversation Runtime Readiness
 
-- Status: planning
+- Status: active
 
 ## Purpose
 
@@ -554,7 +554,7 @@ Validation:
 
 ### Phase 2: Authored conversation loading
 
-- Status: planning
+- Status: active
 
 Scope:
 

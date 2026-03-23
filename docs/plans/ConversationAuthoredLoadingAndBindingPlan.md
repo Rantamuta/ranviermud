@@ -1,8 +1,8 @@
-# Conversation Authored Loading And Binding Plan (Phase 2)
+# Conversation Authored Loading And Binding Plan
 
 ## Status
 
-- Status: planning
+- Status: active
 - Scope: formal plan for authored conversation loading, validation, and NPC binding
 
 ## Goal
