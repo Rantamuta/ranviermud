@@ -2,8 +2,8 @@
 
 ## Status
 
-- Status: draft
-- Binding: Proposed (for Codex implementation)
+- Status: archived
+- Binding: superceded by `ConversationSystemDesign.md`
 - Scope: Bundle-layer conversation system built on Command Architecture + Semantic Messaging
 - Related:
   - `docs/normative/CommandArchitecture.md`
