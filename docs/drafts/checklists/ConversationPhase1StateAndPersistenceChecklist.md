@@ -21,23 +21,23 @@
 
 ## Checklist
 
-- [ ] `C01` [conversation-state] Add module [conversation-state.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-state.js) that resolves a stable `npcRef` into `areaId` and `npcId` and derives the only supported persistence path `conversations.<areaId>.<npcId>.state`.
+- [x] `C01` [conversation-state] Add module [conversation-state.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-state.js) that resolves a stable `npcRef` into `areaId` and `npcId` and derives the only supported persistence path `conversations.<areaId>.<npcId>.state`.
   - Trace:
     - "`npcId` means the area-local authored NPC id, while `npcRef` means the logical unique authored reference `<areaId>:<npcId>`." (`Intent`)
     - "Define the stable NPC identity contract used for persistence lookups." (`In Scope`)
   - Validation handoff: `S1`, `unit`
-- [ ] `C02` [conversation-state] Implement non-mutating persisted read helpers in [conversation-state.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-state.js) by delegating to `getPlayerMetadata` from [player-metadata.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/player-metadata.js), and return explicit absence when no stored state exists.
+- [x] `C02` [conversation-state] Implement non-mutating persisted read helpers in [conversation-state.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-state.js) by delegating to `getPlayerMetadata` from [player-metadata.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/player-metadata.js), and return explicit absence when no stored state exists.
   - Trace:
     - "reading persisted conversation state" (`In Scope`)
     - "Reads of persisted conversation state are non-mutating." (`Acceptance Criteria`)
     - "If no persisted state exists for a specific NPC, helper resolution returns no stored state and does not silently write defaults." (`Acceptance Criteria`)
   - Validation handoff: `S1`, `unit`
-- [ ] `C03` [conversation-state] Implement the per-NPC persistence contract in [conversation-state.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-state.js) so `player.metadata.conversations.<areaId>.<npcId>` remains an object root and `state` is stored as a field within that object rather than collapsing the NPC entry to a scalar value (depends on `C01`).
+- [x] `C03` [conversation-state] Implement the per-NPC persistence contract in [conversation-state.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-state.js) so `player.metadata.conversations.<areaId>.<npcId>` remains an object root and `state` is stored as a field within that object rather than collapsing the NPC entry to a scalar value (depends on `C01`).
   - Trace:
     - "Keep the persistent shape extensible for future per-NPC conversation fields such as visited transitions or conversation-local variables." (`In Scope`)
     - "Persisted conversation progress is stored only under `player.metadata.conversations.<areaId>.<npcId>.state`." (`Acceptance Criteria`)
   - Validation handoff: `S1`, `unit`
-- [ ] `C04` [conversation-state] Implement persisted write-planning helpers in [conversation-state.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-state.js) as a thin convenience layer over [mutator.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/mutator.js), emitting `setPlayerMetadata` instructions that target only `player.metadata.conversations.<areaId>.<npcId>.state` (depends on `C01`, `C03`).
+- [x] `C04` [conversation-state] Implement persisted write-planning helpers in [conversation-state.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-state.js) as a thin convenience layer over [mutator.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/mutator.js), emitting `setPlayerMetadata` instructions that target only `player.metadata.conversations.<areaId>.<npcId>.state` (depends on `C01`, `C03`).
   - Trace:
     - "writing persisted conversation state through existing mutator-backed metadata paths" (`In Scope`)
     - "Persisted conversation progress is stored only under `player.metadata.conversations.<areaId>.<npcId>.state`." (`Acceptance Criteria`)
