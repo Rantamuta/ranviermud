@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: active
+- Status: archived
 - Scope: formal plan for authored conversation loading, validation, and NPC binding
 
 ## Goal

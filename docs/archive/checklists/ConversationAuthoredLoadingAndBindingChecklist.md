@@ -2,9 +2,9 @@
 
 ## Status
 
-- Status: active
+- Status: archived
 - Scope: checklist for authored conversation loading, validation, and NPC binding
-- Source plan: `docs/plans/ConversationAuthoredLoadingAndBindingPlan.md`
+- Source plan: `docs/archive/plans/ConversationAuthoredLoadingAndBindingPlan.md`
 - In Scope:
   - define `metadata.conversation` as the authoritative area-local relative path binding for bundle-local `.conversation.yml` files
   - add runtime loader, validator, cache, and startup priming surfaces for the supported minimal authored subset
