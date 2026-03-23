@@ -143,20 +143,24 @@ function formatCondition(condition) {
   return JSON.stringify(condition);
 }
 
+function isObjectRecord(value) {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
 function validateConversation(doc, inputFile) {
-  if (!doc || typeof doc !== 'object' || Array.isArray(doc)) {
+  if (!isObjectRecord(doc)) {
     throw new Error(`Conversation file "${inputFile}" must parse to an object.`);
   }
 
-  if (!doc.id || typeof doc.id !== 'string') {
-    throw new Error(`Conversation file "${inputFile}" must define top-level string "id".`);
+  if (typeof doc.id !== 'string' || !doc.id.trim()) {
+    throw new Error(`Conversation file "${inputFile}" must define top-level non-empty string "id".`);
   }
 
-  if (!doc.initial || typeof doc.initial !== 'string') {
-    throw new Error(`Conversation file "${inputFile}" must define top-level string "initial".`);
+  if (typeof doc.initial !== 'string' || !doc.initial.trim()) {
+    throw new Error(`Conversation file "${inputFile}" must define top-level non-empty string "initial".`);
   }
 
-  if (!doc.states || typeof doc.states !== 'object' || Array.isArray(doc.states)) {
+  if (!isObjectRecord(doc.states)) {
     throw new Error(`Conversation file "${inputFile}" must define object "states".`);
   }
 

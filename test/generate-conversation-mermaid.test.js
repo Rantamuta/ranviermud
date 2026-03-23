@@ -114,6 +114,55 @@ test('generateConversationMermaid writes markdown next to the source by default'
   assert.match(output, /introducing --> introducing: default/);
 });
 
+test('generateConversationMermaid rejects files that fail local mermaid validation', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'conversation-mermaid-invalid-'));
+  const inputFile = path.join(tempRoot, 'invalid.conversation.yml');
+  fs.writeFileSync(inputFile, [
+    'id: invalid_conversation',
+    'initial: missing',
+    'states:',
+    '  greeting:',
+    '    events:',
+    '      continue:',
+    '        target: greeting',
+    '',
+  ].join('\n'), 'utf8');
+
+  assert.throws(() => generateConversationMermaid(inputFile), /CONVERSATION_INITIAL_STATE_MISSING|Initial state/);
+});
+
+test('generateConversationMermaid rejects whitespace-only id and array states', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'conversation-mermaid-invalid-shape-'));
+
+  const blankIdFile = path.join(tempRoot, 'blank-id.conversation.yml');
+  fs.writeFileSync(blankIdFile, [
+    'id: "   "',
+    'initial: greeting',
+    'states:',
+    '  greeting: {}',
+    '',
+  ].join('\n'), 'utf8');
+
+  assert.throws(
+    () => generateConversationMermaid(blankIdFile),
+    /must define top-level non-empty string "id"/
+  );
+
+  const arrayStatesFile = path.join(tempRoot, 'array-states.conversation.yml');
+  fs.writeFileSync(arrayStatesFile, [
+    'id: shape_test',
+    'initial: greeting',
+    'states:',
+    '  - greeting',
+    '',
+  ].join('\n'), 'utf8');
+
+  assert.throws(
+    () => generateConversationMermaid(arrayStatesFile),
+    /must define object "states"/
+  );
+});
+
 test('CLI exits non-zero when input path is missing', () => {
   const result = spawnSync(
     process.execPath,
