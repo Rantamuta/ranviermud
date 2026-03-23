@@ -114,6 +114,23 @@ test('generateConversationMermaid writes markdown next to the source by default'
   assert.match(output, /introducing --> introducing: default/);
 });
 
+test('generateConversationMermaid rejects files that fail shared conversation validation', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'conversation-mermaid-invalid-'));
+  const inputFile = path.join(tempRoot, 'invalid.conversation.yml');
+  fs.writeFileSync(inputFile, [
+    'id: invalid_conversation',
+    'initial: missing',
+    'states:',
+    '  greeting:',
+    '    events:',
+    '      continue:',
+    '        target: greeting',
+    '',
+  ].join('\n'), 'utf8');
+
+  assert.throws(() => generateConversationMermaid(inputFile), /CONVERSATION_INITIAL_STATE_MISSING|Initial state/);
+});
+
 test('CLI exits non-zero when input path is missing', () => {
   const result = spawnSync(
     process.execPath,
