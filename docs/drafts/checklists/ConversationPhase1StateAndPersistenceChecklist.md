@@ -45,19 +45,19 @@
     - "Must remain a thin convenience layer over existing player metadata reads and mutator-backed writes, not a parallel state system." (`Implementation Surfaces`)
     - "The chosen helper surfaces are specific enough that later phases can use them without inventing additional persistence conventions." (`Acceptance Criteria`)
   - Validation handoff: `S1`, `contract/parity`
-- [ ] `C05` [conversation-state] Reject or fail explicitly when NPC identity resolution cannot produce safe `areaId` and `npcId` path segments, and do not fall back to display names, runtime UUIDs, or a raw `<areaId>:<npcId>` metadata key segment (depends on `C01`).
+- [x] `C05` [conversation-state] Reject or fail explicitly when NPC identity resolution cannot produce safe `areaId` and `npcId` path segments, and do not fall back to display names, runtime UUIDs, or a raw `<areaId>:<npcId>` metadata key segment (depends on `C01`).
   - Trace:
     - "Do not invent a fallback persistence key based on NPC display name or runtime instance UUID; use authored stable identity that can be decomposed into `areaId` and `npcId`." (`Constraints`)
     - "If runtime surfaces expose that authored identity as `entityReference` or an equivalent `<areaId>:<npcId>` reference, derive metadata path segments from it rather than persisting a raw `a:b` key segment." (`Constraints`)
     - "Same-named NPC ids in different areas do not collide in persistence." (`Acceptance Criteria`)
   - Validation handoff: `S2`, `contract/parity`
-- [ ] `C06` [conversation-engagement] Add module [conversation-engagement.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-engagement.js) that exposes runtime-owned `get`, `set`, `replace`, and `clear` operations for ephemeral engagement state without reading from or writing to player metadata.
+- [x] `C06` [conversation-engagement] Add module [conversation-engagement.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-engagement.js) that exposes runtime-owned `get`, `set`, `replace`, and `clear` operations for ephemeral engagement state without reading from or writing to player metadata.
   - Trace:
     - "Define the ownership model for ephemeral engagement state as non-persistent runtime state, separate from player metadata." (`In Scope`)
     - "Temporary engagement state is stored outside persistent player metadata." (`Acceptance Criteria`)
     - "Clearing or replacing temporary engagement state does not alter `player.metadata.conversations`." (`Acceptance Criteria`)
   - Validation handoff: `S3`, `unit`
-- [ ] `C07` [conversation-engagement] Key the [conversation-engagement.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-engagement.js) helper around runtime-owned player/session identity and keep its storage mechanism internal so later phases consume only the helper boundary (depends on `C06`).
+- [x] `C07` [conversation-engagement] Key the [conversation-engagement.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-engagement.js) helper around runtime-owned player/session identity and keep its storage mechanism internal so later phases consume only the helper boundary (depends on `C06`).
   - Trace:
     - "Treat ephemeral engagement as session/runtime state, not persistent metadata." (`Constraints`)
     - "Own ephemeral engagement storage behind a runtime-owned helper, likely backed by session-scoped storage." (`Implementation Surfaces`)
