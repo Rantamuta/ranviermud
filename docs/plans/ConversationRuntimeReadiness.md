@@ -1,6 +1,6 @@
 # Conversation Runtime Readiness
 
-- Status: draft
+- Status: planning
 
 ## Purpose
 
@@ -249,7 +249,7 @@ Impact:
 The draft design expects ephemeral engagement state such as:
 
 - active NPC
-- active conversation id
+- active conversation relative path reference
 - current visible menu mapping
 - stale menu protection
 
@@ -322,7 +322,18 @@ Impact:
 
 The design doc shows the intended binding shape:
 
-- `conversation: <id>`
+```yaml
+metadata:
+  conversation: conversations/squirrel.conversation.yml
+```
+
+Binding invariants for planning:
+
+- `metadata.conversation` is the authoritative conversation binding
+- `metadata.conversation` refers to an area-local relative file path, not a separate conversation id
+- the path resolves within the NPC's own area directory
+- if `metadata.conversation` is absent, that NPC has no conversation
+- there is no fallback from `npcId`
 
 The surveyed area NPC YAML does not currently use that field.
 
@@ -543,7 +554,7 @@ Validation:
 
 ### Phase 2: Authored conversation loading
 
-- Status: draft
+- Status: planning
 
 Scope:
 
@@ -551,6 +562,15 @@ Scope:
 - runtime binding from NPC data to a conversation definition
 - minimal structural/runtime validation on load
 - clear unsupported-construct failure behavior
+
+Phase 2 binding invariants:
+
+- NPC conversation binding is explicit through `metadata.conversation`
+- `metadata.conversation` refers to an area-local relative file path, not a separate conversation id
+- the path resolves within the NPC's own area directory
+- if `metadata.conversation` is absent, that NPC is non-conversable
+- there is no fallback from `npcId`
+- a present `metadata.conversation` that does not resolve to a valid supported conversation file must log an explicit maintainer-facing error, present only a generic no-response line to the player, and create no engagement or progress mutation
 
 Why it stands alone:
 
@@ -560,7 +580,7 @@ Why it stands alone:
 Validation:
 
 - unit tests for the loader that prove a valid minimal `.conversation.yml` file loads into a deterministic runtime definition
-- unit tests that prove NPC metadata binding resolves the intended conversation definition and rejects missing conversation ids cleanly
+- unit tests that prove NPC metadata binding resolves the intended area-local relative conversation path deterministically, treats absent `metadata.conversation` as non-conversable, and for broken path references logs an explicit error while returning only the generic no-response behavior to the player-facing path
 - unit tests that prove unsupported or malformed authored files fail with explicit diagnostics instead of partial runtime behavior
 - tooling-parity tests where practical so the runtime loader and existing Mermaid/tooling expectations do not silently diverge on the supported minimal shape
 - pass condition: one minimal authored conversation can be loaded and bound deterministically, and invalid definitions fail before command execution begins

@@ -379,15 +379,25 @@ onConversationComplete
 
 ## 8. Conversation Binding
 
-NPC metadata attaches conversations.
+NPC metadata binds conversations explicitly.
 
 Example:
 
 ```yaml
-conversation: squirrel
+metadata:
+  conversation: conversations/squirrel.conversation.yml
 ```
 
-The runtime loads the definition when interaction begins.
+Binding rules:
+
+- `metadata.conversation` is an area-local relative file path to the authored conversation file
+- the path resolves within the NPC's own area directory
+- if `metadata.conversation` is absent, that NPC has no conversation
+- if `metadata.conversation` is present but the referenced file cannot be loaded or validated, the runtime logs an explicit maintainer-facing error and treats the NPC as having nothing to say for the player-facing command
+- there is no fallback from `npcId`
+- there is no separate conversation-id layer distinct from the file reference
+
+The runtime loads the referenced file when interaction begins.
 
 If a player uses a supported opener command surface that resolves to an event available from the declared initial state, the runtime may begin the conversation by taking that transition immediately.
 
@@ -505,7 +515,7 @@ Example:
 ```yaml
 conversationActive:
   npcId: squirrel_01
-  conversationId: squirrel
+  conversationPath: conversations/squirrel.conversation.yml
   state: greeting
   menu:
     1: ask_mine
@@ -685,6 +695,21 @@ Behavior:
 - no engagement is created
 - no conversation progress mutates
 - actor receives an actor-visible refusal message
+
+---
+
+#### Target has broken conversation binding
+
+If the target resolves and declares `metadata.conversation`, but the referenced conversation file cannot be loaded or validated, the command fails during **Capture**.
+
+Behavior:
+
+- the runtime logs an explicit maintainer-facing error describing the broken conversation binding
+- no engagement is created
+- no conversation progress mutates
+- actor receives only a generic actor-visible no-response line such as `"<npc> has nothing to say."`
+
+The player-facing command must not expose loader diagnostics, validation internals, or filesystem details.
 
 ---
 
