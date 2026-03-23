@@ -46,6 +46,9 @@
 const fs = require('fs');
 const path = require('path');
 const Data = require('ranvier/src/Data');
+const {
+  validateConversationDefinition,
+} = require('../bundles/bundle-rantamuta/lib/session/conversation-definition-validation');
 
 const GENERATED_START = '<!-- GENERATED: conversation-diagram:start -->';
 const GENERATED_END = '<!-- GENERATED: conversation-diagram:end -->';
@@ -144,24 +147,9 @@ function formatCondition(condition) {
 }
 
 function validateConversation(doc, inputFile) {
-  if (!doc || typeof doc !== 'object' || Array.isArray(doc)) {
-    throw new Error(`Conversation file "${inputFile}" must parse to an object.`);
-  }
-
-  if (!doc.id || typeof doc.id !== 'string') {
-    throw new Error(`Conversation file "${inputFile}" must define top-level string "id".`);
-  }
-
-  if (!doc.initial || typeof doc.initial !== 'string') {
-    throw new Error(`Conversation file "${inputFile}" must define top-level string "initial".`);
-  }
-
-  if (!doc.states || typeof doc.states !== 'object' || Array.isArray(doc.states)) {
-    throw new Error(`Conversation file "${inputFile}" must define object "states".`);
-  }
-
-  if (!Object.prototype.hasOwnProperty.call(doc.states, doc.initial)) {
-    throw new Error(`Initial state "${doc.initial}" is not defined in "${inputFile}".`);
+  const result = validateConversationDefinition(doc, inputFile);
+  if (!result.ok) {
+    throw new Error(result.errors[0].code);
   }
 }
 
