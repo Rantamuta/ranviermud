@@ -114,7 +114,7 @@ test('generateConversationMermaid writes markdown next to the source by default'
   assert.match(output, /introducing --> introducing: default/);
 });
 
-test('generateConversationMermaid rejects files that fail shared conversation validation', () => {
+test('generateConversationMermaid rejects files that fail local mermaid validation', () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'conversation-mermaid-invalid-'));
   const inputFile = path.join(tempRoot, 'invalid.conversation.yml');
   fs.writeFileSync(inputFile, [
