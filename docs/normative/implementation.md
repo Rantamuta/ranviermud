@@ -26,6 +26,10 @@ Related policies:
 
 ## Setup
 
+First, carefully review the originating plan. Then compare it to the implementation checklist. If there is any drift you must stop and highlight the drift. That is, if the checklist introduces new code that is not in the plan, or if the checklist does not implement ideas that are in the plan, this is drift and you must stop and highlight the problem.
+
+Next, review the checklist for quality. If implementing the checklist will cause a drop in quality or cause other problems, you must stop and highlight the problem.
+
 If checklist execution is behavior-changing, run `npm test` and ensure that everything runs green. If tests fail, stop and ask for instructions, unless those failures are already known and explicitly accepted for this implementation.
 
 If checklist execution is docs-only or information-gathering, skip this setup test run.
