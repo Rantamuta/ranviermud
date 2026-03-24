@@ -58,6 +58,7 @@ Deterministic behavior contract:
   - Enforce only minimal invariants:
     - `skillId` is non-empty string.
     - bucket inputs are objects.
+    - prototype-special keys (`__proto__`, `prototype`, `constructor`) are either rejected or rendered safe via null-prototype/`Map` backing.
 
 - [ ] **P3 — Deep-freeze read protection**
   - Integrate the deep-freeze helper in `get` and `list` outputs.
@@ -92,11 +93,15 @@ Deterministic behavior contract:
    - `list` returns recursively frozen container and frozen nested buckets.
    - Attempted mutation of returned structures fails as expected.
 
-3. **Persistence compatibility**
+3. **Key safety against prototype pollution**
+   - Prototype-special IDs (for example `__proto__`) do not alter container prototypes.
+   - CRUD/list behavior remains deterministic when such IDs are attempted.
+
+4. **Persistence compatibility**
    - Existing saved entities without `skills` load with default `{}`.
    - Save/load roundtrip preserves arbitrary nested bucket data.
 
-4. **No behavioral drift in existing skill execution**
+5. **No behavioral drift in existing skill execution**
    - Existing ability execution/cooldown/resource behavior remains unchanged.
 
 ### Command expectations

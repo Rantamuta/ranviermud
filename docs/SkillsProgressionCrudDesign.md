@@ -41,6 +41,7 @@ Interpretation:
 - Top-level key = `skillId`.
 - Value = designer-defined bucket for that skill.
 - Runtime does not interpret bucket shape.
+- Storage safety requirement: object-backed implementations must avoid prototype-chain mutation risks for skill keys.
 
 Examples:
 
@@ -76,6 +77,7 @@ To keep this schema-free but not fragile, runtime should enforce only:
 
 1. `skillId` is a non-empty string.
 2. bucket payloads are objects.
+3. prototype-special keys must not be allowed to behave as ordinary skill keys (e.g., `__proto__`, `prototype`, `constructor`). Implementations must either reject these keys or use a null-prototype/`Map` backing that prevents prototype-chain mutation.
 
 No additional validation or policy checks are part of this design.
 
