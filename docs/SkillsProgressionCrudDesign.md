@@ -85,6 +85,17 @@ No additional validation or policy checks are part of this design.
 - Legacy saved entities without `skills` default to empty object `{}`.
 - Player/NPC save paths continue to rely on existing manager + loader persistence flow.
 
+
+## NPC persistence status (explicit acknowledgement)
+
+At current runtime baseline, NPC instances are not persisted across reboot as runtime entities. NPCs are re-instantiated from area content definitions on boot/spawn.
+
+Implication for this design:
+
+- `Character.skills` applies to both players and NPCs at runtime.
+- Persistent skill buckets are guaranteed only where an existing persistence path exists (players today).
+- NPC skill bucket persistence requires separate NPC persistence infrastructure and is not delivered by this design alone.
+
 ## Determinism and compatibility
 
 - CRUD behavior must be deterministic for identical inputs.
