@@ -131,7 +131,7 @@ Evaluation:
 Determinism rule:
 
 - authored order is the only priority mechanism
-- `default` is considered only after exact event matching fails
+- `default` is considered only after exact event evaluation fails to produce a selected transition
 
 ### onEntry behavior
 
@@ -343,7 +343,7 @@ events:
 Notes:
 
 - `default` is optional and singular per state
-- `default` is evaluated only when no exact event in the current state matches the incoming input
+- `default` is evaluated only when no exact event in the current state produces a selected transition for the incoming input
 - `default` is not menu-visible and does not define `label`
 - `default` is a reserved event key rather than a normal authored event name
 - `default` follows the same placement rule as other transition effects
