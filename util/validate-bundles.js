@@ -160,6 +160,27 @@ function loadBundleVirtualDoorValidator(root, bundleName) {
   }
 }
 
+function loadBundleConversationValidator(root, bundleName) {
+  const modulePath = path.join(root, 'bundles', bundleName, 'lib', 'session', 'conversation-definition-service.js');
+  if (!fs.existsSync(modulePath)) {
+    return null;
+  }
+
+  try {
+    // eslint-disable-next-line global-require, import/no-dynamic-require
+    const mod = require(modulePath);
+    if (!mod || typeof mod._validateConversationDefinitions !== 'function') {
+      return null;
+    }
+
+    return mod._validateConversationDefinitions;
+  } catch (error) {
+    return {
+      __loadError: error,
+    };
+  }
+}
+
 function mapVirtualDoorFinding(finding, bundleName) {
   const output = {
     level: finding && finding.level === 'error' ? 'error' : 'warn',
@@ -182,6 +203,35 @@ function mapVirtualDoorFinding(finding, bundleName) {
       output.path = detail.roomRef;
     }
     output.detail = detail;
+  }
+
+  return output;
+}
+
+function mapConversationFinding(finding, bundleName) {
+  const output = {
+    level: finding && finding.level === 'error' ? 'error' : 'warn',
+    code: finding && typeof finding.code === 'string'
+      ? finding.code
+      : 'CONVERSATION_VALIDATION',
+    message: finding && typeof finding.message === 'string'
+      ? finding.message
+      : 'Conversation validation finding',
+    bundle: finding && typeof finding.bundle === 'string'
+      ? finding.bundle
+      : bundleName,
+  };
+
+  if (finding && typeof finding.area === 'string') {
+    output.area = finding.area;
+  }
+
+  if (finding && typeof finding.path === 'string') {
+    output.path = finding.path;
+  }
+
+  if (finding && finding.detail && typeof finding.detail === 'object') {
+    output.detail = finding.detail;
   }
 
   return output;
@@ -224,6 +274,53 @@ function validateVirtualDoors(root, config, gameState, findings) {
         level: 'warn',
         code: 'VIRTUAL_DOOR_VALIDATION_FAILED',
         message: `VirtualDoor validation failed for bundle "${bundleName}"`,
+        bundle: bundleName,
+        detail: {
+          message: error.message,
+          stack: error.stack,
+        },
+      });
+    }
+  }
+}
+
+function validateConversations(root, config, gameState, findings) {
+  const bundles = Array.isArray(config.bundles) ? config.bundles : [];
+
+  for (const bundleName of bundles) {
+    const validator = loadBundleConversationValidator(root, bundleName);
+    if (!validator) {
+      continue;
+    }
+
+    if (validator.__loadError) {
+      findings.push({
+        level: 'warn',
+        code: 'CONVERSATION_VALIDATOR_LOAD_FAILED',
+        message: `Failed to load conversation validator for bundle "${bundleName}"`,
+        bundle: bundleName,
+        detail: {
+          message: validator.__loadError.message,
+          stack: validator.__loadError.stack,
+        },
+      });
+      continue;
+    }
+
+    try {
+      const conversationFindings = validator(gameState);
+      if (!Array.isArray(conversationFindings)) {
+        continue;
+      }
+
+      for (const finding of conversationFindings) {
+        findings.push(mapConversationFinding(finding, bundleName));
+      }
+    } catch (error) {
+      findings.push({
+        level: 'warn',
+        code: 'CONVERSATION_VALIDATION_FAILED',
+        message: `Conversation validation failed for bundle "${bundleName}"`,
         bundle: bundleName,
         detail: {
           message: error.message,
@@ -312,6 +409,7 @@ async function runEngineWorker(args) {
     const gameState = await validateEngineLoadInProcess(root, config, findings);
     if (gameState) {
       validateVirtualDoors(root, config, gameState, findings);
+      validateConversations(root, config, gameState, findings);
       if (playersMode) {
         await validatePlayers(gameState, findings, strictMode);
       }
@@ -404,6 +502,7 @@ async function main() {
         const gameState = await validateEngineLoadInProcess(root, config, findings);
         if (gameState) {
           validateVirtualDoors(root, config, gameState, findings);
+          validateConversations(root, config, gameState, findings);
           if (playersMode) {
             await validatePlayers(gameState, findings, strictMode);
           }
@@ -441,4 +540,12 @@ async function main() {
   process.exit(hasErrors ? 1 : 0);
 }
 
-main();
+module.exports = {
+  loadBundleConversationValidator,
+  mapConversationFinding,
+  validateConversations,
+};
+
+if (require.main === module) {
+  main();
+}
