@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: active
+- Status: archived
 - Scope: formal plan for the conversation event evaluation runtime
 
 ## Goal

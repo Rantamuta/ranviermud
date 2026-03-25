@@ -2,10 +2,10 @@
 
 ## Status
 
-- Status: active
+- Status: archived
 - Scope: validation planning matrix for the conversation event evaluation runtime checklist
-- Source plan: [ConversationPhase3EventEvaluationRuntimePlan.md](docs/plans/ConversationPhase3EventEvaluationRuntimePlan.md)
-- Source checklist: [ConversationPhase3EventEvaluationRuntimeChecklist.md](docs/drafts/checklists/ConversationPhase3EventEvaluationRuntimeChecklist.md)
+- Source plan: `docs/archive/plans/ConversationPhase3EventEvaluationRuntimePlan.md`
+- Source checklist: `docs/archive/checklists/ConversationPhase3EventEvaluationRuntimeChecklist.md`
 
 ## Purpose
 
