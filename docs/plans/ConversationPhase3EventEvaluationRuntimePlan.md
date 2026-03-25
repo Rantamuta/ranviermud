@@ -45,14 +45,15 @@ It may return data that later phases will use to mutate state or render output, 
   - the loaded conversation definition
   - the player, used only as a read-only source for persisted conversation progress and any read-only condition inputs needed in this phase
   - the NPC reference (`npcRef`, meaning the stable authored identity `<areaId>:<npcId>`)
-  - the current event id when one is being evaluated
-  - any injected helper needed for read-only condition checks
+  - either no event id for inspection of the current state, or one exact authored event id when an event is being evaluated
+  - any injected helper needed for read-only condition checks against the shared `q.*` query surface
 - Define one stable output shape for the evaluator that includes:
   - source state
   - selected event, if any
   - selected transition, if any
-  - destination state
-  - whether the destination is final
+  - destination state, meaning the immediate state entered from the selected event or `default`
+  - settled state, meaning the final current state after any `onEntry` work and any `auto` routing finish
+  - whether the settled state is final
   - visible events in authored order
   - transition effects and state-entry effects as returned data only
   - a structured trace of the evaluation steps
@@ -74,12 +75,18 @@ Here, "visible events" means authored events that:
   - evaluate transitions in authored order
   - first passing transition wins
 - Support hidden `events.default` fallback when:
-  - no exact event matched in the current state
+  - no exact event in the current state produced a selected transition
   - the default condition, if present, passes
 - Support state `onEntry.effects` as returned data only.
 - Support `auto` routing after `onEntry`.
 
 Here, "`auto` routing" means an authored automatic move to another state after entering the current state, without waiting for another player choice.
+
+For this phase, `auto` settling must be deterministic:
+
+- fail explicitly if the same state is revisited in one `auto` chain
+- also fail explicitly if one evaluation step exceeds a hard cap of 32 `auto` hops
+- record the visited states and the failure reason in the trace
 
 - Support final states.
 
@@ -90,9 +97,13 @@ Here, "final state" means an authored permanent end state for that conversation 
 Here, "persisted progress drift" means player metadata points at a state id that no longer exists in the currently loaded conversation definition.
 
 - Add the smallest validation extensions needed so the evaluator does not need to guess about malformed authored shapes.
+- Add one documentation-alignment task to update [ConversationDSL.md](/mnt/c/workspace/mud/ranviermud/docs/plans/ConversationDSL.md) where needed so its wording matches the approved phase 3 execution plan before implementation drifts from planning intent.
+- Add a generally usable deep-clone utility for the same narrow plain-data shapes used by the deep-freeze utility in this phase.
 - Add a generally usable deep-freeze utility and matching branded read-only type for use in this phase's read-only boundaries.
 
 Here, "deep-freeze utility" means a helper that takes supported plain authored data, returns a newly cloned deeply frozen copy, and leaves the caller's original value unchanged.
+
+Here, "deep-clone utility" means a helper that copies only the narrow plain-data shapes supported in this phase and rejects unsupported complex values explicitly.
 
 Here, "branded read-only type" means a JSDoc/TypeScript type marker used for static checking so certain functions can explicitly require already-frozen inputs.
 
@@ -149,13 +160,15 @@ This plan may introduce a generally usable utility, but it does not decide repo-
 - If persisted progress points at a missing state, the evaluator fails explicitly with a stable error result and does not silently reset to `initial`.
 - Visible events are returned in the same order they appear in the authored file after filtering out hidden or blocked events.
 - For an event using `transitions:`, the first passing transition in authored order is always chosen.
-- `events.default` is considered only when no exact event id matched in the current state.
+- `events.default` is considered only when no exact event in the current state produces a selected transition.
 - State-entry effects are collected after entering the destination state.
 - `auto` routes are evaluated only after state-entry effects for the entered state are collected.
+- The evaluator reports both the immediate destination state and the final settled state after any `auto` routing.
 - Final states are reported clearly and do not produce visible events.
 - The evaluator returns a stable trace that is detailed enough for tests and later preview/debug use.
 - The evaluator itself does not mutate world state, does not write player metadata, does not change engagement state, and does not dispatch output.
 - New runtime validation closes any authored-shape gaps that would otherwise force the evaluator to guess.
+- Any wording in [ConversationDSL.md](/mnt/c/workspace/mud/ranviermud/docs/plans/ConversationDSL.md) that conflicts with the approved phase 3 execution contract is updated before checklist drift can carry the mismatch into implementation.
 - Normalized conversation definitions used by the evaluator can be converted into branded deep-frozen copies and passed through the evaluator as read-only inputs.
 - Bundle validation can surface broken conversation bindings and evaluator-readiness problems without requiring a player to discover them in play.
 - Actual runtime conversation use still depends on lazy lookup through the conversation-definition service rather than on startup eager load.
@@ -203,6 +216,9 @@ Here, "deterministic" means the same authored definition, the same stored player
   - functions
   - class instances or other special runtime objects
 - Do not tie conversation correctness to process startup as the only validation point.
+- Any condition support used in this phase must align with the shared read-only `q.*` query surface rather than introducing a conversation-local condition API.
+- There is no conversation-specific query surface outside `q.*` in this phase.
+- If a needed read does not already exist in `q.*`, it must be added to the shared query facade itself rather than introduced as a conversation-only helper, and that expansion requires explicit maintainer approval because it widens a shared runtime surface.
 - Prefer a design where:
   - runtime use can load definitions lazily
   - bundle validation can check those definitions early
@@ -215,25 +231,32 @@ Here, "deterministic" means the same authored definition, the same stored player
 - New evaluator module, likely [conversation-runtime.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-runtime.js)
   - must remain a pure evaluator surface rather than a command, menu, or dispatch integration layer
   - resolve current state from persisted progress or authored `initial`
+  - support both current-state inspection and exact-event evaluation without changing command behavior
   - compute visible events
   - select exact-event, guarded-transition, or hidden-default outcomes
   - collect returned transition effects and state-entry effects
-  - follow `auto` routes
-  - expose final-state and trace information
+  - follow `auto` routes with visited-state detection and a hard cap of 32 hops
+  - expose destination-state, settled-state, final-state, and trace information
 - Possible small validation expansion in [conversation-definition-validation.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-definition-validation.js)
   - only where required so the evaluator does not need to guess about authored shape
+- Documentation alignment update in [ConversationDSL.md](/mnt/c/workspace/mud/ranviermud/docs/plans/ConversationDSL.md)
+  - should bring DSL wording into line with the approved phase 3 execution rules where the plan intentionally becomes more precise
 - Existing persisted-progress helper in [conversation-state.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-state.js)
   - source of player-owned stored state
 - Existing loader in [conversation-definition-service.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/conversation-definition-service.js)
   - source of loaded definitions consumed by the evaluator
   - should remain the authoritative lazy lookup path for runtime use
+- New general deep-clone helper, likely under `bundles/bundle-rantamuta/lib/` or `bundles/bundle-rantamuta/lib/helpers/`
+  - must be conversation-agnostic in implementation
+  - must stay narrow to the same supported plain-data shapes used by deep-freeze in this phase
 - New general deep-freeze helper, likely under `bundles/bundle-rantamuta/lib/` or `bundles/bundle-rantamuta/lib/helpers/`
   - must be conversation-agnostic in implementation
-  - must support converting normalized conversation definitions for this phase into frozen read-only copies without mutating the source
+  - must use the narrow deep-clone helper to produce frozen read-only copies without mutating the source
 - New branded read-only typedef surface
   - used so evaluator-facing APIs can declare that they accept frozen normalized definitions rather than mutable raw objects
 - Shared read-only query facade in [predicate-runtime.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/helpers/predicate-runtime.js)
-  - candidate home for any injected read-only condition helper, if the phase needs one
+  - candidate home for the standardized read-only condition interface this phase should consume
+  - any new query needed by conversations must be added here, not as a conversation-local side surface, and only with explicit approval
 - Existing bundle validation runner in [validate-bundles.js](/mnt/c/workspace/mud/ranviermud/util/validate-bundles.js)
   - likely host for conversation validation integration
   - should surface maintainer-facing findings without changing runtime load authority
@@ -297,8 +320,9 @@ Validation shape:
   - `unit`
 - Required tests:
   - `accepts a loaded definition, player, npcRef, and optional event id`
+  - `supports inspection of the current state when no event id is provided`
   - `rejects calls that omit required runtime inputs`
-  - `passes an injected read-only condition helper through without rewriting it`
+  - `passes a shared-query-surface-compatible read-only condition helper through without rewriting it`
   - `treats player input as read-only for evaluation purposes`
 
 ### 4. Define one stable output shape for the evaluator.
@@ -312,7 +336,7 @@ Validation shape:
 - Evidence type:
   - `unit`
 - Required tests:
-  - `returns source state, destination state, visible events, and final-state flag in one stable result`
+  - `returns source state, destination state, settled state, visible events, and final-state flag in one stable result`
   - `returns transition effects and state-entry effects as data only`
   - `returns a trace object with stable top-level fields`
 
@@ -393,7 +417,8 @@ Validation shape:
 - Evidence type:
   - `unit`
 - Required tests:
-  - `uses default only when no exact event id matches`
+  - `uses default when no exact event id exists in the current state`
+  - `uses default when an exact event exists but no transition in that event is selected`
   - `does not use default when an exact event exists and succeeds`
   - `uses conditioned default when its condition passes`
   - `returns no transition when neither an exact event nor default applies`
@@ -431,8 +456,9 @@ Validation shape:
   - `evaluates auto routes only after collecting onEntry effects`
   - `uses the first passing auto route in authored order`
   - `takes an unconditional auto route when earlier conditioned routes fail`
-  - `records the entered state and the auto-routed destination in the trace`
-  - `fails explicitly on auto-routing loops or route-limit exhaustion`
+  - `records the entered states and the settled state in the trace`
+  - `fails explicitly when one auto chain revisits a state`
+  - `fails explicitly when one auto chain exceeds the 32-hop hard cap`
 
 ### 12. Support final states.
 
@@ -505,7 +531,23 @@ Validation shape:
   - `includes a fixture for auto routing`
   - `includes a fixture for final-state handling`
 
-### 16. Add a generally usable deep-freeze utility and matching branded read-only type for use in this phase's read-only boundaries.
+### 16. Add a generally usable deep-clone utility for the same narrow plain-data shapes used by deep-freeze in this phase.
+
+Validation shape:
+
+- Primary test file:
+  - one new helper test file, likely [deep.clone.test.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/tests/deep.clone.test.js)
+- Evidence type:
+  - `unit`
+- Required tests:
+  - `returns a new deep clone for supported plain object input`
+  - `returns new nested objects and arrays instead of sharing mutable references`
+  - `does not mutate the caller's original input`
+  - `rejects unsupported complex values without changing the caller's original input`
+- Additional scope note:
+  - this helper stays narrow to the same plain-data contract used by deep-freeze in this phase
+
+### 17. Add a generally usable deep-freeze utility and matching branded read-only type for use in this phase's read-only boundaries.
 
 Validation shape:
 
@@ -529,7 +571,7 @@ Validation shape:
 - Additional scope note:
   - this phase should validate conversation-scoped use of the utility, not define repo-wide adoption tests for unrelated systems
 
-### 17. Add bundle-validation support for conversations so maintainers can surface broken or non-executable conversation definitions before runtime interaction.
+### 18. Add bundle-validation support for conversations so maintainers can surface broken or non-executable conversation definitions before runtime interaction.
 
 Validation shape:
 
@@ -552,7 +594,7 @@ Validation shape:
   - `surfaces maintainer-facing findings without changing normal runtime lookup behavior`
   - `does not require startup eager load to be the only way conversations are checked`
 
-### 18. Add tests for state resolution, visible-event filtering, transition selection, `default`, `auto`, `final`, trace output, and invalid persisted state.
+### 19. Add tests for state resolution, visible-event filtering, transition selection, `default`, `auto`, `final`, trace output, and invalid persisted state.
 
 Validation shape:
 
@@ -577,7 +619,9 @@ Validation shape:
 ## Risks and Mitigations
 
 - Risk: phase 3 quietly absorbs phase 5 by trying to fully execute conditions and effects.
-  - Mitigation: keep this phase focused on evaluation only; return effects as data and inject any read-only condition helper.
+  - Mitigation: keep this phase focused on evaluation only; return effects as data and only consume condition support through the shared read-only `q.*` query surface contract.
+- Risk: the plan becomes more precise than [ConversationDSL.md](/mnt/c/workspace/mud/ranviermud/docs/plans/ConversationDSL.md), and later checklist authoring or implementation quietly follows the older wording instead.
+  - Mitigation: carry an explicit documentation-alignment item so the DSL document is updated where needed before implementation drifts from the approved plan.
 - Risk: phase 3 quietly absorbs later command-integration phases by drifting into `say`, `talk`, menu, or command-dispatch work.
   - Mitigation: keep command-routing files out of scope, require evaluator tests that run without those surfaces, and treat any command-file edit as a scope break that must be approved separately.
 - Risk: authored files that passed phase 2 loading still leave the evaluator guessing.
@@ -585,7 +629,7 @@ Validation shape:
 - Risk: invalid stored player progress is silently reset, hiding content drift and creating hard-to-debug behavior.
   - Mitigation: fail explicitly with a stable error code and test that path.
 - Risk: `auto` routing can create loops or long chains that are hard to debug.
-  - Mitigation: define an explicit routing limit or explicit loop detection and record the route in the trace.
+  - Mitigation: use visited-state detection plus a hard cap of 32 hops, and record the visited states and failure reason in the trace.
 - Risk: the first runnable fixture is too small, so later integration work still uncovers basic evaluator gaps.
   - Mitigation: add a small but purpose-built authored fixture that exercises guarded transitions, hidden default, and auto-routing.
 - Risk: conversation validation becomes tied to startup eager loading, making later shard-local loading or reload-friendly invalidation harder.
@@ -599,6 +643,7 @@ Validation shape:
 
 - Assumption: the evaluator can treat the loaded conversation definition from phase 2 as the only authored source of truth for this phase.
 - Assumption: later command surfaces can consume returned evaluator data without needing the evaluator itself to know about sessions, prompts, or menus.
+- Assumption: this phase will not widen the shared query facade unless explicit approval is granted for a specific new `q.*` read.
 - Open question: should the evaluator expose one public entry point with optional event input, or separate entry points for:
   - "inspect current state"
   - "apply event"
@@ -606,12 +651,10 @@ Validation shape:
 
 This plan does not require the final API naming to be decided in advance, but it does require one stable testable result shape.
 
-- Open question: whether loop protection for `auto` should be:
-  - a hard validation error when detectable from authored data
-  - a runtime failure when encountered during evaluation
-  - or both
+- Assumption: runtime loop protection for `auto` will use both visited-state detection and a 32-hop hard cap.
+- Open question: whether some `auto` loop risks should also be rejected during definition validation when they are obvious from authored data alone.
 
-The preferred direction is both, where practical.
+The preferred direction is both, where practical: catch obvious authored problems early, and still fail explicitly at runtime if one is encountered during evaluation.
 
 - Open question: should conversation bundle validation live as:
   - a direct integration in `util/validate-bundles.js`
@@ -632,11 +675,13 @@ Use this checklist during implementation review to keep phase 3 from drifting in
 - The change does not edit [say.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/commands/say.js), [command-dispatch.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/session/command-dispatch.js), or [main.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/input-events/main.js).
 - The evaluator returns data instead of applying effects, dispatching output, or writing player progress.
 - The evaluator uses the existing conversation-definition service as the runtime load path rather than inventing a parallel loader.
-- Any condition support is injected as a read-only helper instead of broadly expanding the shared query surface.
+- Any condition support is injected only through the shared `q.*` surface, and no conversation-local query helper API has been introduced.
+- Any needed new query has explicit approval and extends [predicate-runtime.js](/mnt/c/workspace/mud/ranviermud/bundles/bundle-rantamuta/lib/helpers/predicate-runtime.js), not a side channel.
 - The evaluator treats player and NPC inputs as read-only sources for evaluation rather than as mutation targets.
 - The result shape is stable and testable, with trace data detailed enough to explain how the evaluator reached its answer.
 - Bundle validation surfaces maintainer-facing problems early without replacing lazy runtime lookup during play.
 - Any new helper introduced in this phase stays narrow and phase-appropriate instead of becoming a general policy vehicle.
+- The implementation or checklist includes the planned wording-alignment update to [ConversationDSL.md](/mnt/c/workspace/mud/ranviermud/docs/plans/ConversationDSL.md) where the approved plan intentionally sharpened semantics.
 - If a proposed change needs command interception, menu installation, effect execution, output rendering, or progress writes, it does not belong in phase 3 and should stop for scope review.
 
 ## Validation Strategy
@@ -653,8 +698,10 @@ Required evidence:
 - tests proving visible events preserve authored order after condition filtering
 - tests proving hidden `default` is not included in visible events
 - tests proving the first passing guarded transition wins in authored order
-- tests proving `default` is considered only after exact event lookup fails
+- tests proving `default` is considered only after exact event lookup fails to produce a selected transition
 - tests proving `onEntry` data is collected before `auto` is evaluated
+- tests proving the evaluator reports both immediate destination state and settled state after `auto`
+- tests proving `auto` loop detection and the 32-hop hard cap fail explicitly and deterministically
 - tests proving final states report no visible events
 - tests proving trace output records the important evaluation steps in a stable shape
 
@@ -686,6 +733,8 @@ Required evidence:
 - tests proving any added validation rules are explicit and deterministic rather than warning-only guesswork inside the evaluator
 - tests proving the evaluator returns data for later effect/render handling instead of applying those effects directly
 - tests proving the branded read-only type is documented and used at evaluator-facing boundaries introduced in this phase
+- tests proving no conversation-local query surface was introduced and any approved new condition read extends the shared `q.*` facade instead
+- documentation alignment proving [ConversationDSL.md](/mnt/c/workspace/mud/ranviermud/docs/plans/ConversationDSL.md) reflects the approved phase 3 semantics where this plan intentionally made the execution contract more precise
 - tests proving bundle validation findings use maintainer-facing reporting and do not leak player-facing runtime behavior into the validator path
 
 Pass/fail:
