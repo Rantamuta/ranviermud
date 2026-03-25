@@ -43,10 +43,15 @@ If either working tree is dirty with files unrelated to this implementation, sto
 
 If working trees are dirty and you are instructed to continue, do not stage or commit unrelated changes. Only stage files required for the checklist item being implemented.
 
-Check out a new git branch with a name that reflects the goal of the implementation, in the form `<verb>-<noun>` or `<verb>-<adjective>-<noun>`.
+Branching instructions:
 
-- Branch names SHOULD use lowercase kebab-case tokens.
-- Prefer names that describe the behavior or contract being implemented rather than an internal codename.
+- The implementation branch for `ranviermud` and `bundles/bundle-rantamuta` should be identical for tracking and syncing.
+- If `ranviermud` is not on `master`: verify, checkout or create the identical branch for `bundles/bundle-rantamuta`
+- If `ranviermud` is on `master` but `bundles/bundle-rantamuta` is *not* on `main`, then stop and ask for instructions.
+- If `ranviermud` is on `master` and `bundles/bundle-rantamuta` is on `main`, then:
+  - Check out a new git branch for both repos with a name that reflects the goal of the implementation, in the form `<verb>-<noun>` or `<verb>-<adjective>-<noun>`.
+    - Branch names SHOULD use lowercase kebab-case tokens.
+    - Prefer names that describe the behavior or contract being implemented rather than an internal codename.
 
 If the working tree is dirty at this stage, `git add . && git commit -m "Init <implementation>"` where implementation is suitably descriptive.
 
