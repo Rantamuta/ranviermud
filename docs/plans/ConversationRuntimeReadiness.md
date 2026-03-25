@@ -587,7 +587,7 @@ Validation:
 
 ### Phase 3: Event evaluation runtime
 
-- Status: draft
+- Status: active
 
 Scope:
 
