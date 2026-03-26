@@ -31,7 +31,8 @@ const messageModulePath = path.resolve(
   'bundles',
   'bundle-rantamuta',
   'lib',
-  'session',
+  'runtime',
+  'command',
   'semantic-message.js'
 );
 // eslint-disable-next-line global-require, import/no-dynamic-require
