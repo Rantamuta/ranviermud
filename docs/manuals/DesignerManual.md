@@ -1643,7 +1643,7 @@ Mutation instruction list (current):
 7. `noop`
 8. `transferItem`
 9. `movePlayer`
-10. `changeDoor`
+10. `operateDoor`
 
 Designer-facing scripted mutation:
 
@@ -1808,11 +1808,11 @@ What this does:
 - Moves a player actor between rooms through the command/mutator commit flow.
 - Commonly used by directional movement commands after gate checks pass.
 
-### `changeDoor`
+### `operateDoor`
 
 ```js
 {
-  type: 'changeDoor',
+  type: 'operateDoor',
   mutation: 'open',
   direction: 'north'
 }

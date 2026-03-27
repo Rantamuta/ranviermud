@@ -48,14 +48,14 @@ Purpose:
 ## 3) Mutation Integration
 
 - [x] [Required] Add canonical mutator instruction:
-  - `type: 'changeDoor'`
+  - `type: 'operateDoor'`
   - `mutation: 'open' | 'close' | 'unlock' | 'unlockAndOpen' | 'closeAndLock'`
   - target via direction or roomRef (and actor/fromRoomRef as needed)
-- [x] [Required] Route `changeDoor` through VirtualDoor service mutation API.
+- [x] [Required] Route `operateDoor` through VirtualDoor service mutation API.
 - [x] [Required] Preserve idempotent success and unresolved-target `warn + noop`.
 - [x] [Required] Keep legacy instruction aliases for compatibility:
-  - `openDoor` -> `changeDoor/open`
-  - `closeAndLockDoor` -> `changeDoor/closeAndLock`
+  - `openDoor` -> `operateDoor/open`
+  - `closeAndLockDoor` -> `operateDoor/closeAndLock`
 - [x] [Required] Add movement de-dup support in mutator (e.g. `suppressRoomBroadcast` or equivalent) for composed `go` messages.
 
 ## 4) Query Integration (`q`)
@@ -106,7 +106,7 @@ Purpose:
 
 ## 7) Content and Test Migration
 
-- [x] [Required] Update test content to use canonical `changeDoor` instruction payload.
+- [x] [Required] Update test content to use canonical `operateDoor` instruction payload.
 - [x] [Required] Update test predicates to use canonical `q.isDoor*` query API.
 - [x] [Required] Add/adjust test rooms to cover:
   - virtualized reciprocal pair (matching `lockedBy`)

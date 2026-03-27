@@ -382,8 +382,8 @@ This split prevents veto/mutation ambiguity and keeps behavior predictable.
   - fallback `canDirect` denies locked movement with `GO_EXIT_LOCKED` when no matching key is carried
   - fallback `planDirect` contributes movement/door plan operations:
     - no door or already-open door: enqueue `movePlayer`
-    - closed+unlocked door: enqueue `changeDoor/open` then `movePlayer`
-    - locked+matching key: enqueue `changeDoor/unlockAndOpen` then `movePlayer`
+    - closed+unlocked door: enqueue `operateDoor/open` then `movePlayer`
+    - locked+matching key: enqueue `operateDoor/unlockAndOpen` then `movePlayer`
   - when fallback composes door+movement success flavor, movement uses `suppressRoomBroadcast` to prevent duplicate generic leave/arrive lines
 - Authored exit hooks may extend or replace fallback render behavior through normal Plan contribution merge, including `renderPolicy.replaceSuccess` semantics defined above.
 - Mutator commits merged door/movement operations atomically in Commit with rollback support.
@@ -393,9 +393,9 @@ This split prevents veto/mutation ambiguity and keeps behavior predictable.
 
 - `open`, `close`, `lock`, and `unlock` live in Plan and resolve direct door targets before mutation.
 - Command-to-mutation mapping is:
-  - `open` -> `changeDoor/open`
-  - `close` -> `changeDoor/close`
-  - `lock` -> `changeDoor/closeAndLock`
-  - `unlock` -> `changeDoor/unlock`
+  - `open` -> `operateDoor/open`
+  - `close` -> `operateDoor/close`
+  - `lock` -> `operateDoor/closeAndLock`
+  - `unlock` -> `operateDoor/unlock`
 - Key validation remains Plan/Capture ownership; mutator owns only state transition.
 - Opposite-room door lines are emitted via explicit render instructions, not implicit actor-room `others` semantics.
