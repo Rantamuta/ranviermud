@@ -1098,9 +1098,8 @@ Full featured default-pattern example:
   type: "OBJECT"
   script: facadeDoor
   metadata:
-    permissions:
-      verbs:
-        take: "The gate is bolted into the stone ring."
+    verbs:
+      take: "The gate is bolted into the stone ring."
     facadeDoor:
       roomId: myarea:observatory_inner
       direction: north
@@ -1128,7 +1127,7 @@ Script location for that `script: facadeDoor` entry:
 
 This example overrides what it can from content:
 
-- denial text via `metadata.permissions` and `canDirect`
+- denial text via `metadata.verbs` and `canDirect`
 - all-audience success flavor via one semantic template per verb (`open`, `close`, `lock`, `unlock`)
 - opposite-room flavor via `broadcast` in `planDirect`
 - automatic suppression of generic door success lines in the reusable `facadeDoor` script
@@ -1189,9 +1188,9 @@ Container example:
   maxItems: 4
 ```
 
-## permissions
+## Item Verb Veto
 
-`metadata.permissions` is how you tell the game "this interaction is blocked here."
+For items, `metadata.verbs.<verb>` is how you tell the game "this interaction is blocked here."
 
 For designers, this is mainly about feel:
 
@@ -1203,32 +1202,58 @@ Example messages:
 - "You cannot go that way. The portcullis is closed."
 - "You try to take the book, but it is chained to the podium."
 
-You can put `metadata.permissions` on:
+You can put `metadata.verbs` on items.
 
-- items
-- rooms
-- exits (`rooms.yml` -> `exits[].metadata.permissions`)
+If `metadata.verbs.<verb>` is:
 
-If you return `false`/`deny`, the action is blocked and the player gets the default denial text.  
-If you return a string, the action is blocked and that string is shown to the player.
+- `true`: the item allows that verb
+- `false`: the item blocks that verb and the player gets the command's default denial text
+- a string: the item blocks that verb and that string is shown to the acting player
 
 Simple block with custom message:
 
 ```yml
 metadata:
-  permissions:
-    verbs:
-      take: "You try to take the book, but it is chained to the podium."
+  verbs:
+    take: "You try to take the book, but it is chained to the podium."
 ```
 
 Simple block with default denial text:
 
 ```yml
 metadata:
-  permissions:
-    verbs:
-      take: false
+  verbs:
+    take: false
 ```
+
+Simple explicit allow:
+
+```yml
+metadata:
+  verbs:
+    push: true
+```
+
+Role-specific item example (`put ... in ...` blocked when this item is the indirect target):
+
+```yml
+metadata:
+  verbs:
+    put:
+      indirect: "That container rejects anything you try to place in it."
+```
+
+## permissions
+
+`metadata.permissions` remains the generic policy surface for non-item entity contexts such as:
+
+- rooms
+- exits (`rooms.yml` -> `exits[].metadata.permissions`)
+
+Use this when you are authoring room or exit policy, not ordinary item verb veto.
+
+If you return `false`/`deny`, the action is blocked and the player gets the default denial text.  
+If you return a string, the action is blocked and that string is shown to the player.
 
 Default rule for everything on this object/room:
 
