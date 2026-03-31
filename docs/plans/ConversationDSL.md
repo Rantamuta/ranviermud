@@ -241,32 +241,75 @@ The regular form is:
 ```yaml
 onEntry:
   effects:
-    - messageRoom: "Here you go."
+    - broadcast:
+        audience: room
+        message: "Here you go."
     - transferItem:
         item: widget
         from: inventory
         to: player
-    - broadcastToPlayer: "The blacksmith hands you a widget."
+    - semanticEvent:
+        template: "{actor.You} {verb:hand} {object.direct} to {target.you}."
+        audiencePolicy: self_target_and_others
+        participants:
+          actor:
+            selector: currentActor
+          target:
+            selector: entityByContextRole
+            role: indirectTarget
+        objectText:
+          direct: "the widget"
 ```
 
-Entry operations may include:
+The canonical authored surface for effects should mirror the runtime instruction contracts directly.
 
-- NPC speech/render ops such as `messageRoom`
-- mutation ops such as `transferItem` or `setPlayerMetadata`
-- render ops such as actor-targeted feedback
+That means:
 
-Likely convenience render shorthands include:
+- the exact runtime instruction name should be available in the DSL
+- the exact runtime field names should be available in the DSL
+- the transposer should resolve symbolic values into runtime objects where needed
+- the DSL should not depend on a second conversation-only instruction vocabulary for the same behavior
 
-- `messagePlayer`
-- `messageRoom`
-- `broadcastToPlayer`
-- `broadcastToRoom`
+For example, object-bearing runtime fields still need authored references rather than live objects.
+That means authored YAML may use values such as:
 
-These operations should use the same underlying mutation-op and render-instruction execution model already used by the runtime.
+```yaml
+- movePlayer:
+    toRoom: start
+```
 
-These shorthands are intended as author-facing sugar over the existing render-instruction model, not as a separate rendering semantics layer.
+and the transposition step resolves:
 
-Broader broadcast scopes such as area-level variants may be possible later if designer use cases justify exposing them.
+- `start` -> `<currentAreaId>:start`
+
+Fully qualified refs remain valid when the authored effect needs to target a room outside the current area:
+
+```yaml
+- movePlayer:
+    toRoom: "codex:start"
+```
+
+and the transposition step resolves:
+
+- `"codex:start"`
+
+When the runtime contract already implies a single obvious subject from transposition context,
+the authored DSL may omit that redundant field.
+
+For example:
+
+- `movePlayer` may omit `player` when the current player is the only sensible subject
+- `setPlayerMetadata` may omit `player` when the current player is the intended target
+- `setRoomMetadata` may omit an explicit room target when the current room is intended
+
+If the target is not the local default, the authored DSL should provide the explicit override:
+
+```yaml
+- setRoomMetadata:
+    roomRef: "codex:start"
+    key: bells.rung
+    value: true
+```
 
 `onEntry` is state-entry behavior only.
 It runs when the state is entered, not merely because the state exists.
@@ -516,7 +559,132 @@ Conversation effects should lower to the same underlying runtime mutation operat
 
 For the same reason, raw `command:` execution is intentionally not the default effect surface for the DSL.
 
-Audience-targeted render helpers such as `broadcastToPlayer` and `broadcastToRoom` may be appropriate initial DSL-facing convenience forms if they lower cleanly to the same runtime render instructions.
+The canonical DSL-facing surface should expose the exact runtime instruction names and field names directly.
+
+### Current supported mutation ops
+
+The DSL should be expected to support every current mutation op without surprise.
+
+For the current runtime, that means the canonical authored effect names are:
+
+- `transferItem`
+- `movePlayer`
+- `operateDoor`
+- `openDoor`
+- `closeAndLockDoor`
+- `setPlayerMetadata`
+- `setRoomMetadata`
+- `setAreaMetadata`
+- `setWorldMetadata`
+- `deleteRoomMetadata`
+- `deleteAreaMetadata`
+- `deleteWorldMetadata`
+
+The authored payload for each effect should use the same field names as the runtime instruction contract.
+
+Examples:
+
+```yaml
+effects:
+  - transferItem:
+      item: widget
+      from: inventory
+      to: player
+
+  - movePlayer:
+      toRoom: "codex:start"
+
+  - operateDoor:
+      mutation: open
+      actor: player
+      direction: north
+
+  - setPlayerMetadata:
+      key: story.phase
+      value: 2
+
+  - setRoomMetadata:
+      roomRef: "codex:start"
+      key: bells.rung
+      value: true
+```
+
+When a runtime field expects an object, the authored DSL supplies a symbolic reference.
+The transposer resolves that reference against explicit runtime context.
+
+For room-targeting fields, a bare room id is current-area relative unless otherwise specified.
+So `toRoom: start` means `toRoom: "<currentAreaId>:start"` at transposition time.
+Fully qualified refs such as `codex:start` remain available when the authored effect needs to target a specific remote room.
+
+If a field can be inferred safely from the current transposition context, the authored DSL may omit it.
+This should only be allowed when the omission is part of the documented contract for that effect,
+not as ad hoc transposer behavior.
+
+So:
+
+- `movePlayer` may omit `player` when the acting player is implicit
+- `setPlayerMetadata` may omit `player` when the current player is implicit
+- `setRoomMetadata` may omit `roomRef` when the current room is intended
+- explicit overrides such as `roomRef` remain available when a remote target is needed
+
+Examples:
+
+- `actor: npc`
+- `toRoom: start`
+- `toRoom: "codex:start"`
+- `roomRef: "codex:start"`
+- `item: widget`
+
+This keeps the authored DSL canonical in shape while still allowing runtime object resolution during transposition.
+
+### Canonical render instruction surface
+
+The DSL should also be expected to support every current render instruction without surprise.
+
+For the current runtime, that means:
+
+- `broadcast`
+- `semanticEvent`
+
+The authored payload should again mirror the runtime field names directly.
+
+Examples:
+
+```yaml
+effects:
+  - broadcast:
+      audience: room
+      message: "Here you go."
+
+  - semanticEvent:
+      template: "{actor.You} {verb:hand} {object.direct} to {target.you}."
+      audiencePolicy: self_target_and_others
+      participants:
+        actor:
+          selector: currentActor
+        target:
+          selector: entityByContextRole
+          role: indirectTarget
+      objectText:
+        direct: "the widget"
+```
+
+For `broadcast`, the current runtime contract includes:
+
+- `audience`
+- `message`
+- optional `targetSelector`
+- optional `targetRoomRef`
+- optional `exceptSelector`
+- optional `exceptRoomRef`
+
+For `semanticEvent`, the current runtime contract includes:
+
+- `template`
+- `audiencePolicy`
+- `participants`
+- optional `objectText`
+- optional `templates`
 
 ### onEntry utterance
 
@@ -525,7 +693,9 @@ DSL:
 ```yaml
 onEntry:
   effects:
-    - messageRoom: "Hello."
+    - broadcast:
+        audience: room
+        message: "Hello."
 ```
 
 SCXML analogue:
@@ -536,22 +706,22 @@ SCXML analogue:
 
 Restriction:
 
-- conversation-authored speech may be expressed through render shorthand rather than a special `say` field
+- conversation-authored speech should be expressed through canonical render instructions rather than a special `say` field
 - richer `onEntry` behavior may use additional declarative ops
 - no embedded arbitrary logic
 
-### Render shorthand mapping
+### Optional sugar layer
 
-Author-facing shorthands may map to existing runtime render instructions directly.
+Optional author-facing sugar may still exist later, but it should be defined as explicit sugar over the canonical instruction surface, not as the primary contract.
 
 Examples:
 
-- `messagePlayer: "..."` -> render instruction using player-only audience
-- `messageRoom: "..."` -> render instruction using room transcript audience
-- `broadcastToPlayer: "..."` -> `broadcast` instruction targeting player
-- `broadcastToRoom: "..."` -> `broadcast` instruction targeting room
+- `messagePlayer: "..."` -> sugar over `broadcast`
+- `messageRoom: "..."` -> sugar over `broadcast`
+- `broadcastToPlayer: "..."` -> sugar over `broadcast`
+- `broadcastToRoom: "..."` -> sugar over `broadcast`
 
-More explicit render instruction shapes may still be needed for advanced authored cases, but the common DSL surface should prefer ergonomic shorthand where it lowers cleanly to the existing runtime model.
+But the canonical authored DSL should remain the exact runtime instruction vocabulary so the lowering boundary stays predictable and drift is minimized.
 
 ### Final
 
