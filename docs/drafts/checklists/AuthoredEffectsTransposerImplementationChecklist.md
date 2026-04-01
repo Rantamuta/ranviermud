@@ -86,7 +86,7 @@
     - "Only documented implicit fields are inferred..." (`Acceptance Criteria`)
   - Validation handoff: `S5`, `unit`
 
-- [ ] `C10` [lowering-door] Implement authored door-operation lowering under `bundles/bundle-rantamuta/lib/runtime/authored-effects/` for `operateDoor`, `openDoor`, and `closeAndLockDoor`, including any stricter per-effect locality or targeting rules required by those contracts (depends on `C07`).
+- [x] `C10` [lowering-door] Implement authored door-operation lowering under `bundles/bundle-rantamuta/lib/runtime/authored-effects/` for `operateDoor`, `openDoor`, and `closeAndLockDoor`, including any stricter per-effect locality or targeting rules required by those contracts (depends on `C07`).
   - Trace:
     - "Support the current mutation operations exposed by `mutator.js`: `operateDoor`, `openDoor`, `closeAndLockDoor`" (`In Scope`)
     - "Some effects may impose stricter locality or targeting rules than the generic reference-expansion layer; those restrictions must be documented per effect contract rather than hidden in generic resolution behavior." (`Constraints`)
