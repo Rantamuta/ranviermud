@@ -1,6 +1,6 @@
 # Authored Effects Transposer Design
 
-Status: draft
+Status: active
 
 ## Purpose
 
