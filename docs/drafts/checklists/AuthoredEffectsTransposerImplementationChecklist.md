@@ -26,7 +26,7 @@
 
 ## Checklist
 
-- [ ] `C01` [harness] Add reusable authored-effects harness support under `bundles/bundle-rantamuta/tests/helpers/` so harness infrastructure is separate from later contract coverage and production implementation.
+- [x] `C01` [harness] Add reusable authored-effects harness support under `bundles/bundle-rantamuta/tests/helpers/` so harness infrastructure is separate from later contract coverage and production implementation.
   - Trace:
     - "Add a testing harness and layered tests for validator behavior, transposition behavior, bundle-validation integration, and conversation-directed-speech integration." (`In Scope`)
     - "The preparatory testing harness, contract tests, and transposer implementation should be kept as distinct behavior slices so the harness does not quietly co-adapt with the first tests or implementation." (`Constraints`)
