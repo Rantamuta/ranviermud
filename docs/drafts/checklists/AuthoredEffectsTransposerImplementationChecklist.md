@@ -53,7 +53,7 @@
     - "If any authored effect fails validation or required resolution, the transposer returns structured failure and does not emit partial lowered output." (`Acceptance Criteria`)
   - Validation handoff: `S3`, `unit`
 
-- [ ] `C05` [conversation-validation] Update `bundles/bundle-rantamuta/lib/runtime/conversation/conversation-definition-validation.js` so conversation-owned validation continues to own non-effect conversation shape while delegating authored `effects` payload checks to the shared authored-effects validator (depends on `C04`).
+- [x] `C05` [conversation-validation] Update `bundles/bundle-rantamuta/lib/runtime/conversation/conversation-definition-validation.js` so conversation-owned validation continues to own non-effect conversation shape while delegating authored `effects` payload checks to the shared authored-effects validator (depends on `C04`).
   - Trace:
     - "through conversation definition validation for authored `effects` payloads, without restating effect rules in a second conversation-local validator" (`In Scope`)
     - "Conversation definition validation delegates authored `effects` validation to that shared validator rather than maintaining a second effect-rule implementation." (`Acceptance Criteria`)
