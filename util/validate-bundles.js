@@ -161,24 +161,32 @@ function loadBundleVirtualDoorValidator(root, bundleName) {
 }
 
 function loadBundleConversationValidator(root, bundleName) {
-  const modulePath = path.join(root, 'bundles', bundleName, 'lib', 'session', 'conversation-definition-service.js');
-  if (!fs.existsSync(modulePath)) {
-    return null;
-  }
+  const candidatePaths = [
+    path.join(root, 'bundles', bundleName, 'lib', 'runtime', 'conversation', 'conversation-definition-service.js'),
+    path.join(root, 'bundles', bundleName, 'lib', 'session', 'conversation-definition-service.js'),
+  ];
 
-  try {
-    // eslint-disable-next-line global-require, import/no-dynamic-require
-    const mod = require(modulePath);
-    if (!mod || typeof mod._validateConversationDefinitions !== 'function') {
-      return null;
+  for (const modulePath of candidatePaths) {
+    if (!fs.existsSync(modulePath)) {
+      continue;
     }
 
-    return mod._validateConversationDefinitions;
-  } catch (error) {
-    return {
-      __loadError: error,
-    };
+    try {
+      // eslint-disable-next-line global-require, import/no-dynamic-require
+      const mod = require(modulePath);
+      if (!mod || typeof mod._validateConversationDefinitions !== 'function') {
+        return null;
+      }
+
+      return mod._validateConversationDefinitions;
+    } catch (error) {
+      return {
+        __loadError: error,
+      };
+    }
   }
+
+  return null;
 }
 
 function mapVirtualDoorFinding(finding, bundleName) {

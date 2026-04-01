@@ -60,7 +60,7 @@
     - "Conversation definition validation must reuse the generic authored-effects validator for `effects` payloads rather than duplicating effect-shape rules locally." (`Constraints`)
   - Validation handoff: `S4`, `integration/smoke`
 
-- [ ] `C06` [bundle-validation] Update the bundle-validation path in `util/validate-bundles.js` and any conversation validation service surface it uses so bundle validation reuses the same authored-effects validator entrypoint and runtime conversation loading path rather than a parallel bundle-only rule set (depends on `C04`, `C05`).
+- [x] `C06` [bundle-validation] Update the bundle-validation path in `util/validate-bundles.js` and any conversation validation service surface it uses so bundle validation reuses the same authored-effects validator entrypoint and runtime conversation loading path rather than a parallel bundle-only rule set (depends on `C04`, `C05`).
   - Trace:
     - "Add one shared validator that can be used: ... through bundle validation / CLI validation" (`In Scope`)
     - "Bundle validation / CLI validation: ... reuse the same authored-effects validator entrypoint used by runtime consumers rather than a parallel bundle-only rule set" (`Implementation Surfaces`)
