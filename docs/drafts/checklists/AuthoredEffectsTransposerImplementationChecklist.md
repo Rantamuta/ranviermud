@@ -46,7 +46,7 @@
     - "Where room, area, or context-target resolution helpers already exist in runtime code, the implementation should extract or reuse them rather than copying equivalent logic into a second helper stack." (`Constraints`)
   - Validation handoff: `S2`, `unit`
 
-- [ ] `C04` [validation] Implement per-effect structural validation in the authored-effects validator for single-key effect objects, supported effect names, and effect-specific payload schemas, while keeping static validation structure-focused and reserving live resolvability checks for runtime-aware validation paths (depends on `C02`).
+- [x] `C04` [validation] Implement per-effect structural validation in the authored-effects validator for single-key effect objects, supported effect names, and effect-specific payload schemas, while keeping static validation structure-focused and reserving live resolvability checks for runtime-aware validation paths (depends on `C02`).
   - Trace:
     - "Add one shared validator that can be used: at runtime; through bundle validation / CLI validation; through conversation definition validation for authored `effects` payloads..." (`In Scope`)
     - "Static validation should stay structure-focused; runtime validation may additionally check live resolvability." (`Constraints`)
