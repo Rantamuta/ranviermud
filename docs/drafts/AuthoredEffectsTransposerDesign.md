@@ -188,6 +188,8 @@ For now, the full supported mutation-op target set is:
 - `transferItem`
 - `movePlayer`
 - `operateDoor`
+- `openDoor`
+- `closeAndLockDoor`
 - `setPlayerMetadata`
 - `setRoomMetadata`
 - `setAreaMetadata`
@@ -207,11 +209,8 @@ For now, the full supported render-instruction target set is:
 - `broadcast`
 - `semanticEvent`
 
-The first intended `broadcast` subset is intentionally narrow:
-
-- `audience: room`
-
 The `semanticEvent` payload should match the current semantic render contract rather than inventing a second semantic messaging DSL.
+The `broadcast` payload should also match the current render contract rather than inventing a second broadcast DSL.
 
 ## Context And Resolution
 
