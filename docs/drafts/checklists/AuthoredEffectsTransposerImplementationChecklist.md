@@ -39,7 +39,7 @@
     - "There is one shared validator entrypoint for authored effect entries..." (`Acceptance Criteria`)
   - Validation handoff: `S2`, `unit`
 
-- [ ] `C03` [resolution] Add authored-reference expansion helpers under `bundles/bundle-rantamuta/lib/runtime/authored-effects/` that map documented context symbols and expand current-area-relative room ids, while reusing existing runtime room/area/context helper logic where available and avoiding a second general-purpose entity resolver (depends on `C02`).
+- [x] `C03` [resolution] Add authored-reference expansion helpers under `bundles/bundle-rantamuta/lib/runtime/authored-effects/` that map documented context symbols and expand current-area-relative room ids, while reusing existing runtime room/area/context helper logic where available and avoiding a second general-purpose entity resolver (depends on `C02`).
   - Trace:
     - "The transposer may perform only narrow authored-reference expansion required by the DSL contract..." (`Constraints`)
     - "Any broader entity lookup or disambiguation must reuse existing shared resolver architecture rather than duplicating it." (`Constraints`)
