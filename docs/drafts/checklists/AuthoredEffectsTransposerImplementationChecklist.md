@@ -79,7 +79,7 @@
     - "The transposer lowers only to the existing mutator/render instruction sets and does not execute anything directly." (`Acceptance Criteria`)
   - Validation handoff: `S5`, `unit`
 
-- [ ] `C09` [lowering-move] Implement authored `movePlayer` lowering under `bundles/bundle-rantamuta/lib/runtime/authored-effects/`, including documented implicit player handling and current-area-relative `toRoom` expansion (depends on `C07`).
+- [x] `C09` [lowering-move] Implement authored `movePlayer` lowering under `bundles/bundle-rantamuta/lib/runtime/authored-effects/`, including documented implicit player handling and current-area-relative `toRoom` expansion (depends on `C07`).
   - Trace:
     - "Support the current mutation operations exposed by `mutator.js`: `movePlayer` ..." (`In Scope`)
     - "`movePlayer` accepts current-area-relative room ids such as `toRoom: start` and resolves them to the current area during transposition." (`Acceptance Criteria`)
