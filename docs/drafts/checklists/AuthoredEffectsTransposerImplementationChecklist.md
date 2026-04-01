@@ -106,7 +106,7 @@
     - "The transposer emits only the existing canonical runtime outputs: ... render instructions for render dispatch" (`Intent`)
   - Validation handoff: `S5`, `unit`
 
-- [ ] `C13` [conversation] Update `bundles/bundle-rantamuta/lib/runtime/conversation/directed-speech.js` to replace the local authored-effect lowering shim with the shared transposer while keeping the structural conversation progress mutation separate from authored effects (depends on `C08`, `C09`, `C10`, `C11`, `C12`).
+- [x] `C13` [conversation] Update `bundles/bundle-rantamuta/lib/runtime/conversation/directed-speech.js` to replace the local authored-effect lowering shim with the shared transposer while keeping the structural conversation progress mutation separate from authored effects (depends on `C08`, `C09`, `C10`, `C11`, `C12`).
   - Trace:
     - "Replace the narrow effect-lowering shim in `directed-speech.js` with the shared transposer." (`In Scope`)
     - "Conversation-directed speech uses the shared transposer instead of a local effect-lowering shim." (`Acceptance Criteria`)
