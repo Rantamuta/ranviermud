@@ -67,7 +67,7 @@
     - "Runtime validation and bundle validation both surface invalid authored effect shapes deterministically." (`Acceptance Criteria`)
   - Validation handoff: `S4`, `contract/parity`
 
-- [ ] `C07` [lowering-core] Implement mutation-lowering dispatch under `bundles/bundle-rantamuta/lib/runtime/authored-effects/` so supported authored mutation effects route through per-effect lowering contracts without broad switch rewrites (depends on `C02`, `C03`, `C04`).
+- [x] `C07` [lowering-core] Implement mutation-lowering dispatch under `bundles/bundle-rantamuta/lib/runtime/authored-effects/` so supported authored mutation effects route through per-effect lowering contracts without broad switch rewrites (depends on `C02`, `C03`, `C04`).
   - Trace:
     - "The implementation is organized so new supported effects can be added effect-by-effect without rewriting unrelated lowering logic." (`Acceptance Criteria`)
     - "one registry entry or lowering function per supported effect name" (`Implementation Surfaces`)
