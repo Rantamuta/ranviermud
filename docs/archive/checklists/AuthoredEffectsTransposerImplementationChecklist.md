@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: active
+- Status: archived
 - Scope: implement a reusable authored-effects transposer and shared validator
 - Source plan: `docs/plans/AuthoredEffectsTransposerImplementationPlan.md`
 - In Scope:

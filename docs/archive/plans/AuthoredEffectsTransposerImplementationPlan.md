@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: active
+- Status: archived
 - Scope: formal plan for a reusable authored-effects transposer and shared validator
 
 ## Goal
