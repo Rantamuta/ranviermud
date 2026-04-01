@@ -73,7 +73,7 @@
     - "one registry entry or lowering function per supported effect name" (`Implementation Surfaces`)
   - Validation handoff: `S5`, `unit`
 
-- [ ] `C08` [lowering-transfer] Implement authored `transferItem` lowering under `bundles/bundle-rantamuta/lib/runtime/authored-effects/`, preserving documented field shape and explicit container/item resolution from runtime context (depends on `C07`).
+- [x] `C08` [lowering-transfer] Implement authored `transferItem` lowering under `bundles/bundle-rantamuta/lib/runtime/authored-effects/`, preserving documented field shape and explicit container/item resolution from runtime context (depends on `C07`).
   - Trace:
     - "Support the current mutation operations exposed by `mutator.js`: `transferItem` ..." (`In Scope`)
     - "The transposer lowers only to the existing mutator/render instruction sets and does not execute anything directly." (`Acceptance Criteria`)
