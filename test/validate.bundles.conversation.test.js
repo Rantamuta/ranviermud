@@ -12,14 +12,12 @@ const {
   validateConversations,
 } = require('../util/validate-bundles');
 
-function createBundleModule(tempRoot, source) {
+function createBundleModule(tempRoot, source, relativePath = path.join('lib', 'session', 'conversation-definition-service.js')) {
   const modulePath = path.join(
     tempRoot,
     'bundles',
     'bundle-test',
-    'lib',
-    'session',
-    'conversation-definition-service.js'
+    relativePath
   );
   fs.mkdirSync(path.dirname(modulePath), { recursive: true });
   fs.writeFileSync(modulePath, source, 'utf8');
@@ -37,6 +35,23 @@ test('loadBundleConversationValidator returns a bundle validator when exported',
     '};',
     '',
   ].join('\n'));
+
+  const validator = loadBundleConversationValidator(tempRoot, 'bundle-test');
+
+  assert.equal(typeof validator, 'function');
+});
+
+test('loadBundleConversationValidator prefers the runtime conversation-definition-service path', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'validate-bundles-conversation-'));
+  createBundleModule(tempRoot, [
+    "'use strict';",
+    'module.exports = {',
+    '  _validateConversationDefinitions() {',
+    '    return [];',
+    '  },',
+    '};',
+    '',
+  ].join('\n'), path.join('lib', 'runtime', 'conversation', 'conversation-definition-service.js'));
 
   const validator = loadBundleConversationValidator(tempRoot, 'bundle-test');
 
