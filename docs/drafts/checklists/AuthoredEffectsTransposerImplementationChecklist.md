@@ -99,7 +99,7 @@
     - "Some effects may impose stricter locality or targeting rules than the generic reference-expansion layer..." (`Constraints`)
   - Validation handoff: `S5`, `unit`
 
-- [ ] `C12` [lowering-render] Implement effect-specific render lowering under `bundles/bundle-rantamuta/lib/runtime/authored-effects/` for `broadcast` and `semanticEvent`, passing through the live render instruction contracts instead of inventing conversation-local message semantics (depends on `C02`, `C03`, `C04`).
+- [x] `C12` [lowering-render] Implement effect-specific render lowering under `bundles/bundle-rantamuta/lib/runtime/authored-effects/` for `broadcast` and `semanticEvent`, passing through the live render instruction contracts instead of inventing conversation-local message semantics (depends on `C02`, `C03`, `C04`).
   - Trace:
     - "Support the current render instructions exposed by `render-dispatch.js`: `broadcast`, `semanticEvent`" (`In Scope`)
     - "The transposer lowers only to the existing mutator/render instruction sets and does not execute anything directly." (`Acceptance Criteria`)
