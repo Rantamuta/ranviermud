@@ -92,7 +92,7 @@
     - "Some effects may impose stricter locality or targeting rules than the generic reference-expansion layer; those restrictions must be documented per effect contract rather than hidden in generic resolution behavior." (`Constraints`)
   - Validation handoff: `S5`, `unit`
 
-- [ ] `C11` [lowering-metadata] Implement authored metadata-operation lowering under `bundles/bundle-rantamuta/lib/runtime/authored-effects/` for the current supported set-player, set-room, set-area, set-world, delete-room, delete-area, and delete-world metadata effects, preserving documented implicit targets and explicit overrides (depends on `C07`).
+- [x] `C11` [lowering-metadata] Implement authored metadata-operation lowering under `bundles/bundle-rantamuta/lib/runtime/authored-effects/` for the current supported set-player, set-room, set-area, set-world, delete-room, delete-area, and delete-world metadata effects, preserving documented implicit targets and explicit overrides (depends on `C07`).
   - Trace:
     - "Support the current mutation operations exposed by `mutator.js`: `setPlayerMetadata`, `setRoomMetadata`, `setAreaMetadata`, `setWorldMetadata`, `deleteRoomMetadata`, `deleteAreaMetadata`, `deleteWorldMetadata`" (`In Scope`)
     - "Only documented implicit fields are inferred..." (`Acceptance Criteria`)
