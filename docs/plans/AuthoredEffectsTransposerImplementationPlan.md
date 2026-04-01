@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: draft
+- Status: planning
 - Scope: formal plan for a reusable authored-effects transposer and shared validator
 
 ## Goal
