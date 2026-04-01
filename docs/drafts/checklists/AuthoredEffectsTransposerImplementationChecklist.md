@@ -32,7 +32,7 @@
     - "The preparatory testing harness, contract tests, and transposer implementation should be kept as distinct behavior slices so the harness does not quietly co-adapt with the first tests or implementation." (`Constraints`)
   - Validation handoff: `S1`, `unit`
 
-- [ ] `C02` [runtime] Add a generic authored-effects package under `bundles/bundle-rantamuta/lib/runtime/authored-effects/` that exposes shared entrypoints for authored-effect validation and transposition, plus the canonical result/diagnostic contracts those entrypoints return.
+- [x] `C02` [runtime] Add a generic authored-effects package under `bundles/bundle-rantamuta/lib/runtime/authored-effects/` that exposes shared entrypoints for authored-effect validation and transposition, plus the canonical result/diagnostic contracts those entrypoints return.
   - Trace:
     - "Add a generic runtime-owned authored-effects subsystem under `bundles/bundle-rantamuta/lib/runtime/` rather than under a conversation-only path." (`In Scope`)
     - "There is one generic transposer entrypoint that accepts authored effects plus explicit runtime context and returns canonical `operations` and `renderMessages`, or a structured failure." (`Acceptance Criteria`)
