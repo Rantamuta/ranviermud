@@ -45,6 +45,9 @@ Transposer tests should focus on resolution and exact lowered runtime output.
 Test:
 
 - [x] happy path: resolves `item`, `from`, and `to`
+- [x] current-area-relative item ref resolves within `from`
+- [x] fully qualified item ref resolves within `from`
+- [x] first matching item is selected from `from`
 - [x] unresolved `item`
 - [x] unresolved `from`
 - [x] unresolved `to`
