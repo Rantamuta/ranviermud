@@ -175,7 +175,7 @@ function loadBundleConversationValidator(root, bundleName) {
       // eslint-disable-next-line global-require, import/no-dynamic-require
       const mod = require(modulePath);
       if (!mod || typeof mod._validateConversationDefinitions !== 'function') {
-        return null;
+        continue;
       }
 
       return mod._validateConversationDefinitions;

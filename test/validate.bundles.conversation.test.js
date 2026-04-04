@@ -41,21 +41,62 @@ test('loadBundleConversationValidator returns a bundle validator when exported',
   assert.equal(typeof validator, 'function');
 });
 
-test('loadBundleConversationValidator prefers the runtime conversation-definition-service path', () => {
+test('loadBundleConversationValidator prefers the runtime conversation-definition-service path when both validators are valid', () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'validate-bundles-conversation-'));
   createBundleModule(tempRoot, [
     "'use strict';",
     'module.exports = {',
     '  _validateConversationDefinitions() {',
-    '    return [];',
+    "    return [{ code: 'RUNTIME_VALIDATOR_USED', level: 'warning' }];",
     '  },',
     '};',
     '',
   ].join('\n'), path.join('lib', 'runtime', 'conversation', 'conversation-definition-service.js'));
+  createBundleModule(tempRoot, [
+    "'use strict';",
+    'module.exports = {',
+    '  _validateConversationDefinitions() {',
+    "    return [{ code: 'LEGACY_VALIDATOR_USED', level: 'warning' }];",
+    '  },',
+    '};',
+    '',
+  ].join('\n'));
 
   const validator = loadBundleConversationValidator(tempRoot, 'bundle-test');
 
   assert.equal(typeof validator, 'function');
+  assert.deepEqual(validator(), [
+    { code: 'RUNTIME_VALIDATOR_USED', level: 'warning' },
+  ]);
+});
+
+test('loadBundleConversationValidator falls back to the legacy validator when the runtime file lacks the expected export', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'validate-bundles-conversation-'));
+  createBundleModule(tempRoot, [
+    "'use strict';",
+    'module.exports = {',
+    '  validateConversationDefinitions() {',
+    "    return [{ code: 'WRONG_RUNTIME_EXPORT', level: 'warning' }];",
+    '  },',
+    '};',
+    '',
+  ].join('\n'), path.join('lib', 'runtime', 'conversation', 'conversation-definition-service.js'));
+  createBundleModule(tempRoot, [
+    "'use strict';",
+    'module.exports = {',
+    '  _validateConversationDefinitions() {',
+    "    return [{ code: 'LEGACY_VALIDATOR_USED', level: 'warning' }];",
+    '  },',
+    '};',
+    '',
+  ].join('\n'));
+
+  const validator = loadBundleConversationValidator(tempRoot, 'bundle-test');
+
+  assert.equal(typeof validator, 'function');
+  assert.deepEqual(validator(), [
+    { code: 'LEGACY_VALIDATOR_USED', level: 'warning' },
+  ]);
 });
 
 test('mapConversationFinding preserves conversation validator fields', () => {
