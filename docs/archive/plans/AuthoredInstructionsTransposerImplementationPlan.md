@@ -142,7 +142,7 @@ Success means the project has one mechanical bridge from authored YAML into runt
   - a small number of dispatch-level tests if needed to prove commit-before-render behavior remains intact
 - Planning/design alignment:
   - [`docs/plans/ConversationDSL.md`](/home/rendall/mud/ranviermud/docs/plans/ConversationDSL.md)
-  - [`docs/drafts/AuthoredEffectsTransposerDesign.md`](/home/rendall/mud/ranviermud/docs/drafts/AuthoredEffectsTransposerDesign.md)
+  - [`docs/drafts/AuthoredInstructionsTransposerDesign.md`](/home/rendall/mud/ranviermud/docs/drafts/AuthoredInstructionsTransposerDesign.md)
 
 ## Validation Strategy
 

@@ -4,7 +4,7 @@
 
 - Status: archived
 - Scope: implement a reusable authored-instructions transposer and shared validator
-- Source plan: `docs/plans/AuthoredEffectsTransposerImplementationPlan.md`
+- Source plan: `docs/plans/AuthoredInstructionsTransposerImplementationPlan.md`
 - In Scope:
   - add a generic runtime-owned authored-instructions subsystem under `bundles/bundle-rantamuta/lib/runtime/`
   - implement the current supported authored instruction vocabulary against the live mutator/render instruction vocabulary
