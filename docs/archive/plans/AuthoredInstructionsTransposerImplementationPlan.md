@@ -1,13 +1,13 @@
-# Authored Effects Transposer Implementation Plan
+# Authored Instructions Transposer Implementation Plan
 
 ## Status
 
 - Status: archived
-- Scope: formal plan for a reusable authored-effects transposer and shared validator
+- Scope: formal plan for a reusable authored-instructions transposer and shared validator
 
 ## Goal
 
-Build a reusable authored-effects transposer that turns YAML-authored DSL effects into the existing runtime mutation operations and render instructions, with shared validation for runtime use and bundle validation.
+Build a reusable authored-instructions transposer that turns YAML-authored DSL effects into the existing runtime mutation operations and render instructions, with shared validation for runtime use and bundle validation.
 
 ## Intent
 
@@ -27,8 +27,8 @@ Success means the project has one mechanical bridge from authored YAML into runt
 
 ## In Scope
 
-- Add a generic runtime-owned authored-effects subsystem under `bundles/bundle-rantamuta/lib/runtime/` rather than under a conversation-only path.
-- Define and implement the current supported authored effect vocabulary so it maps to the live runtime instruction vocabulary.
+- Add a generic runtime-owned authored-instructions subsystem under `bundles/bundle-rantamuta/lib/runtime/` rather than under a conversation-only path.
+- Define and implement the current supported authored instruction vocabulary so it maps to the live runtime instruction vocabulary.
 - Support the current mutation operations exposed by `mutator.js`:
   - `transferItem`
   - `movePlayer`
@@ -54,10 +54,10 @@ Success means the project has one mechanical bridge from authored YAML into runt
 - Add one shared validator that can be used:
   - at runtime
   - through bundle validation / CLI validation
-  - through conversation definition validation for authored `effects` payloads, without restating effect rules in a second conversation-local validator
+  - through conversation definition validation for authored `instructions` payloads, without restating effect rules in a second conversation-local validator
 - Replace the narrow effect-lowering shim in [`directed-speech.js`](/home/rendall/mud/ranviermud/bundles/bundle-rantamuta/lib/runtime/conversation/directed-speech.js) with the shared transposer.
 - Add a testing harness and layered tests for validator behavior, transposition behavior, bundle-validation integration, and conversation-directed-speech integration.
-- Keep authored effect lowering separate from structural conversation state persistence.
+- Keep authored instruction lowering separate from structural conversation state persistence.
 
 ## Out of Scope
 
@@ -73,18 +73,18 @@ Success means the project has one mechanical bridge from authored YAML into runt
 
 ## Acceptance Criteria
 
-- There is one generic transposer entrypoint that accepts authored effects plus explicit runtime context and returns canonical `operations` and `renderMessages`, or a structured failure.
-- There is one shared validator entrypoint for authored effect entries, and the same validator rules are used by runtime consumers and bundle validation.
-- Conversation definition validation delegates authored `effects` validation to that shared validator rather than maintaining a second effect-rule implementation.
-- Authored effects can be written using the current runtime instruction names and field names without inventing a parallel vocabulary.
+- There is one generic transposer entrypoint that accepts authored instructions plus explicit runtime context and returns canonical `operations` and `renderMessages`, or a structured failure.
+- There is one shared validator entrypoint for authored instruction entries, and the same validator rules are used by runtime consumers and bundle validation.
+- Conversation definition validation delegates authored `instructions` validation to that shared validator rather than maintaining a second effect-rule implementation.
+- Authored instructions can be written using the current runtime instruction names and field names without inventing a parallel vocabulary.
 - `movePlayer` accepts current-area-relative room ids such as `toRoom: start` and resolves them to the current area during transposition.
 - Fully qualified refs such as `toRoom: "codex:start"` remain valid for explicit remote targeting.
 - Only documented implicit fields are inferred; the transposer does not silently invent missing values outside those contracts.
-- If any authored effect fails validation or required resolution, the transposer returns structured failure and does not emit partial lowered output.
+- If any authored instruction fails validation or required resolution, the transposer returns structured failure and does not emit partial lowered output.
 - The transposer lowers only to the existing mutator/render instruction sets and does not execute anything directly.
 - Conversation-directed speech uses the shared transposer instead of a local effect-lowering shim.
-- Conversation progress persistence remains a separate structural write and is not redefined as an authored effect.
-- Runtime validation and bundle validation both surface invalid authored effect shapes deterministically.
+- Conversation progress persistence remains a separate structural write and is not redefined as an authored instruction.
+- Runtime validation and bundle validation both surface invalid authored instruction shapes deterministically.
 - The implementation is organized so new supported effects can be added effect-by-effect without rewriting unrelated lowering logic.
 
 ## Constraints
@@ -108,8 +108,8 @@ Success means the project has one mechanical bridge from authored YAML into runt
 - Current-area-relative room expansion belongs in the transposer, not in `mutator.js` or `render-dispatch.js`.
 - Some effects may impose stricter locality or targeting rules than the generic reference-expansion layer; those restrictions must be documented per effect contract rather than hidden in generic resolution behavior.
 - Static validation should stay structure-focused; runtime validation may additionally check live resolvability.
-- Conversation definition validation must reuse the generic authored-effects validator for `effects` payloads rather than duplicating effect-shape rules locally.
-- Conversation-specific state persistence stays outside the generic authored-effects subsystem.
+- Conversation definition validation must reuse the generic authored-instructions validator for `effects` payloads rather than duplicating effect-shape rules locally.
+- Conversation-specific state persistence stays outside the generic authored-instructions subsystem.
 - Implementation must follow repository test-first norms.
 - The preparatory testing harness, contract tests, and transposer implementation should be kept as distinct behavior slices so the harness does not quietly co-adapt with the first tests or implementation.
 - "Shared reference-resolution helpers" in this plan means narrow authored-reference expansion helpers only.
@@ -118,7 +118,7 @@ Success means the project has one mechanical bridge from authored YAML into runt
 
 ## Implementation Surfaces
 
-- New generic authored-effects runtime package under `bundles/bundle-rantamuta/lib/runtime/`
+- New generic authored-instructions runtime package under `bundles/bundle-rantamuta/lib/runtime/`
   - validator
   - transposer
   - authored-reference expansion helpers
@@ -129,14 +129,14 @@ Success means the project has one mechanical bridge from authored YAML into runt
   - [`bundles/bundle-rantamuta/lib/runtime/conversation/directed-speech.js`](/home/rendall/mud/ranviermud/bundles/bundle-rantamuta/lib/runtime/conversation/directed-speech.js)
   - [`bundles/bundle-rantamuta/lib/runtime/conversation/conversation-definition-validation.js`](/home/rendall/mud/ranviermud/bundles/bundle-rantamuta/lib/runtime/conversation/conversation-definition-validation.js)
   - any conversation definition service surface needed to expose bundle-validation findings without creating a second validator path
-  - the conversation validator should delegate authored `effects` checks to the generic authored-effects validator
+  - the conversation validator should delegate authored `instructions` checks to the generic authored-instructions validator
 - Bundle validation / CLI validation:
   - [`util/validate-bundles.js`](/home/rendall/mud/ranviermud/util/validate-bundles.js)
   - existing conversation bundle-validation hook surfaces
-  - reuse the same authored-effects validator entrypoint used by runtime consumers rather than a parallel bundle-only rule set
+  - reuse the same authored-instructions validator entrypoint used by runtime consumers rather than a parallel bundle-only rule set
 - Tests:
-  - `bundles/bundle-rantamuta/tests/authored.effects.validation.test.js`
-  - `bundles/bundle-rantamuta/tests/authored.effects.transposer.test.js`
+  - `bundles/bundle-rantamuta/tests/authored.instructions.validation.test.js`
+  - `bundles/bundle-rantamuta/tests/authored.instructions.transposer.test.js`
   - any shared test harness/helper files needed for those tests
   - conversation validation and directed-speech integration tests
   - a small number of dispatch-level tests if needed to prove commit-before-render behavior remains intact
@@ -172,7 +172,7 @@ Extend conversation validation and conversation-directed-speech tests.
 Pass means:
 
 - authored conversation effects are validated through the shared validator
-- directed speech can lower valid authored effects into normal command envelopes
+- directed speech can lower valid authored instructions into normal command envelopes
 - directed speech logs maintainer-facing failures and falls through according to the existing conversation-directed-speech behavior contract
 
 Fail means:
@@ -182,12 +182,12 @@ Fail means:
 
 ### Contract / Parity
 
-Bundle validation must use the same authored-effect validation rules as runtime consumers.
+Bundle validation must use the same authored-instruction validation rules as runtime consumers.
 
 Pass means:
 
-- bundle validation surfaces structural authored-effect findings using the shared validator path
-- runtime and bundle validation agree on structural failures for the same authored effect data
+- bundle validation surfaces structural authored-instruction findings using the shared validator path
+- runtime and bundle validation agree on structural failures for the same authored instruction data
 
 Fail means:
 
@@ -264,7 +264,7 @@ Mitigation:
 ## Open Questions / Assumptions
 
 - Assumption: the plan should target the live runtime instruction names in `mutator.js` and `render-dispatch.js`, including `operateDoor` rather than older naming variants.
-- Assumption: structural authored-effect validation should be shared between runtime and bundle validation, while full live resolvability checks remain runtime-only where necessary.
+- Assumption: structural authored-instruction validation should be shared between runtime and bundle validation, while full live resolvability checks remain runtime-only where necessary.
 - Assumption: the first implementation consumer is conversation-directed speech, but the generic subsystem should not take a conversation-only dependency.
 - Open question: which current effect contracts need explicit bundle-validation-time static checks beyond basic structural validation, if any.
 - Open question: whether a separate maintainer-facing instruction-contract document should be authored before or alongside implementation to reduce ambiguity around mutator/render instruction field expectations.

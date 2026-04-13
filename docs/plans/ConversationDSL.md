@@ -61,7 +61,7 @@ Requests from designers to expose additional existing mutation ops or render ins
 
 The DSL should not use raw command execution as its general effect mechanism.
 
-That means authored effects should not take the form:
+That means authored instructions should not take the form:
 
 ```yaml
 - command: give silver coin to player
@@ -282,7 +282,7 @@ and the transposition step resolves:
 
 - `start` -> `<currentAreaId>:start`
 
-Fully qualified refs remain valid when the authored effect needs to target a room outside the current area:
+Fully qualified refs remain valid when the authored instruction needs to target a room outside the current area:
 
 ```yaml
 - movePlayer:
@@ -565,7 +565,7 @@ The canonical DSL-facing surface should expose the exact runtime instruction nam
 
 The DSL should be expected to support every current mutation op without surprise.
 
-For the current runtime, that means the canonical authored effect names are:
+For the current runtime, that means the canonical authored instruction names are:
 
 - `transferItem`
 - `movePlayer`
@@ -614,7 +614,7 @@ The transposer resolves that reference against explicit runtime context.
 
 For room-targeting fields, a bare room id is current-area relative unless otherwise specified.
 So `toRoom: start` means `toRoom: "<currentAreaId>:start"` at transposition time.
-Fully qualified refs such as `codex:start` remain available when the authored effect needs to target a specific remote room.
+Fully qualified refs such as `codex:start` remain available when the authored instruction needs to target a specific remote room.
 
 If a field can be inferred safely from the current transposition context, the authored DSL may omit it.
 This should only be allowed when the omission is part of the documented contract for that effect,

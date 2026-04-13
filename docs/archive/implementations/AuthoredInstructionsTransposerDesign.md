@@ -1,12 +1,12 @@
-# Authored Effects Transposer Design
+# Authored Instructions Transposer Design
 
 Status: archived
 
 ## Purpose
 
-This document defines a small, mechanical transposer for authored effect data.
+This document defines a small, mechanical transposer for authored instruction data.
 
-The transposer exists to turn YAML-authored effects into the existing runtime instruction sets:
+The transposer exists to turn YAML-authored instructions into the existing runtime instruction sets:
 
 - mutation operations for the mutator
 - render instructions for render dispatch
@@ -39,7 +39,7 @@ The transposer is not a game engine inside the game engine.
 
 It is a mechanical bridge:
 
-1. read one authored effect entry
+1. read one authored instruction entry
 2. identify the effect name
 3. validate the payload shape for that effect
 4. resolve symbolic references from an explicit runtime context
@@ -49,7 +49,7 @@ The output of the transposer should already look like the output that ordinary c
 
 ## Authoring Shape
 
-Each authored effect entry is a single-key object.
+Each authored instruction entry is a single-key object.
 
 Example:
 
@@ -175,7 +175,7 @@ It does not:
 - own conversation state persistence
 
 Conversation progress persistence stays separate.
-That is conversation infrastructure, not an authored effect.
+That is conversation infrastructure, not an authored instruction.
 
 ## Canonical Output Targets
 
@@ -303,7 +303,7 @@ Where possible, static validation should stay structure-focused and runtime vali
 The validator should not pretend to guarantee live-world resolvability in contexts where only structure is knowable.
 
 The validator should not silently coerce bad authored data into something else.
-Unsupported or malformed authored effects should fail explicitly.
+Unsupported or malformed authored instructions should fail explicitly.
 
 ## Relationship To Existing Runtime Contracts
 
@@ -330,12 +330,12 @@ That shim should be replaced by this transposer.
 
 The intended flow for conversation-directed speech is:
 
-1. conversation runtime evaluates state and returns authored effects as data
-2. the transposer validates and lowers those authored effects
+1. conversation runtime evaluates state and returns authored instructions as data
+2. the transposer validates and lowers those authored instructions
 3. directed speech adds any structural conversation progress mutation separately
 4. the command returns a normal `{ ok, plan, render }` envelope
 
-This keeps authored effect handling separate from conversation state persistence.
+This keeps authored instruction handling separate from conversation state persistence.
 
 ## Future Consumers
 
@@ -343,8 +343,8 @@ This design is intentionally generic enough to be reused by other authored syste
 
 Likely future consumers include:
 
-- quest-authored effect data
-- narrative-authored effect data
+- quest-authored instruction data
+- narrative-authored instruction data
 - room-authored behavior DSLs
 - item-authored behavior DSLs
 
@@ -375,7 +375,7 @@ This design should be tested in layers.
 
 ### 1. Transposer contract tests
 
-Add focused unit tests that feed authored effects plus explicit runtime scope into the transposer and assert exact emitted instructions.
+Add focused unit tests that feed authored instructions plus explicit runtime scope into the transposer and assert exact emitted instructions.
 
 These should cover:
 
@@ -417,7 +417,7 @@ These should prove:
 
 - successful transposition into plan/render
 - fall-through on no route
-- logged failure plus fall-through on bad authored effects
+- logged failure plus fall-through on bad authored instructions
 
 ### 5. Full dispatch tests
 
@@ -455,8 +455,8 @@ This should make it easy to meet emerging designer needs without destabilizing e
 
 It should probably expose something like:
 
-- a validator for authored effect entries
-- a transposer for authored effect entries
+- a validator for authored instruction entries
+- a transposer for authored instruction entries
 
 The transposer should return canonical structures such as:
 
@@ -479,7 +479,7 @@ The validator should be reusable by:
 
 The key decisions in this design are:
 
-- authored effects are single-key objects
+- authored instructions are single-key objects
 - each effect name owns its own payload schema
 - YAML shape should match the transposer contract directly
 - the DSL should use runtime instruction names and field names directly
@@ -489,5 +489,5 @@ The key decisions in this design are:
 - some obvious fields may be implicit when the transposition contract says so
 - it includes shared validation for both runtime and CLI use
 - conversation is the first consumer
-- conversation progress persistence remains separate from authored effects
+- conversation progress persistence remains separate from authored instructions
 - the implementation should stay mechanical, deterministic, and easy to extend as new designer needs emerge

@@ -8,7 +8,7 @@
 ## Purpose
 
 This document describes the two conversation-runtime elements that are still
-missing even after directed speech and authored effects are live:
+missing even after directed speech and authored instructions are live:
 
 - adoption of transient conversation engagement in real runtime behavior
 - adoption of condition evaluation in the live conversation path
@@ -33,7 +33,7 @@ The repository now has:
 - pure conversation evaluation
 - conversation definition loading and validation
 - directed event speech through `say <event> to <npc>`
-- authored-effect transposition
+- authored-instruction transposition
 
 However, the live conversation runtime still falls short in two important ways:
 
@@ -390,7 +390,7 @@ For successful directed speech:
 4. Evaluate conversation through `conversation-runtime.js`.
 5. If evaluation fails, log and fall through exactly as today.
 6. If no transition is selected, do not intercept exactly as today.
-7. Transpose authored effects exactly as today.
+7. Transpose authored instructions exactly as today.
 8. Persist settled conversation state exactly as today.
 9. Set or clear transient engagement based on the evaluation result.
 10. Return the normal command-style plan/render result.
@@ -451,7 +451,7 @@ Add or extend tests proving:
 
 - live condition evaluation and persisted state update both occur in one
   successful directed-speech path
-- authored effects still execute normally when conditions are involved
+- authored instructions still execute normally when conditions are involved
 
 ## Non-Goals For This Design
 

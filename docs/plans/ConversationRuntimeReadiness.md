@@ -643,7 +643,7 @@ Validation:
 Scope:
 
 - lowering authored conditions to the shared query facade
-- lowering authored effects to existing mutation/render primitives
+- lowering authored instructions to existing mutation/render primitives
 - expanding query facade only where real authored need requires it
 - supporting the narrow authored subset needed for the first runnable directed-speech conversation slices
 
@@ -886,7 +886,7 @@ Likely work:
 
 - add actor metadata reads
 - add any additional deterministic reads justified by real authored content
-- support additional guarded transitions and authored effect forms as real content requires
+- support additional guarded transitions and authored instruction forms as real content requires
 
 ### Slice 4: Richer lifecycle and multiplayer behavior
 

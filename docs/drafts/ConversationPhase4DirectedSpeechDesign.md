@@ -22,12 +22,12 @@ That evaluator can:
 - read the current conversation state
 - match an authored event
 - choose the next state
-- return authored effects and entry behavior as data
+- return authored instructions and entry behavior as data
 
 It does not:
 
 - save the new conversation state
-- apply authored effects
+- apply authored instructions
 - dispatch authored output
 - integrate with `say <event> to <npc>`
 
@@ -113,7 +113,7 @@ The first directed-speech bring-up should remain intentionally narrow.
 This draft recommends supporting only:
 
 - persisted conversation state update
-- NPC reply rendering from returned authored effect data for a very small approved subset
+- NPC reply rendering from returned authored instruction data for a very small approved subset
 - one initial render effect, likely `messageRoom`
 
 This keeps the first runnable conversation slice simple:
@@ -249,7 +249,7 @@ Responsibilities:
 
 - Should phase 4 support only `messageRoom`, or also one actor-private render form?
 - Should intercepted directed speech preserve the player's ordinary spoken line, or should phase 4 initially render only the NPC reply?
-- Should phase 4 log maintainer-facing diagnostics when a matched route uses unsupported authored effects, and if so what shape should that logging take?
+- Should phase 4 log maintainer-facing diagnostics when a matched route uses unsupported authored instructions, and if so what shape should that logging take?
 - Should phase 4 use fresh test fixtures and test NPCs rather than extending `actorPlanner`, which already carries unrelated harness behavior?
 
 ## Recommendation

@@ -1,10 +1,10 @@
-# Authored Effects Transposer Test Matrix
+# Authored Instructions Transposer Test Matrix
 
 Status: draft
 
 ## Purpose
 
-This document is an informal testing guide for the authored-effects transposer.
+This document is an informal testing guide for the authored-instructions transposer.
 
 It is not a formal implementation checklist.
 It is a plain-language map of the transposer behaviors we want explicit test coverage for.
@@ -18,7 +18,7 @@ The main transposer tests should be table-driven.
 Each test case should define:
 
 - a short case name
-- authored `effects`
+- authored `instructions`
 - runtime `scope`
 - either:
   - the exact expected `operations` and `renderMessages`, or
