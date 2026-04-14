@@ -314,7 +314,7 @@ If the target is not the local default, the authored DSL should provide the expl
 `onEntry` is state-entry behavior only.
 It runs when the state is entered, not merely because the state exists.
 
-If a state defines both `onEntry` and `auto`, `onEntry.effects` run first and `auto` is evaluated afterward.
+If a state defines both `onEntry` and `auto`, `onEntry.actions` run first and `auto` is evaluated afterward.
 
 Semantic discipline rule:
 
@@ -781,7 +781,7 @@ The current profile is intended to stay coherent under those terms:
   - classification: `sugar over SCXML`
   - author-facing shorthand for restricted declarative executable content on transitions
   - lowers to the same underlying mutation and render model already used by the runtime
-- `onEntry.effects`
+- `onEntry.actions`
   - classification: `sugar over SCXML`
   - restricted declarative subset of SCXML `onentry`
   - not a general executable-content surface
@@ -1042,7 +1042,7 @@ Preview impact:
 Definition:
 
 - allowed only as `auto` block
-- evaluated after `onEntry.effects`, if any
+- evaluated after `onEntry.actions`, if any
 - states with `auto` may not also define `events`
 - states with `auto` may not also define `events.default`
 - states with `auto` may not also define `final: true`

@@ -304,7 +304,7 @@ No such lowering implementation currently exists.
 
 Impact:
 
-- authored `messageRoom`, `onEntry.effects`, `transitions`, `auto`, and `events.default` are not executable
+- authored `messageRoom`, `onEntry.actions`, `transitions`, `auto`, and `events.default` are not executable
 - conversation DSL remains descriptive rather than runnable
 
 ### Query surface gaps
