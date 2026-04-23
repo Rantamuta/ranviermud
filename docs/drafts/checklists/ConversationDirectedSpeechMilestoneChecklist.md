@@ -66,7 +66,7 @@ the design-derived sequence.
     - Design trace: item 1, "Confirm current milestone scope is directed speech only."
   - Validation handoff: `S1`, `integration/smoke, contract/parity`
 
-- [ ] `C02` [engagement] Remove `bundles/bundle-rantamuta/lib/runtime/conversation/conversation-engagement.js` only after confirming no live conversation runtime dependency remains.
+- [x] `C02` [engagement] Remove `bundles/bundle-rantamuta/lib/runtime/conversation/conversation-engagement.js` only after confirming no live conversation runtime dependency remains.
   - Trace:
     - "Conversation engagement is deliberately not part of this milestone." (`Intent`)
     - "Engagement cleanup for live conversation runtime code, engagement-only tests, and active documentation posture." (`In Scope`)
