@@ -112,7 +112,7 @@ the design-derived sequence.
     - Design trace: item 3, "`tryDirectedConversation(...)` is the conversation-owned live entrypoint for addressed speech."
   - Validation handoff: `S3`, `integration/smoke, contract/parity`
 
-- [ ] `C06` [conditions] Add a conversation-owned live condition adapter in the conversation runtime layer that accepts the existing narrow declarative query-object condition shape.
+- [x] `C06` [conditions] Add a conversation-owned live condition adapter in the conversation runtime layer that accepts the existing narrow declarative query-object condition shape.
   - Trace:
     - "For this milestone, condition syntax remains the existing narrow declarative query-object model described by the conversation DSL" (`Condition Semantics`)
     - "The exact condition adapter file name is deferred to checklist authoring, but ownership must remain in the conversation/runtime layer and must call the shared `q` facade." (`Open Questions And Deferments`)
