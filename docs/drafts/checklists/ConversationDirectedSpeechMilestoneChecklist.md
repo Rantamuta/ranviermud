@@ -196,7 +196,7 @@ the design-derived sequence.
     - Design trace: item 11, "Verify guarded `events.default` works through live directed speech."
   - Validation handoff: `S7`, `integration/smoke`
 
-- [ ] `C18` [routing] Preserve evaluator-owned guarded `auto` settling in the live path and use `evaluation.settledState` for the structural conversation-state write.
+- [x] `C18` [routing] Preserve evaluator-owned guarded `auto` settling in the live path and use `evaluation.settledState` for the structural conversation-state write.
   - Trace:
     - "Guarded `auto` settling works through live directed speech after a selected event lands in an intermediate state." (`Acceptance Criteria`)
     - "`conversation-state.js` - Source of the structural persisted conversation-state write." (`Implementation Surfaces`)
