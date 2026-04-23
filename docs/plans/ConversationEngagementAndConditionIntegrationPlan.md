@@ -2,6 +2,63 @@
 
 Status: draft
 
+## Supersession Note
+
+This document is superseded in its `engagement` direction.
+
+Maintainer decision:
+
+- treat conversation engagement as a design error for the current conversation
+  system direction
+- do not introduce new engagement storage, adapters, lifecycle hooks, or other
+  engagement harness in order to advance the conversation runtime
+- future agents should read any engagement-oriented work in this document as
+  historical context only, not as an endorsed implementation path
+
+Rationale:
+
+- the real conversation state is already the player-owned persisted FSM state
+  stored under `conversations.<areaId>.<npcId>.state`
+- that persisted state is sufficient for addressed conversation flow such as
+  `say <action> to <npc>`
+- directed speech does not need a separate "currently engaged" record to know
+  where the player is in the conversation; it only needs:
+  - the addressed NPC identity
+  - the loaded conversation definition for that NPC
+  - the player's persisted conversation state for that NPC
+- menu behavior, if later implemented, should be treated as render/output
+  behavior or other narrowly scoped command/runtime behavior, not as a reason
+  to create a second conversation state system
+- bare `talk` convenience behavior is too small a feature to justify a durable
+  engagement subsystem
+- introducing engagement creates extra ownership, invalidation, rollback, and
+  cleanup complexity without providing necessary capability for the current
+  milestone
+
+Repository guidance from this note:
+
+- prefer persisted conversation progress over ephemeral engagement
+- prefer direct evaluation of the addressed NPC's current actor-specific state
+  over any session-local conversation tracking layer
+- treat proposals to add engagement storage or engagement adapters as scope
+  expansion that must be justified against this rejection
+- unless maintainers explicitly reverse this decision, future agents should
+  regard engagement discussion as a previously explored and rejected path
+
+What remains valid from this document:
+
+- live guard/condition wiring is still a valid concern
+- reuse of the shared read-only query surface and predicate-runtime-backed
+  evaluation remains valid
+
+What should be ignored as superseded:
+
+- engagement record shape
+- engagement owner choice
+- engagement set/replace/clear policy
+- engagement adapters
+- engagement-focused acceptance criteria and tests
+
 ## Goal
 
 Complete the missing live-runtime conversation pieces so the current

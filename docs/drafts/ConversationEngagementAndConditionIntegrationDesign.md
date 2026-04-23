@@ -5,6 +5,55 @@
 - Status: draft
 - Scope: collaboration outline for the missing live-runtime conversation pieces
 
+## Supersession Note
+
+This draft is superseded in its `engagement` direction.
+
+Maintainer decision:
+
+- conversation engagement is not part of the necessary runtime model for the
+  current conversation milestone
+- future agents should treat engagement-oriented design in this document as a
+  rejected branch of exploration rather than as pending work
+
+Why this direction was rejected:
+
+- the authoritative conversation state is the persisted player-owned FSM state
+  keyed by NPC identity
+- addressed speech such as `say <action> to <npc>` does not require a separate
+  ephemeral engagement record in order to determine the current conversation
+  state
+- the minimum runtime needed for conversations is:
+  - resolve the addressed NPC
+  - load that NPC's conversation definition
+  - read the persisted conversation state for this player/NPC pair
+  - evaluate guards, transitions, default routes, and auto-settling
+  - commit authored effects and the new persisted conversation state
+  - render the resulting NPC output
+- menu behavior is not evidence that engagement is needed; menu is better
+  understood as render/output behavior and may be implemented later without
+  promoting engagement into a core runtime abstraction
+- bare `talk` convenience or resume behavior is too small a feature to justify
+  a parallel engagement subsystem
+- engagement introduces extra complexity around ownership, invalidation,
+  disconnect cleanup, movement cleanup, staleness, and rollback while solving
+  no required problem for the current `say <action> to <npc>` milestone
+
+Future-agent guidance:
+
+- do not add engagement storage as part of directed speech bring-up
+- do not add engagement adapters or engagement lifecycle management unless a
+  later maintainer explicitly reopens that design choice
+- read the guard-evaluation parts of this draft, if needed, independently from
+  the engagement material
+
+Superseded sections of intent include:
+
+- defining a live engagement record
+- choosing an engagement owner
+- setting, replacing, or clearing engagement from directed speech
+- designing engagement adapters or engagement-driven lifecycle behavior
+
 ## Purpose
 
 This document describes the two conversation-runtime elements that are still
@@ -485,4 +534,3 @@ This draft recommends:
 - reuse the shared predicate runtime instead of building a conversation-only
   condition system
 - complete this integration before menu work begins
-
