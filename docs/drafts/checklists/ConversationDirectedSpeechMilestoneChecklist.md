@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: planning
+- Status: active
 - Scope: implementation checklist for the directed-speech conversation milestone
 - Source plan: `docs/plans/ConversationDirectedSpeechMilestonePlan.md`
 - Source design: `docs/plans/ConversationDirectedSpeechMilestoneDesign.md`
@@ -59,7 +59,7 @@ the design-derived sequence.
 
 ## Checklist
 
-- [ ] `C01` [dispatch] Keep `bundles/bundle-rantamuta/commands/say.js` limited to the existing `TEXT to LIVING` handoff through `tryDirectedConversation(...)`, with ordinary addressed-say fallback unchanged.
+- [x] `C01` [dispatch] Keep `bundles/bundle-rantamuta/commands/say.js` limited to the existing `TEXT to LIVING` handoff through `tryDirectedConversation(...)`, with ordinary addressed-say fallback unchanged.
   - Trace:
     - "`say <action> to <npc>`" (`Goal`)
     - "Keep `commands/say.js` narrow. It should continue to route the `TEXT to LIVING` form through `tryDirectedConversation(...)` and otherwise fall back to ordinary addressed speech." (`Constraints`)

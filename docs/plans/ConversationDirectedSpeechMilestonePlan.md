@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: planning
+- Status: active
 - Scope: complete the intermediate conversation milestone for directed speech
 - Source design: `docs/plans/ConversationDirectedSpeechMilestoneDesign.md`
 
