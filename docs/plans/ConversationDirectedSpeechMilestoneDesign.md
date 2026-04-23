@@ -1,6 +1,6 @@
 # Conversation Directed Speech Milestone Design
 
-Status: draft
+Status: planning
 
 ## Purpose
 
