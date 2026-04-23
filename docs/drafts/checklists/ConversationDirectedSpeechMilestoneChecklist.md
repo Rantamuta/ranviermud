@@ -210,7 +210,7 @@ the design-derived sequence.
     - Design trace: item 13, "Verify no matching conversation route still falls back to ordinary addressed `say`."
   - Validation handoff: `S7`, `integration/smoke, contract/parity`
 
-- [ ] `C20` [transaction] Preserve operation ordering in `tryDirectedConversation(...)` so lowered authored operations precede the final `createSetConversationStateInstruction(...)` operation.
+- [x] `C20` [transaction] Preserve operation ordering in `tryDirectedConversation(...)` so lowered authored operations precede the final `createSetConversationStateInstruction(...)` operation.
   - Trace:
     - "Successful conversation speech commits authored effects before the structural persisted conversation-state write to the settled state." (`Acceptance Criteria`)
     - "`conversation-state.js` - Source of the structural persisted conversation-state write." (`Implementation Surfaces`)
