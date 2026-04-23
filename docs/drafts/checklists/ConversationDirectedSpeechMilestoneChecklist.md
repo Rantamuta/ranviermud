@@ -175,7 +175,7 @@ the design-derived sequence.
     - Design trace: item 8, "Ensure ordinary false guard results are normal conversation outcomes, not maintainer-facing failures."
   - Validation handoff: `S6`, `unit, integration/smoke`
 
-- [ ] `C15` [routing] Preserve exact-event authority in the live path so a passing exact guarded event is selected instead of `events.default`.
+- [x] `C15` [routing] Preserve exact-event authority in the live path so a passing exact guarded event is selected instead of `events.default`.
   - Trace:
     - "`say <action> to <npc>` can select an exact guarded conversation event when the guard passes." (`Acceptance Criteria`)
     - "Live guard/condition wiring for exact events, `events.default`, and `auto` settling." (`In Scope`)
