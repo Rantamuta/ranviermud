@@ -266,7 +266,7 @@ the design-derived sequence.
       this milestone.
   - Validation handoff: `S9`, `contract/parity`
 
-- [ ] `C24` [records] Add the required `CHANGELOG.md` entry for live addressed-`say` conversation behavior when implementation changes the command surface.
+- [x] `C24` [records] Add the required `CHANGELOG.md` entry for live addressed-`say` conversation behavior when implementation changes the command surface.
   - Trace:
     - "Update `CHANGELOG.md` when the behavior is implemented, because live gameplay command behavior changes." (`Compatibility And Records`)
     - "This milestone is user-visible because it changes live gameplay behavior for addressed `say` when the addressed NPC has a valid conversation route." (`Compatibility And Records`)
