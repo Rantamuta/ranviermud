@@ -140,7 +140,7 @@ the design-derived sequence.
     - Design trace: item 5, "lift the existing `createQueryFacade(...)` implementation out of `predicate-runtime.js` into `bundles/bundle-rantamuta/lib/helpers/query-facade.js`."
   - Validation handoff: `S5`, `unit, contract/parity`
 
-- [ ] `C10` [query] Update `bundles/bundle-rantamuta/lib/helpers/predicate-runtime.js` to import `createQueryFacade(...)` from `query-facade.js` while preserving existing predicate-runtime behavior and diagnostics.
+- [x] `C10` [query] Update `bundles/bundle-rantamuta/lib/helpers/predicate-runtime.js` to import `createQueryFacade(...)` from `query-facade.js` while preserving existing predicate-runtime behavior and diagnostics.
   - Trace:
     - "`predicate-runtime.js` - Expected to stop owning the shared `q` facade after extraction." (`Implementation Surfaces`)
     - "Preserve existing predicate-runtime diagnostics unless an explicit compatibility decision authorizes changing them." (`Constraints`)
