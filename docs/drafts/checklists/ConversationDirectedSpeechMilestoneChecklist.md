@@ -217,7 +217,7 @@ the design-derived sequence.
     - Design trace: item 14, "Verify successful conversation speech commits authored effects before writing the settled persisted conversation state."
   - Validation handoff: `S8`, `integration/smoke, contract/parity`
 
-- [ ] `C21` [transaction] Preserve failure handling in `tryDirectedConversation(...)` so failed condition evaluation or authored-instruction lowering returns before building any conversation-state write operation.
+- [x] `C21` [transaction] Preserve failure handling in `tryDirectedConversation(...)` so failed condition evaluation or authored-instruction lowering returns before building any conversation-state write operation.
   - Trace:
     - "Failed condition lowering, condition evaluation, or authored-instruction lowering does not mutate persisted conversation state." (`Acceptance Criteria`)
     - "Malformed or unsupported guard data is surfaced through the existing maintainer-facing directed-speech failure path and does not produce a conversation-state write." (`Acceptance Criteria`)
