@@ -8,7 +8,8 @@ Complete the missing live-runtime conversation pieces so the current
 conversation system can:
 
 - remember the player's current live conversation engagement in memory
-- evaluate authored guards in real gameplay through the shared predicate runtime
+- evaluate authored guards in real gameplay through shared read-only query and
+  evaluation infrastructure built on the predicate runtime
 
 ## Intent
 
@@ -31,6 +32,12 @@ In plain language, the system should know both:
 This plan does not add menus or menu input yet. It only makes the live
 conversation runtime real enough that those later features have a correct
 foundation.
+
+For this plan, "authored guard" means a conversation-authored gating rule in
+the conversation DSL. It does not mean that conversation routing becomes a
+bundle predicate registry by identity. The goal is to reuse shared evaluation
+infrastructure, not to collapse conversation guards into a different authored
+subsystem.
 
 ## In Scope
 
@@ -62,7 +69,7 @@ foundation.
 ## Acceptance Criteria
 
 - Successful directed speech that matches a conversation route records a live
-  engagement object for the chosen runtime owner.
+  engagement object for the chosen runtime owner for this slice.
 - Final-state directed speech clears live engagement instead of leaving stale
   engagement behind.
 - Engagement records at least:
@@ -71,12 +78,23 @@ foundation.
   - the current settled conversation state
   - the currently visible authored event ids
   - a revision value suitable for later menu work
+- In this slice, engagement begins only after a successful routed live
+  conversation interaction. Merely being in a potentially talkable state does
+  not create engagement yet.
+- `visibleEventIds` recorded into engagement come from the settled state after
+  auto settling and guard evaluation, exclude hidden/default internal routes,
+  and preserve the runtime's deterministic authored ordering.
 - Live directed speech provides `conditionEvaluator` and `q` to
   `evaluateConversationRuntime(...)`.
 - Authored guarded behavior that already works in pure runtime tests also works
   through the live directed-speech path.
-- Live conversation guard evaluation reuses the shared predicate runtime and
-  shared read-only query facade rather than a conversation-only evaluator.
+- Live conversation guard evaluation reuses shared read-only query and
+  evaluation infrastructure based on the predicate runtime rather than a
+  conversation-only evaluator.
+- Ordinary guard evaluation returning `false` remains a normal runtime outcome,
+  not a maintainer-facing failure.
+- Authored guard contract violations and runtime integration failures are
+  surfaced distinctly from ordinary false-guard outcomes.
 - If live guard evaluation cannot be wired correctly at runtime, the system
   fails through the existing maintainer-facing directed-speech failure path
   rather than silently treating guards as always true or always false.
@@ -95,10 +113,17 @@ foundation.
   - it may accept `conditionEvaluator` and `q`
   - it should not load predicate runtime services or own engagement storage
 - Do not invent a conversation-only guard system.
-  - shared predicate runtime and query facade must remain the source of live
-    guard evaluation
+  - conversation guards remain conversation-authored guard constructs
+  - shared predicate runtime and query infrastructure are reused as the live
+    evaluation mechanism
+  - conversation guards are not treated as bundle predicate registry entries by
+    identity
 - Do not collapse transient engagement into persisted player conversation
   progress
+- `conversation-engagement.js` remains the storage surface for transient
+  engagement.
+  - if an adapter is introduced, it is a narrow integration helper over that
+    storage surface rather than a second competing engagement store
 - Do not begin menu rendering or numeric selector interception in this slice
 
 ## Implementation Surfaces
@@ -109,22 +134,24 @@ Primary runtime surfaces likely to change:
   - supply `conditionEvaluator` and `q`
   - set or clear transient engagement after successful evaluation
 - `bundles/bundle-rantamuta/lib/runtime/conversation/conversation-engagement.js`
-  - likely reused as the storage surface
+  - reused as the storage surface
   - may gain tiny convenience helpers if needed
 - `bundles/bundle-rantamuta/lib/runtime/conversation/conversation-runtime.js`
   - should ideally remain behaviorally pure
   - touch only if integration reveals a missing stable output detail
 - `bundles/bundle-rantamuta/lib/helpers/predicate-runtime.js`
-  - reused, not replaced
+  - reused as shared evaluation infrastructure, not replaced
   - may need a narrow integration seam if no suitable live-facing entrypoint is
-    currently available for conversation
+    currently available for conversation-authored guards
 
 Possible new runtime surfaces:
 
 - `bundles/bundle-rantamuta/lib/runtime/conversation/conversation-condition-adapter.js`
   - builds `conditionEvaluator` and `q` from live scope
 - `bundles/bundle-rantamuta/lib/runtime/conversation/conversation-engagement-adapter.js`
-  - builds canonical engagement records and applies set/clear policy
+  - optional narrow helper
+  - builds canonical engagement records and applies set/clear policy over
+    `conversation-engagement.js`
 
 Primary test surfaces likely to change:
 
@@ -185,16 +212,18 @@ Mitigation:
 ## Open Questions / Assumptions
 
 - Preferred assumption: engagement should be keyed by session-owned runtime
-  owner, not by persisted player object, when the call surface makes that
-  practical.
+  owner, not by persisted player object.
+- If the directed-speech integration seam cannot supply a session-owned owner,
+  checklist authoring must explicitly lock the alternative owner choice before
+  implementation begins.
 - Assumption: `say <event> to <npc>` remains the first live conversation
   surface used to prove engagement and guard integration.
 - Open question: whether a small reusable adapter module should be introduced
   immediately, or whether the first implementation should wire directly in
   `directed-speech.js` and extract only if the seam proves stable.
 - Open question: whether the shared predicate runtime already exposes the exact
-  live-facing entrypoint needed for conversation, or whether a narrow adapter is
-  needed to normalize the call contract.
+  live-facing entrypoint needed for conversation-authored guards, or whether a
+  narrow adapter is needed to normalize the call contract.
 
 ## Validation Strategy
 
@@ -205,14 +234,16 @@ repo validation rules in `AGENTS.md`.
 
 Required evidence:
 
-- conversation runtime tests proving guarded visibility, guarded transitions,
-  guarded default, and guarded auto behavior through the live integration seam
+- pure evaluator tests remain green for guarded visibility, guarded
+  transitions, guarded default, and guarded auto behavior
 - engagement helper/adapter tests proving set, replace, read, and clear policy
+- focused integration tests proving that the live directed-speech path supplies
+  the expected guard-evaluation inputs to the pure evaluator
 
 Pass condition:
 
 - tests show the live conversation path now honors guards and records
-  engagement deterministically
+  engagement deterministically without changing the pure evaluator contract
 
 ### Integration/Smoke
 
@@ -221,6 +252,10 @@ Required evidence:
 - directed-speech tests proving a successful live conversation route both:
   - persists settled conversation progress
   - updates transient engagement
+- directed-speech tests proving:
+  - ordinary false-guard outcomes do not produce maintainer-facing failures
+  - malformed guard/integration failures do produce the expected
+    maintainer-facing failure path
 - `say` command tests proving addressed speech still falls through correctly
   when no conversation route matches
 
@@ -235,8 +270,9 @@ Required evidence:
 
 - tests proving live guarded directed speech produces the same evaluator
   decisions the pure runtime already supports
-- tests proving live conversation guard evaluation uses the shared predicate
-  runtime/query model instead of a divergent local rule set
+- tests proving live conversation guard evaluation uses the shared
+  predicate-runtime-backed query/evaluation model instead of a divergent local
+  rule set
 
 Pass condition:
 
