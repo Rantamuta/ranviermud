@@ -224,11 +224,29 @@ the design-derived sequence.
     - Design trace: item 15, "Verify failed lowering/evaluation does not mutate persisted conversation state."
   - Validation handoff: `S8`, `integration/smoke, contract/parity`
 
-- [ ] `C22` [audit] Confirm the live milestone path has no runtime dependency on engagement records, menu rendering, numeric input interception, or `talk`.
+- [x] `C22` [audit] Confirm the live milestone path has no runtime dependency on engagement records, menu rendering, numeric input interception, or `talk`.
   - Trace:
     - "The live milestone path does not introduce or depend on engagement records, menu rendering, numeric input interception, or `talk`." (`Acceptance Criteria`)
     - "Conversation engagement records or engagement lifecycle." (`Out of Scope`)
     - Design trace: item 16, "Verify the milestone does not introduce or depend on engagement records, menu rendering, numeric input interception, or `talk`."
+  - Implementation audit:
+    - `bundles/bundle-rantamuta/lib/runtime/conversation/**` contains no live
+      engagement helper dependency; the remaining `menu` mention is a pure
+      evaluator comment stating that `conversation-runtime.js` does not install
+      menus.
+    - `bundles/bundle-rantamuta/commands/say.js` routes only addressed speech
+      through `tryDirectedConversation(...)` and does not depend on engagement,
+      menu rendering, numeric input interception, or `talk`.
+    - Conversation-focused tests retain one `talk` mention only to prove the
+      pure runtime does not require `say`, `talk`, or command-dispatch wiring.
+    - Wider `selector`, `numeric`, and `intransitive` hits in command,
+      semantic-message, door, inventory, look, and entity-resolution code are
+      unrelated command/runtime vocabulary, not conversation engagement or menu
+      dependencies.
+    - Active directed-speech milestone plan/design/checklist mentions of
+      engagement, menus, numeric selectors, and `talk` are intentional
+      out-of-scope/audit language; superseded engagement drafts carry explicit
+      supersession notes.
   - Validation handoff: `S9`, `contract/parity`
 
 - [ ] `C23` [docs] Update active conversation planning docs so the remaining milestone is described as directed speech plus live guard wiring, with engagement discussions removed, superseded, or archived as appropriate.
