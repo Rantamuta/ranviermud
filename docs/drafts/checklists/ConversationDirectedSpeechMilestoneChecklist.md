@@ -119,7 +119,7 @@ the design-derived sequence.
     - Design trace: item 4, "Add a narrow live condition adapter for conversations."
   - Validation handoff: `S4`, `unit, integration/smoke`
 
-- [ ] `C07` [conditions] Implement the condition adapter so same-named supported condition keys call the shared `q` facade methods needed by the milestone fixtures, returning `true` only for exact true query results and `false` for valid non-true query results.
+- [x] `C07` [conditions] Implement the condition adapter so same-named supported condition keys call the shared `q` facade methods needed by the milestone fixtures, returning `true` only for exact true query results and `false` for valid non-true query results.
   - Trace:
     - "The live condition adapter should mirror supported condition keys to same-named methods on the shared `q` facade where practical." (`Condition Semantics`)
     - "For this milestone, the adapter should support only the shared `q` facade methods needed by the milestone fixtures, using same-named condition keys." (`Condition Semantics`)
