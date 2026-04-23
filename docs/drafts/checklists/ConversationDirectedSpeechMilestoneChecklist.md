@@ -189,7 +189,7 @@ the design-derived sequence.
     - Design trace: item 10, "Verify failed guarded exact events can fall through to authored `events.default` when present."
   - Validation handoff: `S7`, `integration/smoke`
 
-- [ ] `C17` [routing] Preserve guarded `events.default` behavior in the live path for unmatched spoken actions.
+- [x] `C17` [routing] Preserve guarded `events.default` behavior in the live path for unmatched spoken actions.
   - Trace:
     - "Guarded `events.default` works through live directed speech." (`Acceptance Criteria`)
     - "If no matching conversation route is available, addressed speech falls back to ordinary `say` behavior." (`Acceptance Criteria`)
