@@ -154,7 +154,7 @@ the design-derived sequence.
     - Design trace: item 5, "Build the shared read-only `q` facade from live command scope: actor/player, NPC, room, area, and world/state."
   - Validation handoff: `S5`, `integration/smoke, contract/parity`
 
-- [ ] `C12` [runtime] Pass the live `conditionEvaluator` and `q` from `tryDirectedConversation(...)` into `evaluateConversationRuntime(...)`.
+- [x] `C12` [runtime] Pass the live `conditionEvaluator` and `q` from `tryDirectedConversation(...)` into `evaluateConversationRuntime(...)`.
   - Trace:
     - "`directed-speech.js` - Expected to build/pass `conditionEvaluator` and `q` into `evaluateConversationRuntime(...)`." (`Implementation Surfaces`)
     - "`conversation-runtime.js` - Already accepts optional `conditionEvaluator` and `q`." (`Implementation Surfaces`)
