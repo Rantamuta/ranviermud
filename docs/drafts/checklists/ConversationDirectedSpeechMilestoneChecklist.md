@@ -203,7 +203,7 @@ the design-derived sequence.
     - Design trace: item 12, "Verify guarded `auto` settling works through live directed speech."
   - Validation handoff: `S7`, `integration/smoke`
 
-- [ ] `C19` [fallback] Preserve `tryDirectedConversation(...)` returning `null` when evaluation produces no selected transition so `commands/say.js` falls back to ordinary addressed `say`.
+- [x] `C19` [fallback] Preserve `tryDirectedConversation(...)` returning `null` when evaluation produces no selected transition so `commands/say.js` falls back to ordinary addressed `say`.
   - Trace:
     - "If no matching conversation route is available, addressed speech falls back to ordinary `say` behavior." (`Acceptance Criteria`)
     - "Keep `commands/say.js` narrow ... and otherwise fall back to ordinary addressed speech." (`Constraints`)
