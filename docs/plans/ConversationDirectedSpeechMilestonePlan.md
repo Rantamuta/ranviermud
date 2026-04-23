@@ -198,8 +198,17 @@ core conversation state. It should be planned as its own render/input concern.
     conversation state remains exactly unchanged.
   - Include at least one failure that happens before authored effects are
     committed, so rollback expectations are explicit for the milestone.
-- 16. [ ] Do not add engagement records, menu rendering, numeric input
-  interception, or `talk`.
+- 16. [ ] Verify the milestone does not introduce or depend on engagement
+  records, menu rendering, numeric input interception, or `talk`.
+  - Proposed verification: search live runtime code, tests, fixtures, and
+    active planning docs for engagement/menu/numeric-input/`talk` conversation
+    hooks.
+  - Surface every remaining instance and classify it as removed, superseded,
+    archived, explicitly out of scope, or unrelated false positive.
+  - Do not require zero textual mentions; supersession notes and archived
+    context may remain when they are clearly classified.
+  - Assert the live milestone path remains only `say <action> to <npc>` through
+    directed speech.
 - 17. [ ] Update active planning docs to describe the remaining milestone as
   directed speech plus live guard wiring.
 - 18. [ ] Run `npm test`.
