@@ -80,11 +80,29 @@ the design-derived sequence.
     - Design trace: item 2, "remove engagement-only tests."
   - Validation handoff: `S2`, `contract/parity`
 
-- [ ] `C04` [audit] Classify remaining engagement/menu/numeric-input/`talk` conversation mentions in active runtime code, fixtures, tests, and active docs as removed, superseded, archived, explicitly out of scope, or unrelated false positives.
+- [x] `C04` [audit] Classify remaining engagement/menu/numeric-input/`talk` conversation mentions in active runtime code, fixtures, tests, and active docs as removed, superseded, archived, explicitly out of scope, or unrelated false positives.
   - Trace:
     - "Remaining engagement/menu/numeric-input/`talk` mentions in active docs, tests, or fixtures are surfaced and classified as removed, superseded, archived, explicitly out of scope, or unrelated false positives." (`Acceptance Criteria`)
     - "Do not require zero textual mentions; classify remaining mentions as superseded, archived, explicitly out of scope, or false positives." (`Risks And Mitigations`)
     - Design trace: item 2, "ensure remaining conversation docs either avoid engagement entirely, carry explicit supersession notes, or are archived."
+  - Implementation audit:
+    - `bundles/bundle-rantamuta/lib/**`, `commands/**`, and `areas/**`: no
+      live conversation engagement dependency remains.
+    - `bundles/bundle-rantamuta/tests/**`: engagement-only helper tests were
+      removed; the remaining `talk` mention in `conversation.runtime.test.js`
+      documents pure-evaluator independence from command wiring.
+    - Current milestone plan/design/checklist mentions are intentional
+      out-of-scope and verification language.
+    - `ConversationEngagementAndConditionIntegrationPlan.md` and
+      `ConversationEngagementAndConditionIntegrationDesign.md` carry
+      supersession notes and are classified as superseded engagement context.
+    - `ConversationSystemDesign.md`, `ConversationRuntimeReadiness.md`, and
+      older directed-speech drafts still contain later-phase menu, numeric
+      selector, engagement, or `talk` discussion; those are classified as
+      later-phase/out-of-scope for this milestone and remain candidates for the
+      active-doc alignment item.
+    - Non-conversation uses of "numeric", such as `time-to-tick.js`, are
+      unrelated false positives.
   - Validation handoff: `S2`, `contract/parity`
 
 - [ ] `C05` [speech] Keep `tryDirectedConversation(...)` in `bundles/bundle-rantamuta/lib/runtime/conversation/directed-speech.js` as the only live conversation-owned entrypoint for addressed speech.
