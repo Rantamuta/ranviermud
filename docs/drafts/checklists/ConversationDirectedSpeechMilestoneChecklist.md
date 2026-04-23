@@ -133,7 +133,7 @@ the design-derived sequence.
     - Design trace: item 4, "Malformed or unsupported condition shapes should surface as maintainer-facing integration failures rather than silently becoming progression decisions."
   - Validation handoff: `S4`, `unit, integration/smoke`
 
-- [ ] `C09` [query] Extract the existing `createQueryFacade(...)` implementation from `bundles/bundle-rantamuta/lib/helpers/predicate-runtime.js` into `bundles/bundle-rantamuta/lib/helpers/query-facade.js`.
+- [x] `C09` [query] Extract the existing `createQueryFacade(...)` implementation from `bundles/bundle-rantamuta/lib/helpers/predicate-runtime.js` into `bundles/bundle-rantamuta/lib/helpers/query-facade.js`.
   - Trace:
     - "`bundles/bundle-rantamuta/lib/helpers/query-facade.js` - Expected new shared home for `createQueryFacade(...)`." (`Implementation Surfaces`)
     - "extract the `q` facade into `lib/helpers/query-facade.js` and import that facade directly" (`Risks And Mitigations`)
