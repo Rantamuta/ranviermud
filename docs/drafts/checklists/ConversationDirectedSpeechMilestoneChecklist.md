@@ -168,7 +168,7 @@ the design-derived sequence.
     - Design trace: item 7, "The live directed-speech seam should then log that runtime failure through the existing `CONVERSATION_DIRECTED_SPEECH <code>: <message>` path and return `null`."
   - Validation handoff: `S6`, `integration/smoke`
 
-- [ ] `C14` [guards] Preserve ordinary false-guard behavior so a well-formed false guard produces no maintainer-facing failure and does not by itself produce a conversation-state write.
+- [x] `C14` [guards] Preserve ordinary false-guard behavior so a well-formed false guard produces no maintainer-facing failure and does not by itself produce a conversation-state write.
   - Trace:
     - "Treat a well-formed condition that evaluates to `false` as normal authored conversation flow, not as a maintainer-facing failure." (`Constraints`)
     - "A well-formed false guard is a normal conversation outcome: it does not emit maintainer-facing failure logs and does not mutate persisted conversation state by itself." (`Acceptance Criteria`)
