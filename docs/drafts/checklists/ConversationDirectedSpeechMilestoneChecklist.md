@@ -73,7 +73,7 @@ the design-derived sequence.
     - Design trace: item 2, "remove `conversation-engagement.js`" and "confirm no live conversation runtime code depends on engagement."
   - Validation handoff: `S2`, `contract/parity`
 
-- [ ] `C03` [engagement] Remove engagement-only tests or fixtures that no longer describe active conversation behavior.
+- [x] `C03` [engagement] Remove engagement-only tests or fixtures that no longer describe active conversation behavior.
   - Trace:
     - "Engagement cleanup for live conversation runtime code, engagement-only tests, and active documentation posture." (`In Scope`)
     - "The live milestone path does not introduce or depend on engagement records, menu rendering, numeric input interception, or `talk`." (`Acceptance Criteria`)
