@@ -105,7 +105,7 @@ the design-derived sequence.
       unrelated false positives.
   - Validation handoff: `S2`, `contract/parity`
 
-- [ ] `C05` [speech] Keep `tryDirectedConversation(...)` in `bundles/bundle-rantamuta/lib/runtime/conversation/directed-speech.js` as the only live conversation-owned entrypoint for addressed speech.
+- [x] `C05` [speech] Keep `tryDirectedConversation(...)` in `bundles/bundle-rantamuta/lib/runtime/conversation/directed-speech.js` as the only live conversation-owned entrypoint for addressed speech.
   - Trace:
     - "Keep `tryDirectedConversation(...)` as the conversation-owned live entrypoint for addressed speech." (`Constraints`)
     - "Expected to build/pass `conditionEvaluator` and `q` into `evaluateConversationRuntime(...)`." (`Implementation Surfaces`)
