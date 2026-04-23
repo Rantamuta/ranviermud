@@ -103,19 +103,7 @@ core conversation state. It should be planned as its own render/input concern.
     otherwise.
 - 6. [ ] Pass `conditionEvaluator` and `q` into
   `evaluateConversationRuntime(...)`.
-- 7. [ ] Ensure ordinary false guard results are normal conversation outcomes, not
-  maintainer-facing failures.
-  - Plain-language interpretation: a guard evaluating to `false` means the
-    authored transition is not available right now; it does not mean the
-    conversation system is broken.
-  - A false guard should not emit maintainer-facing failure logs, should not
-    mutate persisted conversation state by itself, and may allow the runtime to
-    try another authored route such as `events.default`.
-  - If no valid conversation route remains, directed speech may fall back to
-    ordinary addressed `say`.
-  - Contrast with malformed or unsupported guard data, which is likely a
-    content/runtime integration problem and belongs under item 8.
-- 8. [ ] Ensure malformed or unsupported guard integration failures are logged
+- 7. [ ] Ensure malformed or unsupported guard integration failures are logged
   through the existing maintainer-facing directed-speech failure path.
   - Enforcement rule: the live condition adapter must not treat malformed or
     unsupported guard data as an ordinary `false` guard result.
@@ -139,6 +127,18 @@ core conversation state. It should be planned as its own render/input concern.
   - Assert no conversation-state write operation is produced.
   - Assert player-facing behavior remains ordinary addressed speech fallback
     rather than a raw maintainer error.
+- 8. [ ] Ensure ordinary false guard results are normal conversation outcomes, not
+  maintainer-facing failures.
+  - Plain-language interpretation: a guard evaluating to `false` means the
+    authored transition is not available right now; it does not mean the
+    conversation system is broken.
+  - A false guard should not emit maintainer-facing failure logs, should not
+    mutate persisted conversation state by itself, and may allow the runtime to
+    try another authored route such as `events.default`.
+  - If no valid conversation route remains, directed speech may fall back to
+    ordinary addressed `say`.
+  - Contrast with malformed or unsupported guard data, which is likely a
+    content/runtime integration problem and belongs under item 7.
 - 9. [ ] Verify exact guarded event selection works through
   `say <action> to <npc>`.
   - Proposed verification: create or reuse a test conversation with an exact
