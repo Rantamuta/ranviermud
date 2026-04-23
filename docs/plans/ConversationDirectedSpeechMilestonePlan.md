@@ -211,8 +211,25 @@ core conversation state. It should be planned as its own render/input concern.
     directed speech.
 - 17. [ ] Update active planning docs to describe the remaining milestone as
   directed speech plus live guard wiring.
+  - Plain-language interpretation: once this plan is settled, active planning
+    docs should point at this milestone instead of the superseded
+    engagement-shaped plan.
+  - The milestone scope is `say <action> to <npc>` with live
+    guard/condition wiring, shared `q`, transactional state-write ordering, and
+    no engagement/menu/`talk` expansion.
+  - This item is docs alignment, not a new feature request.
 - 18. [ ] Run `npm test`.
+  - If validation fails, stop rather than silently expanding scope.
+  - Gather the failing command, relevant output, suspected failure area, and any
+    obvious next diagnostic step.
+  - Ask maintainers for instructions before implementing fixes that are not
+    already within the approved milestone scope.
 - 19. [ ] Run `npm run ci:local`.
+  - If validation fails, stop rather than silently expanding scope.
+  - Gather the failing command, relevant output, suspected failure area, and any
+    obvious next diagnostic step.
+  - Ask maintainers for instructions before implementing fixes that are not
+    already within the approved milestone scope.
 
 ## Notes For Expansion
 
