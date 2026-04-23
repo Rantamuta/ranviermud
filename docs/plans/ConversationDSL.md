@@ -57,6 +57,12 @@ When new condition reads are needed, they should be added to the shared `q` quer
 
 In the current runtime, that means expanding `createQueryFacade(...)` in `bundles/bundle-rantamuta/lib/helpers/predicate-runtime.js` and exposing the new read there alongside the existing `q.*` surface.
 
+Conversation conditions must not lower to area predicate-registry scripts.
+Predicate-registry evaluation is render-only and intentionally treats unknown
+predicates, thrown predicates, and non-boolean returns as `false`; that
+fail-to-false behavior is appropriate for descriptive text selection but too
+permissive for authored state progression.
+
 Requests from designers to expose additional existing mutation ops or render instructions through the DSL should be considered on their merits, especially when doing so avoids unnecessary duplication between authored conversation behavior and runtime capability.
 
 The DSL should not use raw command execution as its general effect mechanism.
@@ -505,6 +511,11 @@ Restriction:
 - must resolve through a predefined declarative query-object surface
 - should lower to the runtime's existing read-only `q.*` query facade rather than to predicate registry scripts
 - `condition` is the DSL's more ergonomic author-facing spelling of SCXML `cond`, not a semantic divergence
+
+The query-object surface and the predicate registry are not interchangeable.
+The query facade provides deterministic reads for state-machine evaluation; the
+predicate registry provides render-time prose selection with fail-to-false
+diagnostics.
 
 ### Condition purity
 
