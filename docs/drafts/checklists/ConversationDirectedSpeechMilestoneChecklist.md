@@ -147,7 +147,7 @@ the design-derived sequence.
     - Design trace: item 5, "`predicate-runtime.js` should import the shared facade rather than remain the owner of `q`"; item 5 caveat about predicate diagnostic wording.
   - Validation handoff: `S5`, `unit, contract/parity`
 
-- [ ] `C11` [query] Build a shared `q` facade in `tryDirectedConversation(...)` from live command scope: player/actor, NPC, room, area, and world/state.
+- [x] `C11` [query] Build a shared `q` facade in `tryDirectedConversation(...)` from live command scope: player/actor, NPC, room, area, and world/state.
   - Trace:
     - "Shared read-only `q` facade construction from live command scope." (`In Scope`)
     - "`bundles/bundle-rantamuta/lib/helpers/query-facade.js` - Expected to be imported by `predicate-runtime.js` and the directed-speech conversation path." (`Implementation Surfaces`)
