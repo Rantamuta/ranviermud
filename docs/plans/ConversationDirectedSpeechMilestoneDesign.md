@@ -1,4 +1,4 @@
-# Conversation Directed Speech Milestone Plan
+# Conversation Directed Speech Milestone Design
 
 Status: draft
 
