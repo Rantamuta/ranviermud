@@ -73,8 +73,34 @@ core conversation state. It should be planned as its own render/input concern.
   - Implication: later condition work should add `conditionEvaluator` and `q`
     at that evaluator call site, without widening `say.js`.
 - 4. [ ] Add a narrow live condition adapter for conversations.
+  - Recommended interpretation: add a conversation-owned condition evaluator
+    that supports a deliberately small declarative condition subset by calling
+    the shared read-only `q.*` query facade.
+  - The adapter should return `true` only for exact true outcomes.
+  - Ordinary unmet conditions should return `false` as normal conversation
+    outcomes.
+  - Malformed or unsupported condition shapes should surface as
+    maintainer-facing integration failures rather than silently becoming
+    progression decisions.
+  - The adapter must not call area predicate-registry scripts or use render
+    predicate evaluation as the authority for conversation progression.
 - 5. [ ] Build the shared read-only `q` facade from live command scope:
   actor/player, NPC, room, area, and world/state.
+  - Recommended interpretation: lift the existing `createQueryFacade(...)`
+    implementation out of `predicate-runtime.js` into
+    `bundles/bundle-rantamuta/lib/helpers/query-facade.js`.
+  - `predicate-runtime.js` should import the shared facade rather than remain
+    the owner of `q`.
+  - Conversation runtime should use the shared facade directly from live
+    command scope; it must not call `createPredicateRuntime().evaluate(...)`
+    or route conversation progress through area predicate-registry scripts.
+  - Do not place the facade under `lib/runtime/conversation/`; `q` is shared
+    read infrastructure, not conversation-specific machinery.
+  - Caveat: the current query diagnostics use predicate-specific wording such
+    as `Predicate query q...`. A mechanical extraction may leave those messages
+    intact initially. If the wording is generalized, preserve existing
+    predicate-runtime diagnostics unless an explicit compatibility decision says
+    otherwise.
 - 6. [ ] Pass `conditionEvaluator` and `q` into
   `evaluateConversationRuntime(...)`.
 - 7. [ ] Ensure ordinary false guard results are normal conversation outcomes, not
