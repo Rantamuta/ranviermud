@@ -182,7 +182,7 @@ the design-derived sequence.
     - Design trace: item 9, "Verify exact guarded event selection works through `say <action> to <npc>`."
   - Validation handoff: `S7`, `integration/smoke`
 
-- [ ] `C16` [routing] Preserve authored `events.default` fallback in the live path when an exact guarded event is present but unavailable.
+- [x] `C16` [routing] Preserve authored `events.default` fallback in the live path when an exact guarded event is present but unavailable.
   - Trace:
     - "A failed guarded exact event can fall through to authored `events.default` when a usable default route exists." (`Acceptance Criteria`)
     - "Treat a well-formed condition that evaluates to `false` as normal authored conversation flow" (`Constraints`)
