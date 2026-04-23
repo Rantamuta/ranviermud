@@ -126,7 +126,7 @@ the design-derived sequence.
     - Design trace: item 4, "The adapter should return `true` only for exact true outcomes" and "Ordinary unmet conditions should return `false` as normal conversation outcomes."
   - Validation handoff: `S4`, `unit, integration/smoke`
 
-- [ ] `C08` [conditions] Implement the condition adapter error boundary so malformed condition shape, unsupported condition operator, missing required `q` method, or evaluator exception becomes an integration failure rather than ordinary `false`.
+- [x] `C08` [conditions] Implement the condition adapter error boundary so malformed condition shape, unsupported condition operator, missing required `q` method, or evaluator exception becomes an integration failure rather than ordinary `false`.
   - Trace:
     - "Treat malformed condition shape, unsupported condition operator, missing required `q` method, or condition-evaluator exceptions as integration failures." (`Constraints`)
     - "Unsupported or malformed condition data is an integration failure, not a false guard." (`Condition Semantics`)
