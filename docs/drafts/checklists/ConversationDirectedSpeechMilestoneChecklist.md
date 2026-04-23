@@ -249,11 +249,21 @@ the design-derived sequence.
       supersession notes.
   - Validation handoff: `S9`, `contract/parity`
 
-- [ ] `C23` [docs] Update active conversation planning docs so the remaining milestone is described as directed speech plus live guard wiring, with engagement discussions removed, superseded, or archived as appropriate.
+- [x] `C23` [docs] Update active conversation planning docs so the remaining milestone is described as directed speech plus live guard wiring, with engagement discussions removed, superseded, or archived as appropriate.
   - Trace:
     - "Documentation alignment so active conversation plans describe the milestone as directed speech plus live guard wiring." (`In Scope`)
     - "Active planning docs describe the remaining milestone as directed speech plus live guard wiring." (`Acceptance Criteria`)
     - Design trace: item 17, "Update active planning docs to describe the remaining milestone as directed speech plus live guard wiring."
+  - Implementation note:
+    - `ConversationDirectedSpeechMilestonePlan.md` and
+      `ConversationDirectedSpeechMilestoneDesign.md` already describe the active
+      milestone as directed speech plus live guard wiring.
+    - `ConversationRuntimeReadiness.md` now identifies the directed-speech plan
+      as the active implementation milestone and classifies engagement, menu,
+      numeric selector, and `talk` sections as future-phase context.
+    - `ConversationSystemDesign.md` now carries the same current-milestone note
+      so its broader future-system discussion does not authorize engagement for
+      this milestone.
   - Validation handoff: `S9`, `contract/parity`
 
 - [ ] `C24` [records] Add the required `CHANGELOG.md` entry for live addressed-`say` conversation behavior when implementation changes the command surface.
