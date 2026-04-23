@@ -161,7 +161,7 @@ the design-derived sequence.
     - Design trace: item 6, "Pass `conditionEvaluator` and `q` into `evaluateConversationRuntime(...)`."
   - Validation handoff: `S6`, `integration/smoke`
 
-- [ ] `C13` [failure] Preserve the existing `evaluation.ok === false` path in `tryDirectedConversation(...)` so condition-evaluation failures log through `CONVERSATION_DIRECTED_SPEECH <code>: <message>` and return `null`.
+- [x] `C13` [failure] Preserve the existing `evaluation.ok === false` path in `tryDirectedConversation(...)` so condition-evaluation failures log through `CONVERSATION_DIRECTED_SPEECH <code>: <message>` and return `null`.
   - Trace:
     - "`directed-speech.js` - Expected to keep maintainer-facing failures on the existing `CONVERSATION_DIRECTED_SPEECH <code>: <message>` path." (`Implementation Surfaces`)
     - "`conversation-runtime.js` - Expected to continue converting condition-evaluator throws into `CONVERSATION_RUNTIME_CONDITION_EVALUATION_FAILED`." (`Implementation Surfaces`)
