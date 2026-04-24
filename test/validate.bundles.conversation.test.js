@@ -99,6 +99,31 @@ test('loadBundleConversationValidator falls back to the legacy validator when th
   ]);
 });
 
+test('loadBundleConversationValidator falls back to the legacy validator when the runtime file throws during require', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'validate-bundles-conversation-'));
+  createBundleModule(tempRoot, [
+    "'use strict';",
+    "throw new Error('broken runtime validator module');",
+    '',
+  ].join('\n'), path.join('lib', 'runtime', 'conversation', 'conversation-definition-service.js'));
+  createBundleModule(tempRoot, [
+    "'use strict';",
+    'module.exports = {',
+    '  _validateConversationDefinitions() {',
+    "    return [{ code: 'LEGACY_VALIDATOR_USED', level: 'warning' }];",
+    '  },',
+    '};',
+    '',
+  ].join('\n'));
+
+  const validator = loadBundleConversationValidator(tempRoot, 'bundle-test');
+
+  assert.equal(typeof validator, 'function');
+  assert.deepEqual(validator(), [
+    { code: 'LEGACY_VALIDATOR_USED', level: 'warning' },
+  ]);
+});
+
 test('mapConversationFinding preserves conversation validator fields', () => {
   const output = mapConversationFinding({
     level: 'error',
@@ -160,7 +185,7 @@ test('validateConversations appends findings from bundle conversation validators
 
 test('validateConversations records validator load failures as warnings', () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'validate-bundles-conversation-'));
-  createBundleModule(tempRoot, [
+  const modulePath = createBundleModule(tempRoot, [
     "'use strict';",
     "throw new Error('broken validator module');",
     '',
@@ -173,6 +198,7 @@ test('validateConversations records validator load failures as warnings', () => 
   assert.equal(findings[0].level, 'warn');
   assert.equal(findings[0].code, 'CONVERSATION_VALIDATOR_LOAD_FAILED');
   assert.equal(findings[0].bundle, 'bundle-test');
+  assert.equal(findings[0].detail.modulePath, modulePath);
 });
 
 test('validateConversations records validator execution failures as warnings', () => {

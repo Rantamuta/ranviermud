@@ -165,6 +165,7 @@ function loadBundleConversationValidator(root, bundleName) {
     path.join(root, 'bundles', bundleName, 'lib', 'runtime', 'conversation', 'conversation-definition-service.js'),
     path.join(root, 'bundles', bundleName, 'lib', 'session', 'conversation-definition-service.js'),
   ];
+  let firstLoadFailure = null;
 
   for (const modulePath of candidatePaths) {
     if (!fs.existsSync(modulePath)) {
@@ -180,13 +181,16 @@ function loadBundleConversationValidator(root, bundleName) {
 
       return mod._validateConversationDefinitions;
     } catch (error) {
-      return {
-        __loadError: error,
-      };
+      if (!firstLoadFailure) {
+        firstLoadFailure = {
+          __loadError: error,
+          __modulePath: modulePath,
+        };
+      }
     }
   }
 
-  return null;
+  return firstLoadFailure || null;
 }
 
 function mapVirtualDoorFinding(finding, bundleName) {
@@ -310,6 +314,7 @@ function validateConversations(root, config, gameState, findings) {
         detail: {
           message: validator.__loadError.message,
           stack: validator.__loadError.stack,
+          ...(validator.__modulePath ? { modulePath: validator.__modulePath } : {}),
         },
       });
       continue;
