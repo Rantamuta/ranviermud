@@ -191,7 +191,7 @@ initial: idling
 states:
   idling:
     onEntry:
-      effects:
+      actions:
         - messageRoom: "Ah, a traveler. What do you need?"
     events:
       greet:
@@ -222,7 +222,7 @@ states:
 ```yaml
 <state_id>:
   onEntry:                              # optional
-    effects:
+    actions:
       - <effect>
   final: true|false               # optional, default false
   events:                         # optional unless final or auto
@@ -246,7 +246,7 @@ The regular form is:
 
 ```yaml
 onEntry:
-  effects:
+  actions:
     - broadcast:
         audience: room
         message: "Here you go."
@@ -325,7 +325,7 @@ If a state defines both `onEntry` and `auto`, `onEntry.actions` run first and `a
 Semantic discipline rule:
 
 - transition effects = effects of the player's choice
-- `onEntry` effects = effects of arriving in that state regardless of path
+- `onEntry` actions = effects of arriving in that state regardless of path
 
 Placement rule:
 
@@ -422,7 +422,7 @@ Authors may deviate when there is a strong reason, but this is the preferred sty
 ```yaml
 goodbye_forever:
   onEntry:
-    effects:
+    actions:
       - messageRoom: "Goodbye for ever."
   final: true
 ```
@@ -436,7 +436,7 @@ For example:
 ```yaml
 see_you_later:
   onEntry:
-    effects:
+    actions:
       - messageRoom: "See you later."
   events:
     greet:
@@ -453,7 +453,7 @@ DSL:
 ```yaml
 greeting:
   onEntry:
-    effects:
+    actions:
       - messageRoom: "..."
 ```
 
@@ -703,7 +703,7 @@ DSL:
 
 ```yaml
 onEntry:
-  effects:
+  actions:
     - broadcast:
         audience: room
         message: "Hello."
@@ -878,7 +878,7 @@ Unreachable states may warn rather than hard fail in early tooling.
 ```yaml
 idling:
   onEntry:
-    effects:
+    actions:
       - messageRoom: "Ah, a traveler."
   events:
     greet:
@@ -891,7 +891,7 @@ idling:
 ```yaml
 greeting:
   onEntry:
-    effects:
+    actions:
       - messageRoom: "What do you need?"
   events:
     buy:
@@ -985,7 +985,7 @@ If no exact event matches in `idling`, the machine takes `default`.
 ```yaml
 goodbye_forever:
   onEntry:
-    effects:
+    actions:
       - messageRoom: "Goodbye forever."
   final: true
 ```
@@ -995,7 +995,7 @@ goodbye_forever:
 ```yaml
 see_you_later:
   onEntry:
-    effects:
+    actions:
       - messageRoom: "See you later."
   events:
     greet:
@@ -1008,7 +1008,7 @@ see_you_later:
 ```yaml
 greeting_router:
   onEntry:
-    effects:
+    actions:
       - messageRoom: "The blacksmith studies {actor} for a moment."
   auto:
     - target: returning_customer
