@@ -2,9 +2,9 @@
 
 ## Status
 
-- Status: active
+- Status: archived
 - Scope: complete the intermediate conversation milestone for directed speech
-- Source design: `docs/plans/ConversationDirectedSpeechMilestoneDesign.md`
+- Source design: `docs/archive/plans/ConversationDirectedSpeechMilestoneDesign.md`
 
 ## Goal
 

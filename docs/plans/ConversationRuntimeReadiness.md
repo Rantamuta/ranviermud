@@ -4,16 +4,15 @@
 
 ## Current Milestone Note
 
-The active implementation milestone is
-`docs/plans/ConversationDirectedSpeechMilestonePlan.md`: live directed speech
-through `say <event> to <npc>` with guard/condition wiring, shared `q`, and
-persisted conversation progress.
+The completed directed-speech milestone is archived at
+`docs/archive/plans/ConversationDirectedSpeechMilestonePlan.md`: live directed
+speech through `say <event> to <npc>` with guard/condition wiring, shared `q`,
+and persisted conversation progress.
 
 This readiness document is retained as a broader survey and later-phase map.
 Sections that describe engagement, menu state, numeric selector interception,
-or `talk` are not requirements for the directed-speech milestone. Treat them as
-future-phase context unless a later approved plan explicitly reopens that
-scope.
+or `talk` were not part of that completed milestone. Treat them as future-phase
+context unless a later approved plan explicitly reopens that scope.
 
 ## Purpose
 

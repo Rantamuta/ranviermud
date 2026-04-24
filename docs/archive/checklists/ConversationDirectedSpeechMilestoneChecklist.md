@@ -2,10 +2,10 @@
 
 ## Status
 
-- Status: active
+- Status: archived
 - Scope: implementation checklist for the directed-speech conversation milestone
-- Source plan: `docs/plans/ConversationDirectedSpeechMilestonePlan.md`
-- Source design: `docs/plans/ConversationDirectedSpeechMilestoneDesign.md`
+- Source plan: `docs/archive/plans/ConversationDirectedSpeechMilestonePlan.md`
+- Source design: `docs/archive/plans/ConversationDirectedSpeechMilestoneDesign.md`
 
 ## Locked Scope
 
@@ -255,15 +255,15 @@ the design-derived sequence.
     - "Active planning docs describe the remaining milestone as directed speech plus live guard wiring." (`Acceptance Criteria`)
     - Design trace: item 17, "Update active planning docs to describe the remaining milestone as directed speech plus live guard wiring."
   - Implementation note:
-    - `ConversationDirectedSpeechMilestonePlan.md` and
-      `ConversationDirectedSpeechMilestoneDesign.md` already describe the active
-      milestone as directed speech plus live guard wiring.
-    - `ConversationRuntimeReadiness.md` now identifies the directed-speech plan
-      as the active implementation milestone and classifies engagement, menu,
+    - The archived milestone plan and design describe the directed-speech scope
+      as live guard-wired addressed speech without engagement, menus, numeric
+      selectors, or `talk`.
+    - `ConversationRuntimeReadiness.md` now records the directed-speech
+      milestone as completed and archived while classifying engagement, menu,
       numeric selector, and `talk` sections as future-phase context.
-    - `ConversationSystemDesign.md` now carries the same current-milestone note
-      so its broader future-system discussion does not authorize engagement for
-      this milestone.
+    - `ConversationSystemDesign.md` now carries the same archive/completion note
+      so its broader future-system discussion does not authorize engagement as
+      part of the completed directed-speech slice.
   - Validation handoff: `S9`, `contract/parity`
 
 - [x] `C24` [records] Add the required `CHANGELOG.md` entry for live addressed-`say` conversation behavior when implementation changes the command surface.

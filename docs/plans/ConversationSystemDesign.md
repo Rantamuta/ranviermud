@@ -4,16 +4,16 @@ Status: draft
 
 ## Current Milestone Note
 
-The active intermediate milestone is documented in
-`docs/plans/ConversationDirectedSpeechMilestonePlan.md`. That milestone is
-limited to live directed speech through `say <event> to <npc>`, guard/condition
-wiring, shared `q`, authored-instruction execution, and persisted conversation
-progress.
+The completed directed-speech milestone is archived in
+`docs/archive/plans/ConversationDirectedSpeechMilestonePlan.md`. That completed
+slice delivered live directed speech through `say <event> to <npc>`,
+guard/condition wiring, shared `q`, authored-instruction execution, and
+persisted conversation progress.
 
 This broader draft still discusses menus, numeric selectors, `talk`, and
 conversation engagement as future-system design material. Those sections are
-not authority for the directed-speech milestone, and engagement should not be
-introduced for that milestone.
+not authority for the archived directed-speech milestone, and engagement should
+not be reintroduced into that completed slice without a new approved plan.
 
 This document defines the architecture and implementation plan for the NPC conversation system used by the MUD. It consolidates earlier design work from `ConversationPlan.md` while incorporating the newer architectural decisions discussed during review.
 

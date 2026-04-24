@@ -1,10 +1,13 @@
 # Conversation Directed Speech Milestone Design
 
-Status: active
+## Status
+
+- Status: archived
+- Scope: historical design checklist for the directed-speech conversation milestone
 
 ## Purpose
 
-This document captures the minimal remaining work for the intermediate
+This document captured the minimal remaining work for the intermediate
 conversation milestone:
 
 ```text
@@ -14,7 +17,7 @@ say <action> to <npc>
 At this milestone, authored conversations should be able to advance through
 directed speech in live gameplay.
 
-This is a planning checklist, not a normative checklist.
+This is a historical planning checklist, not a normative checklist.
 
 ## Scope
 

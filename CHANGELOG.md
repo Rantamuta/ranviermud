@@ -36,8 +36,8 @@ References:
 - `bundles/bundle-rantamuta/lib/runtime/conversation/directed-speech.js`
 - `bundles/bundle-rantamuta/lib/runtime/conversation/conversation-condition-evaluator.js`
 - `bundles/bundle-rantamuta/lib/helpers/query-facade.js`
-- `docs/plans/ConversationDirectedSpeechMilestonePlan.md`
-- `docs/drafts/checklists/ConversationDirectedSpeechMilestoneChecklist.md`
+- `docs/archive/plans/ConversationDirectedSpeechMilestonePlan.md`
+- `docs/archive/checklists/ConversationDirectedSpeechMilestoneChecklist.md`
 Timestamp: 2026.04.23 14:59
 
 ### Verb-local syntax matching for diegetic commands
