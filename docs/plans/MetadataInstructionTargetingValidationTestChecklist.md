@@ -95,7 +95,7 @@ It does not replace the implementation checklist, and it is intentionally not au
 - [x] `T23` `transposeAuthoredInstructions(...)` lowers implicit room/area/world metadata delete ops and preserves `force`.
   - Evidence: [authored.instructions.transposer.test.js](/home/rendall/mud/ranviermud/bundles/bundle-rantamuta/tests/authored.instructions.transposer.test.js:875)
 
-- [ ] `T24` `transposeAuthoredInstructions(...)` lowers `deleteRoomMetadata` with explicit `actor`.
+- [x] `T24` `transposeAuthoredInstructions(...)` lowers `deleteRoomMetadata` with explicit `actor`.
   - Gap: no current transposer test covers explicit `actor` override for room metadata delete
 
 - [ ] `T25` `transposeAuthoredInstructions(...)` lowers `deleteRoomMetadata` with explicit `roomRef`.
