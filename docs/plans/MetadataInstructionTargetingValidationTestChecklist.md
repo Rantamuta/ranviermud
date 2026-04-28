@@ -57,7 +57,7 @@ It does not replace the implementation checklist, and it is intentionally not au
 - [x] `T11` `setWorldMetadata` and `deleteWorldMetadata` reject `actor`.
   - Gap: no current validator test exercises unsupported `actor` targeting for world metadata ops
 
-- [ ] `T12` `setWorldMetadata` and `deleteWorldMetadata` reject `player`.
+- [x] `T12` `setWorldMetadata` and `deleteWorldMetadata` reject `player`.
   - Gap: no current validator test exercises unsupported `player` targeting for world metadata ops
 
 - [ ] `T13` `setWorldMetadata` and `deleteWorldMetadata` reject `roomRef`.
