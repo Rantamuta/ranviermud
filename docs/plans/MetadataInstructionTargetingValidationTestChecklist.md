@@ -77,7 +77,7 @@ It does not replace the implementation checklist, and it is intentionally not au
 - [x] `T17` `transposeAuthoredInstructions(...)` lowers `setRoomMetadata` with implicit current room.
   - Evidence: [authored.instructions.transposer.test.js](/home/rendall/mud/ranviermud/bundles/bundle-rantamuta/tests/authored.instructions.transposer.test.js:765)
 
-- [ ] `T18` `transposeAuthoredInstructions(...)` lowers `setRoomMetadata` with explicit `actor`.
+- [x] `T18` `transposeAuthoredInstructions(...)` lowers `setRoomMetadata` with explicit `actor`.
   - Gap: no current transposer test covers explicit `actor` override for room metadata set
 
 - [x] `T19` `transposeAuthoredInstructions(...)` lowers `setRoomMetadata` with explicit `roomRef`.
