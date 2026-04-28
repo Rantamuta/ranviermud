@@ -101,7 +101,7 @@ It does not replace the implementation checklist, and it is intentionally not au
 - [x] `T25` `transposeAuthoredInstructions(...)` lowers `deleteRoomMetadata` with explicit `roomRef`.
   - Gap: no current transposer test covers explicit `roomRef` override for room metadata delete
 
-- [ ] `T26` `transposeAuthoredInstructions(...)` lowers `deleteAreaMetadata` with explicit `actor`.
+- [x] `T26` `transposeAuthoredInstructions(...)` lowers `deleteAreaMetadata` with explicit `actor`.
   - Gap: no current transposer test covers explicit `actor` override for area metadata delete
 
 - [ ] `T27` unsupported metadata targeting returns `AUTHORED_INSTRUCTIONS_INVALID`.
