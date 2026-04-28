@@ -71,7 +71,7 @@ It does not replace the implementation checklist, and it is intentionally not au
 - [x] `T15` `transposeAuthoredInstructions(...)` lowers `setPlayerMetadata` with implicit current player.
   - Evidence: [authored.instructions.transposer.test.js](/home/rendall/mud/ranviermud/bundles/bundle-rantamuta/tests/authored.instructions.transposer.test.js:737)
 
-- [ ] `T16` `transposeAuthoredInstructions(...)` lowers `setPlayerMetadata` with explicit `player`.
+- [x] `T16` `transposeAuthoredInstructions(...)` lowers `setPlayerMetadata` with explicit `player`.
   - Gap: no current transposer test covers explicit `player` override for `setPlayerMetadata`
 
 - [x] `T17` `transposeAuthoredInstructions(...)` lowers `setRoomMetadata` with implicit current room.
