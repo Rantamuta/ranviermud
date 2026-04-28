@@ -60,7 +60,7 @@ It does not replace the implementation checklist, and it is intentionally not au
 - [x] `T12` `setWorldMetadata` and `deleteWorldMetadata` reject `player`.
   - Gap: no current validator test exercises unsupported `player` targeting for world metadata ops
 
-- [ ] `T13` `setWorldMetadata` and `deleteWorldMetadata` reject `roomRef`.
+- [x] `T13` `setWorldMetadata` and `deleteWorldMetadata` reject `roomRef`.
   - Gap: no current validator test exercises unsupported `roomRef` targeting for world metadata ops
 
 - [ ] `T14` unsupported metadata targeting fails with one deterministic, explicit finding path rather than only via incidental structural failure.
