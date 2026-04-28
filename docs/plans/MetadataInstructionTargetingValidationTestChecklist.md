@@ -104,7 +104,7 @@ It does not replace the implementation checklist, and it is intentionally not au
 - [x] `T26` `transposeAuthoredInstructions(...)` lowers `deleteAreaMetadata` with explicit `actor`.
   - Gap: no current transposer test covers explicit `actor` override for area metadata delete
 
-- [ ] `T27` unsupported metadata targeting returns `AUTHORED_INSTRUCTIONS_INVALID`.
+- [x] `T27` unsupported metadata targeting returns `AUTHORED_INSTRUCTIONS_INVALID`.
   - Gap: the transposer has generic invalid-input coverage at [authored.instructions.transposer.test.js](/home/rendall/mud/ranviermud/bundles/bundle-rantamuta/tests/authored.instructions.transposer.test.js:77), but no metadata-specific unsupported-targeting case
 
 - [ ] `T28` unsupported metadata targeting emits no `operations` or `renderMessages`.
