@@ -86,7 +86,7 @@ It does not replace the implementation checklist, and it is intentionally not au
 - [x] `T20` `transposeAuthoredInstructions(...)` lowers `setAreaMetadata` with implicit current area.
   - Evidence: [authored.instructions.transposer.test.js](/home/rendall/mud/ranviermud/bundles/bundle-rantamuta/tests/authored.instructions.transposer.test.js:822)
 
-- [ ] `T21` `transposeAuthoredInstructions(...)` lowers `setAreaMetadata` with explicit `actor`.
+- [x] `T21` `transposeAuthoredInstructions(...)` lowers `setAreaMetadata` with explicit `actor`.
   - Gap: no current transposer test covers explicit `actor` override for area metadata set
 
 - [x] `T22` `transposeAuthoredInstructions(...)` lowers `setWorldMetadata` with no targeting fields.
