@@ -63,7 +63,7 @@ It does not replace the implementation checklist, and it is intentionally not au
 - [x] `T13` `setWorldMetadata` and `deleteWorldMetadata` reject `roomRef`.
   - Gap: no current validator test exercises unsupported `roomRef` targeting for world metadata ops
 
-- [ ] `T14` unsupported metadata targeting fails with one deterministic, explicit finding path rather than only via incidental structural failure.
+- [x] `T14` unsupported metadata targeting fails with one deterministic, explicit finding path rather than only via incidental structural failure.
   - Gap: current metadata validator coverage only exercises malformed optional fields, not unsupported-but-well-formed targeting fields
 
 ## Transposer Claims
