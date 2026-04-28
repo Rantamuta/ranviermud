@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: active
+- Status: archived
 - Scope: align authored metadata-instruction targeting validation with the live lowering contract in `bundle-rantamuta`
 - Binding: no (working plan)
 

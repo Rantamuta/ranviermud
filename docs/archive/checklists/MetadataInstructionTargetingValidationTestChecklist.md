@@ -2,11 +2,11 @@
 
 ## Status
 
-- Status: active
+- Status: archived
 - Scope: claim-level test coverage checklist for metadata-instruction targeting validation
 - Binding: no (companion validation artifact)
-- Source plan: `docs/plans/MetadataInstructionTargetingValidationPlan.md`
-- Source checklist: `docs/plans/MetadataInstructionTargetingValidationChecklist.md`
+- Source plan: `docs/archive/plans/MetadataInstructionTargetingValidationPlan.md`
+- Source checklist: `docs/archive/checklists/MetadataInstructionTargetingValidationChecklist.md`
 
 ## Purpose
 
@@ -112,5 +112,5 @@ It does not replace the implementation checklist, and it is intentionally not au
 
 ## Non-Executable Remainder
 
-- [ ] `M01` Review metadata-targeting wording in [DesignerManual.md](/home/rendall/mud/ranviermud/docs/manuals/DesignerManual.md:1675), [BundleRantamutaTechnicalManual.md](/home/rendall/mud/ranviermud/docs/manuals/BundleRantamutaTechnicalManual.md:696), and [ConversationDSL.md](/home/rendall/mud/ranviermud/docs/plans/ConversationDSL.md:307).
+- [x] `M01` Review metadata-targeting wording in [DesignerManual.md](/home/rendall/mud/ranviermud/docs/manuals/DesignerManual.md:1675), [BundleRantamutaTechnicalManual.md](/home/rendall/mud/ranviermud/docs/manuals/BundleRantamutaTechnicalManual.md:696), and [ConversationDSL.md](/home/rendall/mud/ranviermud/docs/plans/ConversationDSL.md:307).
   - Note: this is intentionally not an automated test claim; it remains a manual documentation-alignment check

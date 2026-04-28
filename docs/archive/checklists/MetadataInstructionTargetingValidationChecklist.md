@@ -2,9 +2,9 @@
 
 ## Status
 
-- Status: active
+- Status: archived
 - Scope: implementation checklist for narrowing authored metadata-instruction targeting validation to the live lowering contract in `bundle-rantamuta`
-- Source plan: `docs/plans/MetadataInstructionTargetingValidationPlan.md`
+- Source plan: `docs/archive/plans/MetadataInstructionTargetingValidationPlan.md`
 - In Scope:
   - tighten metadata-instruction validation so accepted targeting fields match the current lowerers
   - reject `player` targeting on room, area, and world metadata ops
