@@ -72,7 +72,7 @@
     - "Keep the lowerers in `transposer.js` as the authority for the live targeting contract unless this plan is explicitly revised." (`Constraints`)
   - Validation handoff: `S2`, `integration/transposition`
 
-- [ ] `C08` [docs] Align [DesignerManual.md](/home/rendall/mud/ranviermud/docs/manuals/DesignerManual.md:1675), [BundleRantamutaTechnicalManual.md](/home/rendall/mud/ranviermud/docs/manuals/BundleRantamutaTechnicalManual.md:696), and [ConversationDSL.md](/home/rendall/mud/ranviermud/docs/plans/ConversationDSL.md:307) so they describe only the supported metadata-targeting matrix and do not imply support for ignored fields (depends on `C02` through `C06`).
+- [x] `C08` [docs] Align [DesignerManual.md](/home/rendall/mud/ranviermud/docs/manuals/DesignerManual.md:1675), [BundleRantamutaTechnicalManual.md](/home/rendall/mud/ranviermud/docs/manuals/BundleRantamutaTechnicalManual.md:696), and [ConversationDSL.md](/home/rendall/mud/ranviermud/docs/plans/ConversationDSL.md:307) so they describe only the supported metadata-targeting matrix and do not imply support for ignored fields (depends on `C02` through `C06`).
   - Trace:
     - "Update non-normative docs where needed so manuals and planning docs do not imply broader metadata targeting support than the runtime actually provides." (`In Scope`)
     - "Docs that describe metadata targeting no longer imply support for fields the runtime ignores." (`Acceptance Criteria`)

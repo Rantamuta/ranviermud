@@ -684,9 +684,11 @@ Mutator-owned metadata delete ops:
 Behavior contract:
 
 1. All deletes execute only in commit/mutator phase; render and predicate phases remain read-only.
-2. Room and area deletes resolve targets from actor context only.
-   - Room: `actor.room`
-   - Area: `actor.room.area`
+2. Room, area, and world deletes keep a narrow targeting contract.
+   - Canonical mutator payloads operate on resolved runtime targets, not symbolic authored selectors.
+   - `deleteRoomMetadata` may be authored with implicit actor context or explicit `roomRef` before transposition; `player` is not supported.
+   - `deleteAreaMetadata` uses actor-context targeting only; `player` and `roomRef` are not supported.
+   - `deleteWorldMetadata` does not accept targeting fields.
 3. Missing path delete is idempotent no-op with no warning and no thrown error.
 4. Default delete is leaf-only; non-leaf/object/array delete throws unless `force: true`.
 5. Deletes do not auto-prune empty parent/root objects.
@@ -710,9 +712,11 @@ Behavior contract:
    - Room: `room.metadata.values`
    - Area: `area.metadata.values`
    - World: `state.metadata.values`
-5. Room and area writes resolve targets from actor context only.
-   - Room: `actor.room`
-   - Area: `actor.room.area`
+5. Room, area, and world writes keep a narrow targeting contract.
+   - Canonical mutator payloads operate on resolved runtime targets, not symbolic authored selectors.
+   - `setRoomMetadata` may be authored with implicit actor context or explicit `roomRef` before transposition; `player` is not supported.
+   - `setAreaMetadata` uses actor-context targeting only; `player` and `roomRef` are not supported.
+   - `setWorldMetadata` does not accept targeting fields.
 6. For world writes, existing non-object root values are coerced to object roots with warning-level logs:
    - `WORLDMETA_COERCE_METADATA_ROOT`
    - `WORLDMETA_COERCE_VALUES_ROOT`

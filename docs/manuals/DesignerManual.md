@@ -1686,7 +1686,9 @@ Designer-facing scripted mutation:
 What this does:
 
 - Writes JSON-safe state to `room.metadata.values` using a dot-separated key path.
-- Resolves the target room from actor context (`actor.room`), not authored `roomRef`.
+- Uses the resolved room target carried into the runtime mutation.
+- In authored conversation/actions, current-room targeting is implicit and `roomRef` is the only explicit remote-room override before transposition.
+- `player` is not a supported targeting override for `setRoomMetadata`.
 - Rejects `undefined`; allows `null` as a normal stored value.
 - Lets predicates read that state using `q.getRoomMetadata('myarea:observatory', 'buttonPushed') === true`.
 - Keeps state mutation in command/mutator flow and keeps predicates side-effect free.
@@ -1706,6 +1708,7 @@ What this does:
 
 - Writes to `area.metadata.values` using a dot-separated key path.
 - Uses current-area-only targeting from actor context (`actor.room.area`).
+- In authored conversation/actions, `setAreaMetadata` supports actor-context targeting only; it does not accept `player` or `roomRef` overrides.
 - Does not accept authored `areaRef` targeting in this operation.
 - Rejects subtree-conflict writes (for example existing `storyArc.chapterOne` object and attempted set of `storyArc`).
 
@@ -1727,6 +1730,7 @@ Caution:
 What this does:
 
 - Writes to world `metadata.values` using a dot-separated key path.
+- Does not accept `actor`, `player`, or `roomRef` targeting; this operation always writes to world metadata.
 - Creates missing world roots (`state.metadata`, `state.metadata.values`) on write.
 - If existing world roots are non-object values, coerces them to objects with warning-level logs.
 - Rejects `undefined`; allows `null` as a storable value.
@@ -1747,7 +1751,9 @@ What this does:
 What this does:
 
 - Deletes a key-path from `room.metadata.values` on the actor's current room.
-- Uses current-room targeting from actor context (`actor.room`).
+- Uses the resolved room target carried into the runtime mutation.
+- In authored conversation/actions, current-room targeting is implicit and `roomRef` is the only explicit remote-room override before transposition.
+- `player` is not a supported targeting override for `deleteRoomMetadata`.
 - Missing key-path is idempotent no-op (no warning, no error).
 - By default only leaf values can be deleted.
 - Deleting an object/array path requires `force: true`.
@@ -1766,6 +1772,7 @@ What this does:
 What this does:
 
 - Deletes a key-path from current-area `area.metadata.values` resolved from `actor.room.area`.
+- In authored conversation/actions, `deleteAreaMetadata` supports actor-context targeting only; it does not accept `player` or `roomRef` overrides.
 - Missing key-path is idempotent no-op (no warning, no error).
 - By default only leaf values can be deleted.
 - Deleting an object/array path requires `force: true`.
@@ -1783,6 +1790,7 @@ What this does:
 What this does:
 
 - Deletes a key-path from world metadata state.
+- Does not accept `actor`, `player`, or `roomRef` targeting; this operation always targets world metadata.
 - If world metadata root/path is missing, the operation is idempotent no-op.
 - Missing-root no-op does not create world metadata root.
 - By default only leaf values can be deleted.

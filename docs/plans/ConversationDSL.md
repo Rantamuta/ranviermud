@@ -637,6 +637,9 @@ So:
 - `setPlayerMetadata` may omit `player` when the current player is implicit
 - `setRoomMetadata` may omit `roomRef` when the current room is intended
 - explicit overrides such as `roomRef` remain available when a remote target is needed
+- `setAreaMetadata` may omit `actor` when current actor context is intended, but it does not accept `player` or `roomRef`
+- `setWorldMetadata` does not accept `actor`, `player`, or `roomRef`
+- the same targeting matrix applies to `deleteRoomMetadata`, `deleteAreaMetadata`, and `deleteWorldMetadata`
 
 Examples:
 
