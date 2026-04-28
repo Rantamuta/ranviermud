@@ -48,7 +48,7 @@ It does not replace the implementation checklist, and it is intentionally not au
 - [x] `T08` `setAreaMetadata` and `deleteAreaMetadata` reject `player`.
   - Gap: no current validator test exercises unsupported `player` targeting for area metadata ops
 
-- [ ] `T09` `setAreaMetadata` and `deleteAreaMetadata` reject `roomRef`.
+- [x] `T09` `setAreaMetadata` and `deleteAreaMetadata` reject `roomRef`.
   - Gap: no current validator test exercises unsupported `roomRef` targeting for area metadata ops
 
 - [x] `T10` `setWorldMetadata` and `deleteWorldMetadata` accept their implicit no-targeting forms.
