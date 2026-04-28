@@ -54,7 +54,7 @@ It does not replace the implementation checklist, and it is intentionally not au
 - [x] `T10` `setWorldMetadata` and `deleteWorldMetadata` accept their implicit no-targeting forms.
   - Evidence: broad valid-payload coverage in [authored.instructions.validation.test.js](/home/rendall/mud/ranviermud/bundles/bundle-rantamuta/tests/authored.instructions.validation.test.js:53)
 
-- [ ] `T11` `setWorldMetadata` and `deleteWorldMetadata` reject `actor`.
+- [x] `T11` `setWorldMetadata` and `deleteWorldMetadata` reject `actor`.
   - Gap: no current validator test exercises unsupported `actor` targeting for world metadata ops
 
 - [ ] `T12` `setWorldMetadata` and `deleteWorldMetadata` reject `player`.
