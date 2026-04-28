@@ -107,7 +107,7 @@ It does not replace the implementation checklist, and it is intentionally not au
 - [x] `T27` unsupported metadata targeting returns `AUTHORED_INSTRUCTIONS_INVALID`.
   - Gap: the transposer has generic invalid-input coverage at [authored.instructions.transposer.test.js](/home/rendall/mud/ranviermud/bundles/bundle-rantamuta/tests/authored.instructions.transposer.test.js:77), but no metadata-specific unsupported-targeting case
 
-- [ ] `T28` unsupported metadata targeting emits no `operations` or `renderMessages`.
+- [x] `T28` unsupported metadata targeting emits no `operations` or `renderMessages`.
   - Gap: the transposer has generic no-partial-output coverage at [authored.instructions.transposer.test.js](/home/rendall/mud/ranviermud/bundles/bundle-rantamuta/tests/authored.instructions.transposer.test.js:1336), but no metadata-specific unsupported-targeting case
 
 ## Non-Executable Remainder
