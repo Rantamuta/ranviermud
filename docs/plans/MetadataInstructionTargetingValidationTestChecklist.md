@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: planning
+- Status: active
 - Scope: claim-level test coverage checklist for metadata-instruction targeting validation
 - Binding: no (companion validation artifact)
 - Source plan: `docs/plans/MetadataInstructionTargetingValidationPlan.md`

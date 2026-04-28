@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: planning
+- Status: active
 - Scope: implementation checklist for narrowing authored metadata-instruction targeting validation to the live lowering contract in `bundle-rantamuta`
 - Source plan: `docs/plans/MetadataInstructionTargetingValidationPlan.md`
 - In Scope:
