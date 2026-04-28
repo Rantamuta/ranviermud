@@ -45,7 +45,7 @@ It does not replace the implementation checklist, and it is intentionally not au
 - [x] `T07` `setAreaMetadata` and `deleteAreaMetadata` accept explicit `actor`.
   - Evidence: explicit metadata-targeting coverage in [authored.instructions.validation.test.js](/home/rendall/mud/ranviermud/bundles/bundle-rantamuta/tests/authored.instructions.validation.test.js:225)
 
-- [ ] `T08` `setAreaMetadata` and `deleteAreaMetadata` reject `player`.
+- [x] `T08` `setAreaMetadata` and `deleteAreaMetadata` reject `player`.
   - Gap: no current validator test exercises unsupported `player` targeting for area metadata ops
 
 - [ ] `T09` `setAreaMetadata` and `deleteAreaMetadata` reject `roomRef`.
