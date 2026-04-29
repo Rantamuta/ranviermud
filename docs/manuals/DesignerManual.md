@@ -1098,9 +1098,8 @@ Full featured default-pattern example:
   type: "OBJECT"
   script: facadeDoor
   metadata:
-    permissions:
-      verbs:
-        take: "The gate is bolted into the stone ring."
+    verbs:
+      take: "The gate is bolted into the stone ring."
     facadeDoor:
       roomId: myarea:observatory_inner
       direction: north
@@ -1128,7 +1127,7 @@ Script location for that `script: facadeDoor` entry:
 
 This example overrides what it can from content:
 
-- denial text via `metadata.permissions` and `canDirect`
+- denial text via `metadata.verbs` and `canDirect`
 - all-audience success flavor via one semantic template per verb (`open`, `close`, `lock`, `unlock`)
 - opposite-room flavor via `broadcast` in `planDirect`
 - automatic suppression of generic door success lines in the reusable `facadeDoor` script
@@ -1189,9 +1188,9 @@ Container example:
   maxItems: 4
 ```
 
-## permissions
+## Item Verb Veto
 
-`metadata.permissions` is how you tell the game "this interaction is blocked here."
+For items, `metadata.verbs.<verb>` is how you tell the game "this interaction is blocked here."
 
 For designers, this is mainly about feel:
 
@@ -1203,32 +1202,58 @@ Example messages:
 - "You cannot go that way. The portcullis is closed."
 - "You try to take the book, but it is chained to the podium."
 
-You can put `metadata.permissions` on:
+You can put `metadata.verbs` on items.
 
-- items
-- rooms
-- exits (`rooms.yml` -> `exits[].metadata.permissions`)
+If `metadata.verbs.<verb>` is:
 
-If you return `false`/`deny`, the action is blocked and the player gets the default denial text.  
-If you return a string, the action is blocked and that string is shown to the player.
+- `true`: the item allows that verb
+- `false`: the item blocks that verb and the player gets the command's default denial text
+- a string: the item blocks that verb and that string is shown to the acting player
 
 Simple block with custom message:
 
 ```yml
 metadata:
-  permissions:
-    verbs:
-      take: "You try to take the book, but it is chained to the podium."
+  verbs:
+    take: "You try to take the book, but it is chained to the podium."
 ```
 
 Simple block with default denial text:
 
 ```yml
 metadata:
-  permissions:
-    verbs:
-      take: false
+  verbs:
+    take: false
 ```
+
+Simple explicit allow:
+
+```yml
+metadata:
+  verbs:
+    push: true
+```
+
+Role-specific item example (`put ... in ...` blocked when this item is the indirect target):
+
+```yml
+metadata:
+  verbs:
+    put:
+      indirect: "That container rejects anything you try to place in it."
+```
+
+## permissions
+
+`metadata.permissions` remains the generic policy surface for non-item entity contexts such as:
+
+- rooms
+- exits (`rooms.yml` -> `exits[].metadata.permissions`)
+
+Use this when you are authoring room or exit policy, not ordinary item verb veto.
+
+If you return `false`/`deny`, the action is blocked and the player gets the default denial text.  
+If you return a string, the action is blocked and that string is shown to the player.
 
 Default rule for everything on this object/room:
 
@@ -1643,7 +1668,7 @@ Mutation instruction list (current):
 7. `noop`
 8. `transferItem`
 9. `movePlayer`
-10. `changeDoor`
+10. `operateDoor`
 
 Designer-facing scripted mutation:
 
@@ -1661,7 +1686,9 @@ Designer-facing scripted mutation:
 What this does:
 
 - Writes JSON-safe state to `room.metadata.values` using a dot-separated key path.
-- Resolves the target room from actor context (`actor.room`), not authored `roomRef`.
+- Uses the resolved room target carried into the runtime mutation.
+- In authored conversation/actions, current-room targeting is implicit and `roomRef` is the only explicit remote-room override before transposition.
+- `player` is not a supported targeting override for `setRoomMetadata`.
 - Rejects `undefined`; allows `null` as a normal stored value.
 - Lets predicates read that state using `q.getRoomMetadata('myarea:observatory', 'buttonPushed') === true`.
 - Keeps state mutation in command/mutator flow and keeps predicates side-effect free.
@@ -1681,6 +1708,7 @@ What this does:
 
 - Writes to `area.metadata.values` using a dot-separated key path.
 - Uses current-area-only targeting from actor context (`actor.room.area`).
+- In authored conversation/actions, `setAreaMetadata` supports actor-context targeting only; it does not accept `player` or `roomRef` overrides.
 - Does not accept authored `areaRef` targeting in this operation.
 - Rejects subtree-conflict writes (for example existing `storyArc.chapterOne` object and attempted set of `storyArc`).
 
@@ -1702,6 +1730,7 @@ Caution:
 What this does:
 
 - Writes to world `metadata.values` using a dot-separated key path.
+- Does not accept `actor`, `player`, or `roomRef` targeting; this operation always writes to world metadata.
 - Creates missing world roots (`state.metadata`, `state.metadata.values`) on write.
 - If existing world roots are non-object values, coerces them to objects with warning-level logs.
 - Rejects `undefined`; allows `null` as a storable value.
@@ -1722,7 +1751,9 @@ What this does:
 What this does:
 
 - Deletes a key-path from `room.metadata.values` on the actor's current room.
-- Uses current-room targeting from actor context (`actor.room`).
+- Uses the resolved room target carried into the runtime mutation.
+- In authored conversation/actions, current-room targeting is implicit and `roomRef` is the only explicit remote-room override before transposition.
+- `player` is not a supported targeting override for `deleteRoomMetadata`.
 - Missing key-path is idempotent no-op (no warning, no error).
 - By default only leaf values can be deleted.
 - Deleting an object/array path requires `force: true`.
@@ -1741,6 +1772,7 @@ What this does:
 What this does:
 
 - Deletes a key-path from current-area `area.metadata.values` resolved from `actor.room.area`.
+- In authored conversation/actions, `deleteAreaMetadata` supports actor-context targeting only; it does not accept `player` or `roomRef` overrides.
 - Missing key-path is idempotent no-op (no warning, no error).
 - By default only leaf values can be deleted.
 - Deleting an object/array path requires `force: true`.
@@ -1758,6 +1790,7 @@ What this does:
 What this does:
 
 - Deletes a key-path from world metadata state.
+- Does not accept `actor`, `player`, or `roomRef` targeting; this operation always targets world metadata.
 - If world metadata root/path is missing, the operation is idempotent no-op.
 - Missing-root no-op does not create world metadata root.
 - By default only leaf values can be deleted.
@@ -1808,11 +1841,11 @@ What this does:
 - Moves a player actor between rooms through the command/mutator commit flow.
 - Commonly used by directional movement commands after gate checks pass.
 
-### `changeDoor`
+### `operateDoor`
 
 ```js
 {
-  type: 'changeDoor',
+  type: 'operateDoor',
   mutation: 'open',
   direction: 'north'
 }

@@ -2,6 +2,18 @@
 
 - Status: active
 
+## Current Milestone Note
+
+The completed directed-speech milestone is archived at
+`docs/archive/plans/ConversationDirectedSpeechMilestonePlan.md`: live directed
+speech through `say <event> to <npc>` with guard/condition wiring, shared `q`,
+and persisted conversation progress.
+
+This readiness document is retained as a broader survey and later-phase map.
+Sections that describe engagement, menu state, numeric selector interception,
+or `talk` were not part of that completed milestone. Treat them as future-phase
+context unless a later approved plan explicitly reopens that scope.
+
 ## Purpose
 
 This document records the current codebase readiness for implementing a bundle-layer conversation runtime.
@@ -304,7 +316,7 @@ No such lowering implementation currently exists.
 
 Impact:
 
-- authored `messageRoom`, `onEntry.effects`, `transitions`, `auto`, and `events.default` are not executable
+- authored `messageRoom`, `onEntry.actions`, `transitions`, `auto`, and `events.default` are not executable
 - conversation DSL remains descriptive rather than runnable
 
 ### Query surface gaps
@@ -643,7 +655,7 @@ Validation:
 Scope:
 
 - lowering authored conditions to the shared query facade
-- lowering authored effects to existing mutation/render primitives
+- lowering authored instructions to existing mutation/render primitives
 - expanding query facade only where real authored need requires it
 - supporting the narrow authored subset needed for the first runnable directed-speech conversation slices
 
@@ -886,7 +898,7 @@ Likely work:
 
 - add actor metadata reads
 - add any additional deterministic reads justified by real authored content
-- support additional guarded transitions and authored effect forms as real content requires
+- support additional guarded transitions and authored instruction forms as real content requires
 
 ### Slice 4: Richer lifecycle and multiplayer behavior
 

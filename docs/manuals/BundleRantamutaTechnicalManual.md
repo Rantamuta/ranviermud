@@ -294,11 +294,11 @@ Current instruction types:
 1. `noop`
 2. `transferItem`
 3. `movePlayer`
-4. `changeDoor`
+4. `operateDoor`
 
-`changeDoor` payload:
+`operateDoor` payload:
 
-1. `type: 'changeDoor'`
+1. `type: 'operateDoor'`
 2. `mutation: 'open' | 'close' | 'unlock' | 'unlockAndOpen' | 'closeAndLock'`
 3. target by `direction` and/or `roomRef` (plus `actor` / `fromRoomRef` as needed)
 
@@ -307,8 +307,8 @@ Routing behavior:
 1. mutator routes canonical door mutations through `getVirtualDoorService(state).mutateDoor(...)`,
 2. unresolved targets warn and noop (idempotent no-op semantics preserved),
 3. legacy instruction aliases are still accepted:
-   - `openDoor` -> `changeDoor/open`
-   - `closeAndLockDoor` -> `changeDoor/closeAndLock`
+   - `openDoor` -> `operateDoor/open`
+   - `closeAndLockDoor` -> `operateDoor/closeAndLock`
 
 Atomicity model:
 
@@ -417,8 +417,8 @@ Examples:
    - command layer returns an empty base success envelope and delegates movement/door behavior to resolved exit hooks
    - fallback exit hook behavior:
      - no door or already-open door: enqueue `movePlayer`
-     - closed+unlocked: enqueue `changeDoor/open` then `movePlayer`
-     - locked+matching key: enqueue `changeDoor/unlockAndOpen` then `movePlayer`
+     - closed+unlocked: enqueue `operateDoor/open` then `movePlayer`
+     - locked+matching key: enqueue `operateDoor/unlockAndOpen` then `movePlayer`
      - locked+no matching key: deny with `GO_EXIT_LOCKED`
    - fallback composed door+movement messaging sets `suppressRoomBroadcast` on movement to avoid duplicate generic leave/arrive lines
    - authored exit `planDirect` can layer additional operations/render and may request `renderPolicy.replaceSuccess` to replace generic fallback success flavor
@@ -427,10 +427,10 @@ Examples:
    - direct scope: `room.exits`, `room.items`
    - indirect scope (when present): `player.inventory`
    - command-to-mutation mapping:
-     - `open` -> `changeDoor/open`
-     - `close` -> `changeDoor/close`
-     - `lock` -> `changeDoor/closeAndLock`
-     - `unlock` -> `changeDoor/unlock`
+     - `open` -> `operateDoor/open`
+     - `close` -> `operateDoor/close`
+     - `lock` -> `operateDoor/closeAndLock`
+     - `unlock` -> `operateDoor/unlock`
 4. `put`:
    - direct and directIndirect
    - direct scope: `player.inventory`
@@ -684,9 +684,11 @@ Mutator-owned metadata delete ops:
 Behavior contract:
 
 1. All deletes execute only in commit/mutator phase; render and predicate phases remain read-only.
-2. Room and area deletes resolve targets from actor context only.
-   - Room: `actor.room`
-   - Area: `actor.room.area`
+2. Room, area, and world deletes keep a narrow targeting contract.
+   - Canonical mutator payloads operate on resolved runtime targets, not symbolic authored selectors.
+   - `deleteRoomMetadata` may be authored with implicit actor context or explicit `roomRef` before transposition; `player` is not supported.
+   - `deleteAreaMetadata` uses actor-context targeting only; `player` and `roomRef` are not supported.
+   - `deleteWorldMetadata` does not accept targeting fields.
 3. Missing path delete is idempotent no-op with no warning and no thrown error.
 4. Default delete is leaf-only; non-leaf/object/array delete throws unless `force: true`.
 5. Deletes do not auto-prune empty parent/root objects.
@@ -710,9 +712,11 @@ Behavior contract:
    - Room: `room.metadata.values`
    - Area: `area.metadata.values`
    - World: `state.metadata.values`
-5. Room and area writes resolve targets from actor context only.
-   - Room: `actor.room`
-   - Area: `actor.room.area`
+5. Room, area, and world writes keep a narrow targeting contract.
+   - Canonical mutator payloads operate on resolved runtime targets, not symbolic authored selectors.
+   - `setRoomMetadata` may be authored with implicit actor context or explicit `roomRef` before transposition; `player` is not supported.
+   - `setAreaMetadata` uses actor-context targeting only; `player` and `roomRef` are not supported.
+   - `setWorldMetadata` does not accept targeting fields.
 6. For world writes, existing non-object root values are coerced to object roots with warning-level logs:
    - `WORLDMETA_COERCE_METADATA_ROOT`
    - `WORLDMETA_COERCE_VALUES_ROOT`

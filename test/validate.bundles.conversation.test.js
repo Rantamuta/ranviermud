@@ -12,14 +12,12 @@ const {
   validateConversations,
 } = require('../util/validate-bundles');
 
-function createBundleModule(tempRoot, source) {
+function createBundleModule(tempRoot, source, relativePath = path.join('lib', 'session', 'conversation-definition-service.js')) {
   const modulePath = path.join(
     tempRoot,
     'bundles',
     'bundle-test',
-    'lib',
-    'session',
-    'conversation-definition-service.js'
+    relativePath
   );
   fs.mkdirSync(path.dirname(modulePath), { recursive: true });
   fs.writeFileSync(modulePath, source, 'utf8');
@@ -41,6 +39,89 @@ test('loadBundleConversationValidator returns a bundle validator when exported',
   const validator = loadBundleConversationValidator(tempRoot, 'bundle-test');
 
   assert.equal(typeof validator, 'function');
+});
+
+test('loadBundleConversationValidator prefers the runtime conversation-definition-service path when both validators are valid', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'validate-bundles-conversation-'));
+  createBundleModule(tempRoot, [
+    "'use strict';",
+    'module.exports = {',
+    '  _validateConversationDefinitions() {',
+    "    return [{ code: 'RUNTIME_VALIDATOR_USED', level: 'warning' }];",
+    '  },',
+    '};',
+    '',
+  ].join('\n'), path.join('lib', 'runtime', 'conversation', 'conversation-definition-service.js'));
+  createBundleModule(tempRoot, [
+    "'use strict';",
+    'module.exports = {',
+    '  _validateConversationDefinitions() {',
+    "    return [{ code: 'LEGACY_VALIDATOR_USED', level: 'warning' }];",
+    '  },',
+    '};',
+    '',
+  ].join('\n'));
+
+  const validator = loadBundleConversationValidator(tempRoot, 'bundle-test');
+
+  assert.equal(typeof validator, 'function');
+  assert.deepEqual(validator(), [
+    { code: 'RUNTIME_VALIDATOR_USED', level: 'warning' },
+  ]);
+});
+
+test('loadBundleConversationValidator falls back to the legacy validator when the runtime file lacks the expected export', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'validate-bundles-conversation-'));
+  createBundleModule(tempRoot, [
+    "'use strict';",
+    'module.exports = {',
+    '  validateConversationDefinitions() {',
+    "    return [{ code: 'WRONG_RUNTIME_EXPORT', level: 'warning' }];",
+    '  },',
+    '};',
+    '',
+  ].join('\n'), path.join('lib', 'runtime', 'conversation', 'conversation-definition-service.js'));
+  createBundleModule(tempRoot, [
+    "'use strict';",
+    'module.exports = {',
+    '  _validateConversationDefinitions() {',
+    "    return [{ code: 'LEGACY_VALIDATOR_USED', level: 'warning' }];",
+    '  },',
+    '};',
+    '',
+  ].join('\n'));
+
+  const validator = loadBundleConversationValidator(tempRoot, 'bundle-test');
+
+  assert.equal(typeof validator, 'function');
+  assert.deepEqual(validator(), [
+    { code: 'LEGACY_VALIDATOR_USED', level: 'warning' },
+  ]);
+});
+
+test('loadBundleConversationValidator falls back to the legacy validator when the runtime file throws during require', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'validate-bundles-conversation-'));
+  createBundleModule(tempRoot, [
+    "'use strict';",
+    "throw new Error('broken runtime validator module');",
+    '',
+  ].join('\n'), path.join('lib', 'runtime', 'conversation', 'conversation-definition-service.js'));
+  createBundleModule(tempRoot, [
+    "'use strict';",
+    'module.exports = {',
+    '  _validateConversationDefinitions() {',
+    "    return [{ code: 'LEGACY_VALIDATOR_USED', level: 'warning' }];",
+    '  },',
+    '};',
+    '',
+  ].join('\n'));
+
+  const validator = loadBundleConversationValidator(tempRoot, 'bundle-test');
+
+  assert.equal(typeof validator, 'function');
+  assert.deepEqual(validator(), [
+    { code: 'LEGACY_VALIDATOR_USED', level: 'warning' },
+  ]);
 });
 
 test('mapConversationFinding preserves conversation validator fields', () => {
@@ -104,7 +185,7 @@ test('validateConversations appends findings from bundle conversation validators
 
 test('validateConversations records validator load failures as warnings', () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'validate-bundles-conversation-'));
-  createBundleModule(tempRoot, [
+  const modulePath = createBundleModule(tempRoot, [
     "'use strict';",
     "throw new Error('broken validator module');",
     '',
@@ -117,6 +198,7 @@ test('validateConversations records validator load failures as warnings', () => 
   assert.equal(findings[0].level, 'warn');
   assert.equal(findings[0].code, 'CONVERSATION_VALIDATOR_LOAD_FAILED');
   assert.equal(findings[0].bundle, 'bundle-test');
+  assert.equal(findings[0].detail.modulePath, modulePath);
 });
 
 test('validateConversations records validator execution failures as warnings', () => {

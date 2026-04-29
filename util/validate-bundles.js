@@ -161,24 +161,36 @@ function loadBundleVirtualDoorValidator(root, bundleName) {
 }
 
 function loadBundleConversationValidator(root, bundleName) {
-  const modulePath = path.join(root, 'bundles', bundleName, 'lib', 'session', 'conversation-definition-service.js');
-  if (!fs.existsSync(modulePath)) {
-    return null;
-  }
+  const candidatePaths = [
+    path.join(root, 'bundles', bundleName, 'lib', 'runtime', 'conversation', 'conversation-definition-service.js'),
+    path.join(root, 'bundles', bundleName, 'lib', 'session', 'conversation-definition-service.js'),
+  ];
+  let firstLoadFailure = null;
 
-  try {
-    // eslint-disable-next-line global-require, import/no-dynamic-require
-    const mod = require(modulePath);
-    if (!mod || typeof mod._validateConversationDefinitions !== 'function') {
-      return null;
+  for (const modulePath of candidatePaths) {
+    if (!fs.existsSync(modulePath)) {
+      continue;
     }
 
-    return mod._validateConversationDefinitions;
-  } catch (error) {
-    return {
-      __loadError: error,
-    };
+    try {
+      // eslint-disable-next-line global-require, import/no-dynamic-require
+      const mod = require(modulePath);
+      if (!mod || typeof mod._validateConversationDefinitions !== 'function') {
+        continue;
+      }
+
+      return mod._validateConversationDefinitions;
+    } catch (error) {
+      if (!firstLoadFailure) {
+        firstLoadFailure = {
+          __loadError: error,
+          __modulePath: modulePath,
+        };
+      }
+    }
   }
+
+  return firstLoadFailure || null;
 }
 
 function mapVirtualDoorFinding(finding, bundleName) {
@@ -302,6 +314,7 @@ function validateConversations(root, config, gameState, findings) {
         detail: {
           message: validator.__loadError.message,
           stack: validator.__loadError.stack,
+          ...(validator.__modulePath ? { modulePath: validator.__modulePath } : {}),
         },
       });
       continue;

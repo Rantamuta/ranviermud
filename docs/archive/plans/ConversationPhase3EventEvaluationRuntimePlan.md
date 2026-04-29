@@ -126,7 +126,7 @@ Here, "lazy runtime lookup" means the runtime loads or resolves a conversation d
 - Installing, replacing, or clearing engagement state.
 - Lifecycle cleanup such as disconnect, room-change, despawn, or stale-menu invalidation.
 - Multiplayer visibility policy.
-- Executing authored effects.
+- Executing authored instructions.
 
 In this phase, effects may be returned as data, but they must not be applied.
 

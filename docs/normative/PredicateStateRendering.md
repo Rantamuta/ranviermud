@@ -56,6 +56,14 @@ Rationale:
 
 - gameplay authority belongs to command phases
 - descriptive variation belongs to rendering
+- predicate failure semantics are intentionally render-safe: unknown predicates,
+  thrown predicates, and non-boolean returns evaluate as `false` instead of
+  failing the caller
+  - that fail-to-false posture is acceptable for descriptive variation, where a
+  missing or broken predicate may merely select less-specific prose
+  - that posture is not acceptable for gameplay progress, policy, or mutation
+  decisions, where silently evaluating to `false` could hide content errors,
+  block progression, or change world authority without an explicit failure
 
 ## Registry Contract
 

@@ -4,6 +4,42 @@ All entries follow `docs/CHANGELOG_POLICY.md`.
 
 ## Unreleased
 
+### Directed speech conversation milestone
+
+Summary:
+
+- Added live conversation routing for addressed `say <action> to <npc>` when
+  the addressed NPC has a valid authored conversation route.
+- Wired conversation guard evaluation through the shared read-only `q` facade
+  without routing conversation progress through render predicate evaluation.
+- Added persisted per-player/per-NPC conversation progress writes after
+  successful authored effects, using the settled conversation state.
+- Removed the live conversation engagement helper path from this milestone and
+  documented engagement, menus, numeric selectors, and `talk` as out of scope.
+Why:
+- Authored conversations need an intermediate live gameplay path before menu or
+  `talk` convenience surfaces are introduced.
+Impact:
+- Addressed `say` can now advance valid authored conversations instead of
+  always rendering ordinary speech.
+- If no usable conversation route matches, addressed `say` falls back to
+  ordinary speech behavior.
+- Malformed or unsupported conversation guards are logged as maintainer-facing
+  directed-speech failures and do not produce conversation-state writes.
+Migration/Action:
+- Optional: content authors may bind NPCs to authored conversation files and
+  use guarded event ids that players can invoke with `say <action> to <npc>`.
+- Do not rely on engagement records, menu rendering, numeric selectors, or
+  `talk` for this milestone.
+References:
+- `bundles/bundle-rantamuta/commands/say.js`
+- `bundles/bundle-rantamuta/lib/runtime/conversation/directed-speech.js`
+- `bundles/bundle-rantamuta/lib/runtime/conversation/conversation-condition-evaluator.js`
+- `bundles/bundle-rantamuta/lib/helpers/query-facade.js`
+- `docs/archive/plans/ConversationDirectedSpeechMilestonePlan.md`
+- `docs/archive/checklists/ConversationDirectedSpeechMilestoneChecklist.md`
+Timestamp: 2026.04.23 14:59
+
 ### Verb-local syntax matching for diegetic commands
 
 Summary:

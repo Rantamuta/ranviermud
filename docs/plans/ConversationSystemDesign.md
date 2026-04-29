@@ -2,6 +2,19 @@
 
 Status: draft
 
+## Current Milestone Note
+
+The completed directed-speech milestone is archived in
+`docs/archive/plans/ConversationDirectedSpeechMilestonePlan.md`. That completed
+slice delivered live directed speech through `say <event> to <npc>`,
+guard/condition wiring, shared `q`, authored-instruction execution, and
+persisted conversation progress.
+
+This broader draft still discusses menus, numeric selectors, `talk`, and
+conversation engagement as future-system design material. Those sections are
+not authority for the archived directed-speech milestone, and engagement should
+not be reintroduced into that completed slice without a new approved plan.
+
 This document defines the architecture and implementation plan for the NPC conversation system used by the MUD. It consolidates earlier design work from `ConversationPlan.md` while incorporating the newer architectural decisions discussed during review.
 
 The goal is to provide a **single authoritative design document** containing both:
@@ -504,6 +517,17 @@ Rules:
 - new condition reads should be added to the shared query facade, not as conversation-local helpers
 - effects apply only during Commit
 
+Rationale:
+
+- render predicates intentionally fail to `false` for unknown predicates, thrown
+  predicates, and non-boolean returns
+- that behavior is safe for descriptive rendering but is too permissive for
+  conversation progress, where a broken condition should not silently become a
+  gameplay decision
+- conversation conditions may reuse the shared read-only `q.*` query surface,
+  but must not call predicate-registry scripts as the authority for state
+  progression
+
 ---
 
 ## 11. Engagement Session
@@ -989,6 +1013,10 @@ May include:
 Conditions read authoritative metadata through the existing query surface and remain separate from render predicates or predicate-registry scripts.
 
 When new read capabilities are needed for conversations, they should be added to the shared `q` facade rather than introduced as a conversation-specific side channel. In the current runtime that means extending `createQueryFacade(...)` in `bundles/bundle-rantamuta/lib/helpers/predicate-runtime.js`.
+
+This distinction is deliberate: `q.*` is a read-only query facade, while
+predicate-registry evaluation is a render-time text-selection mechanism with
+fail-to-false semantics that must not drive conversation progression.
 
 Example:
 

@@ -38,7 +38,7 @@ Move door/facade behavior to the `exit` target hook path (`canDirect`/`planDirec
 The following patterns in `go` are considered door cruft and should be removed/migrated to exit hooks:
 - Door lookup in command body (for example `destination.getDoor(currentRoom)`).
 - Door policy checks in command body (for example lock/key checks).
-- Door mutation planning in command body (`changeDoor` planning, including auto-open/auto-unlock logic).
+- Door mutation planning in command body (`operateDoor` planning, including auto-open/auto-unlock logic).
 - Door-specific composed success text assembly (door labels/opposite-door labels and related semantic event composition).
 
 ## Risks
