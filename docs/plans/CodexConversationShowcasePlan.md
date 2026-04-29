@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: draft
+- Status: planning
 - Scope: `bundle-rantamuta` codex-area authored content and validation
 - Binding: no
 
@@ -47,7 +47,7 @@ The conversation should feel like a cohesive mini-game in its own right. It may 
   - `deleteAreaMetadata`
   - `deleteWorldMetadata`
 - Add focused validation so the example remains loadable and the important authored routes keep working.
-- Update `CHANGELOG.md` if the example is shipped as player-visible content.
+- Update `CHANGELOG.md` for the player-visible content addition.
 
 ## Out of Scope
 
@@ -106,7 +106,7 @@ The conversation should feel like a cohesive mini-game in its own right. It may 
 - `bundles/bundle-rantamuta/tests/**`
   - Focused coverage for conversation loading and selected directed-speech routes.
 - `CHANGELOG.md`
-  - Player-visible content record if this example is included in release-facing branch history.
+  - Player-visible content record for the new showcase.
 
 ## Validation Strategy
 
@@ -158,7 +158,7 @@ Required evidence:
 This is player-visible authored content, not a runtime compatibility change.
 
 - No normative contract update is expected unless implementation discovers that the authored conversation behavior differs from existing normative docs.
-- `CHANGELOG.md` should be updated if the example ships as part of the player-visible bundle content.
+- `CHANGELOG.md` should be updated because the example is player-visible bundle content.
 - Existing public runtime surfaces, CLI behavior, boot behavior, and command syntax must remain unchanged.
 
 ## Conformance QC
