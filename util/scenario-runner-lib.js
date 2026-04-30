@@ -81,6 +81,7 @@ function readScenarioFile(filePath) {
 
 function collectScenarioConfig(args, root) {
   const commandLines = [];
+  const assertionDirectives = [];
   const seedInventoryRefs = [];
   const seedRoomItemRefs = [];
   let roomRef = null;
@@ -120,6 +121,15 @@ function collectScenarioConfig(args, root) {
             break;
           case 'seedRoomItem':
             seedRoomItemRefs.push(directive.value);
+            break;
+          case 'matches':
+          case 'notMatches':
+            assertionDirectives.push({
+              type: directive.key,
+              text: directive.value,
+              filePath: directive.filePath,
+              lineNumber: directive.lineNumber,
+            });
             break;
           default:
             throw new Error(`Unknown scenario directive "${directive.key}" at ${directive.filePath}:${directive.lineNumber}`);
@@ -216,6 +226,7 @@ function collectScenarioConfig(args, root) {
 
   return {
     commandLines,
+    assertionDirectives,
     roomRef,
     seedRefs: {
       seedInventoryRefs,

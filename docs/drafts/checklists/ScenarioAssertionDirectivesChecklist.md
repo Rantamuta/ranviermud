@@ -44,7 +44,7 @@
 
 ## Checklist
 
-- [ ] `C01` [parser] Extend scenario directive parsing in `util/scenario-runner-lib.js` to recognize `matches` and `notMatches` as non-command assertion-event directives, preserving their text and order for JSON output while excluding them from command execution.
+- [x] `C01` [parser] Extend scenario directive parsing in `util/scenario-runner-lib.js` to recognize `matches` and `notMatches` as non-command assertion-event directives, preserving their text and order for JSON output while excluding them from command execution.
   - Trace:
     - "Add two `.scenario` directives: `matches: <text>`; `notMatches: <text>`." (`In Scope`)
     - "Treat `matches:` and `notMatches:` as non-command assertion-event directives in the scenario stream." (`In Scope`)
