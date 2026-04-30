@@ -14,7 +14,7 @@
 - Treat assertion directives as ordered non-command entries in the scenario stream.
 - Keep V1 assertion matching to substring matching.
 - Ignore assertion directives during plain output command playback.
-- Emit assertion directives as ordered JSON events after preceding command output is flushed.
+- Emit assertion directives as JSON events in scenario-file order.
 - Add helper behavior that consumes JSON assertion events against command-local accumulated visible output.
 - Convert one existing scenario, likely `door-lock.scenario`, to demonstrate assertion directives.
 - Update runner documentation and changelog coverage for the approved tooling behavior.
@@ -35,7 +35,7 @@
 - `.scenario` files may include `matches:` and `notMatches:` after `command:`.
 - Plain output mode executes only commands and does not print, execute, or fail on assertion directives.
 - JSON output mode emits ordered `{ "type": "matches", "text": "<text>" }` and `{ "type": "notMatches", "text": "<text>" }` events.
-- Assertion events appear in scenario order after preceding command output and before the next command's `run` event.
+- JSON output preserves scenario-file order for `run`, `output`, `matches`, and `notMatches` events.
 - Matching uses substring semantics.
 - The assertion consumer joins all command output events before applying assertions.
 - Assertion failures identify command index, command text, assertion type, expected/forbidden text, and command-local received output.
@@ -68,10 +68,10 @@
     - "Making assertion directives affect plain text runner output." (`Out of Scope`)
   - Validation handoff: `S2`, `integration/smoke`
 
-- [ ] `C05` [json] Emit JSON `matches` and `notMatches` events from `executeScenarioRequest` in scenario order after preceding command output has been flushed and before the next command's `run` event.
+- [ ] `C05` [json] Emit JSON `matches` and `notMatches` events from `executeScenarioRequest` in scenario-file order.
   - Trace:
-    - "In JSON mode, emit assertion directives as ordered JSON events at their position in the scenario stream after command output has been flushed." (`In Scope`)
-    - "Assertion events appear in scenario order after the preceding command's output events are flushed and before the next command's `run` event." (`Acceptance Criteria`)
+    - "In JSON mode, emit assertion directives as JSON events in scenario-file order." (`In Scope`)
+    - "JSON output preserves scenario-file order for `run`, `output`, `matches`, and `notMatches` events." (`Acceptance Criteria`)
   - Validation handoff: `S3`, `contract/parity`
 
 - [ ] `C06` [helper] Add a scenario assertion consumer helper under `bundles/bundle-rantamuta/tests/helpers/` that accumulates `output` event text from the latest `run` event and applies each substring `matches` / `notMatches` assertion event against the current joined command-local output buffer as the event appears.

@@ -24,7 +24,7 @@ The regular runner should still be useful for manual smoke runs: it should execu
 - Treat `matches:` and `notMatches:` as non-command assertion-event directives in the scenario stream.
 - Keep assertion matching as substring matching for this plan.
 - In plain output mode, ignore assertion directives during command execution.
-- In JSON mode, emit assertion directives as ordered JSON events at their position in the scenario stream after command output has been flushed.
+- In JSON mode, emit assertion directives as JSON events in scenario-file order.
 - Add test helper behavior that consumes JSON `matches` and `notMatches` events and asserts against the command-local accumulated visible output.
 - Group command-local output by `run` event boundaries:
   - start a fresh visible-output buffer at each `run` event.
@@ -59,7 +59,7 @@ The regular runner should still be useful for manual smoke runs: it should execu
 3. JSON output mode emits ordered assertion events with shape equivalent to:
    - `{ "type": "matches", "text": "<text>" }`
    - `{ "type": "notMatches", "text": "<text>" }`
-4. Assertion events appear in scenario order after the preceding command's output events are flushed and before the next command's `run` event.
+4. JSON output preserves scenario-file order for `run`, `output`, `matches`, and `notMatches` events.
 5. `matches:` and `notMatches:` use substring matching, not regular expressions.
 6. The assertion consumer joins all output events for a command before applying assertions, so assertions do not fail merely because output was split across multiple JSON `output` events.
 7. A `matches:` failure reports the command index, command text, expected text, and command-local received output.
@@ -88,7 +88,7 @@ The regular runner should still be useful for manual smoke runs: it should execu
   - Extend scenario directive parsing to recognize `matches` and `notMatches`.
   - Preserve assertion directives as ordered non-command entries in the parsed scenario request for JSON output.
   - Ignore assertion directives in plain output mode.
-  - Emit JSON assertion events in command order after command output is flushed.
+  - Emit JSON assertion events in scenario-file order.
 - `util/scenario-test-harness.js`
   - Should not require structural changes unless the assertion consumer needs a shared helper surface.
 - `bundles/bundle-rantamuta/tests/helpers/`
@@ -115,8 +115,8 @@ Required evidence:
   - Pass if a scenario containing assertion directives executes normally and does not print assertion directive lines.
   - Fail if plain output mode treats assertion directives as commands or emits them as player-visible output.
 - JSON output coverage:
-  - Pass if JSON output includes ordered `matches` and `notMatches` events after preceding command output events have been flushed.
-  - Fail if assertion events are emitted as commands, omitted from JSON output, or appear before preceding command output has been flushed.
+  - Pass if JSON output preserves scenario-file order for `run`, `output`, `matches`, and `notMatches` events.
+  - Fail if assertion events are emitted as commands, omitted from JSON output, or reordered away from their scenario-file position.
 - Assertion helper coverage:
   - Pass if helper tests prove substring `matches` success/failure and substring `notMatches` success/failure against joined command-local output.
   - Fail if a multi-line command response causes a valid assertion to fail only because output arrived as separate JSON events.
@@ -146,7 +146,7 @@ This plan changes the `.scenario` file contract and JSON scenario-runner event s
 - Risk: assertion directives make scenario files too test-specific for manual use.
   - Mitigation: plain output mode ignores assertions, keeping scenario files runnable by humans.
 - Risk: assertion events appear in a confusing position in the JSON stream.
-  - Mitigation: require assertions to follow a command and emit them after output flushing and before the next `run` event in JSON mode.
+  - Mitigation: preserve scenario-file order so assertion events appear exactly where authors placed them relative to commands.
 - Risk: tests become brittle if they assert literary prose too tightly.
   - Mitigation: use stable fragments, not whole transcripts.
 - Risk: unknown directive strictness is weakened too much.
