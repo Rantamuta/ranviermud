@@ -108,10 +108,12 @@ function collectScenarioConfig(args, root) {
 
       const scenarioPath = path.resolve(root, args[i + 1]);
       const directives = readScenarioFile(scenarioPath);
+      let sawScenarioCommand = false;
       for (const directive of directives) {
         switch (directive.key) {
           case 'command':
             commandLines.push(directive.value);
+            sawScenarioCommand = true;
             break;
           case 'room':
             roomRef = directive.value;
@@ -124,6 +126,9 @@ function collectScenarioConfig(args, root) {
             break;
           case 'matches':
           case 'notMatches':
+            if (!sawScenarioCommand) {
+              throw new Error(`Scenario assertion directive "${directive.key}" must follow a command at ${directive.filePath}:${directive.lineNumber}`);
+            }
             assertionDirectives.push({
               type: directive.key,
               text: directive.value,
